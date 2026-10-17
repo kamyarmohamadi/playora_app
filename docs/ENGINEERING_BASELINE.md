@@ -1,32 +1,34 @@
 # Engineering Baseline
 
-Reviewed against the repository tree on 2026-10-17.
+Updated 2026-10-17 after the first platform-shell verification pass.
 
-## Observed repository state
+## Current repository state
 
-- The default branch is main.
-- The root contains a short README, a small project ZIP, a nested bazi folder with an audit note and another ZIP.
-- The default-branch tree does not currently expose a package.json, lockfile, tsconfig, complete application source tree, or CI workflow at the root.
-- A separate fix/playora-v1 branch has a validator source file, but that alone is not a complete application source tree.
-- Previously inspected contents of the archived bazi package had test failures and a TypeScript build failure. Any fixes made in an isolated prototype must not be assumed to be integrated into GitHub.
+- The default branch main originally contained project archives and audit notes rather than a complete application source tree.
+- This feature branch establishes a canonical root-level React + TypeScript + Vite app shell. Historical archives under bazi/ are left untouched.
+- The shell contains the home dashboard, illustrative game catalogue, global search, local favorites, guest profile, notification popover, settings and placeholder pages for Friends and Leaderboard.
+- Game play, online multiplayer, registered accounts, backend persistence, rankings and production security infrastructure are not implemented in this milestone.
 
-## What this means
+## Scope
 
-- A complete clean install, application build, end-to-end browser verification, and production security audit cannot be claimed from the default-branch repository as currently structured.
-- Documentation and project instructions can be validated as text, but they do not prove the game is working.
-- Before feature development, extract/review the intended source package, establish a canonical app directory, bring all source and lockfile into version control, and make the base build and tests reproducible.
-- Do not add a CI workflow that pretends to build a runnable application while the relevant source and scripts are absent. Add CI after the source of truth and reproducible project scripts have been established.
+Current priority is the main platform UI and shared experience. Game engines are intentionally out of scope until the shell is reviewed and stable. The catalogue labels unfinished games clearly; game cards do not launch game logic.
 
-## Next implementation sequence
+## Verification performed on the feature branch
 
-1. Establish one canonical, directly buildable application source tree and a pinned dependency lockfile.
-2. Restore repeatable typecheck, unit-test, lint, and production-build commands and fix existing failures.
-3. Add unit tests for manifests, registry behavior, core game rules, and game API compatibility.
-4. Implement and verify backgammon legality before calling the game complete.
-5. Design and test the game isolation boundary, CSP/headers, capability allowlist, and message validation before loading untrusted game code.
-6. Add Playwright smoke paths and RTL responsive screenshots; make these part of the repeatable release gate.
-7. Add CI to enforce the real checks above.
+- Clean install: npm ci --no-audit --no-fund — passed.
+- UI tests: npm test -- --reporter=dot — 7 tests passed.
+- Type check: npm run typecheck — passed.
+- Production build: npm run build — passed with Vite 7.3.7.
+- Browser smoke (Chromium): home page returned HTTP 200; catalogue navigation, search, favorites, guest profile and settings interactions passed.
+- Responsive smoke at 390 × 844: document and body widths remained 390 px, html direction was RTL, and the mobile navigation drawer opened.
+- Browser runtime errors: none observed on final smoke pass. No HTTP responses >= 400 were observed during that pass.
 
-## Important distinction
+These checks validate the current app shell only. They do not establish production security, correct game rules, authentication, multiplayer readiness, or release readiness.
 
-This file records the observed baseline, not a claim that the planned architecture or future controls have already been implemented.
+## Next steps
+
+1. Review the home-page information hierarchy, navigation and design system.
+2. Refine keyboard and accessibility behavior, then capture user-facing visual previews.
+3. Establish the game SDK/module contract as a separate milestone after the app shell is accepted.
+4. Implement game rules only after the platform shell is stable and the scope is explicitly reopened.
+5. Add account systems, multiplayer, CSP/hosting security and backend features as independently reviewed milestones.

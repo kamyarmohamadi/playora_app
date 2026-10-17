@@ -31,3 +31,9 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# App dependencies/build artifacts
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
