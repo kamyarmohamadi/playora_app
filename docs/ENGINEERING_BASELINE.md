@@ -1,32 +1,22 @@
 # Engineering Baseline
 
-Reviewed against the repository tree on 2026-10-17.
+Updated 2026-10-17.
 
-## Observed repository state
+## Current repository state
+- The default branch main originally contained project archives and audit notes rather than a complete application source tree.
+- This feature branch establishes a canonical root-level React + TypeScript + Vite app shell. Historical archives under bazi/ are left untouched.
+- The shell contains the home dashboard, illustrative game catalogue, global search, local favorites, guest profile, notification popover, settings and placeholder pages for Friends and Leaderboard.
+- Game play, online multiplayer, registered accounts, backend persistence, rankings and production security infrastructure are not implemented in this milestone.
 
-- The default branch is main.
-- The root contains a short README, a small project ZIP, a nested bazi folder with an audit note and another ZIP.
-- The default-branch tree does not currently expose a package.json, lockfile, tsconfig, complete application source tree, or CI workflow at the root.
-- A separate fix/playora-v1 branch has a validator source file, but that alone is not a complete application source tree.
-- Previously inspected contents of the archived bazi package had test failures and a TypeScript build failure. Any fixes made in an isolated prototype must not be assumed to be integrated into GitHub.
+## Scope
+Current priority is the main platform UI and shared experience. Game engines are intentionally out of scope until the shell is reviewed and stable. The catalogue labels unfinished games clearly.
 
-## What this means
+## Verification
+This file records expected checks, not their results. Run npm ci, npm test, npm run typecheck and npm run build against the exact branch version. Browser screenshots and responsive interaction checks should be performed when tooling is available. Never claim a check passed unless it was run.
 
-- A complete clean install, application build, end-to-end browser verification, and production security audit cannot be claimed from the default-branch repository as currently structured.
-- Documentation and project instructions can be validated as text, but they do not prove the game is working.
-- Before feature development, extract/review the intended source package, establish a canonical app directory, bring all source and lockfile into version control, and make the base build and tests reproducible.
-- Do not add a CI workflow that pretends to build a runnable application while the relevant source and scripts are absent. Add CI after the source of truth and reproducible project scripts have been established.
-
-## Next implementation sequence
-
-1. Establish one canonical, directly buildable application source tree and a pinned dependency lockfile.
-2. Restore repeatable typecheck, unit-test, lint, and production-build commands and fix existing failures.
-3. Add unit tests for manifests, registry behavior, core game rules, and game API compatibility.
-4. Implement and verify backgammon legality before calling the game complete.
-5. Design and test the game isolation boundary, CSP/headers, capability allowlist, and message validation before loading untrusted game code.
-6. Add Playwright smoke paths and RTL responsive screenshots; make these part of the repeatable release gate.
-7. Add CI to enforce the real checks above.
-
-## Important distinction
-
-This file records the observed baseline, not a claim that the planned architecture or future controls have already been implemented.
+## Next steps
+1. Confirm tests and build, then inspect desktop and mobile layouts.
+2. Refine navigation, spacing, typography and interactions using feedback.
+3. Establish the game SDK/module contract as a separate milestone.
+4. Implement game rules only after the platform shell is accepted.
+5. Add account systems, multiplayer, CSP/hosting security and backend features in separate reviewed milestones.

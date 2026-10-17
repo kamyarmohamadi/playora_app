@@ -1,21 +1,25 @@
 # Playora
 
-Playora is planned as a Persian-first, right-to-left modular game platform.
+Playora is a Persian-first, right-to-left game platform. This milestone focuses on the **main app shell and shared product experience**; game rules and game engines are explicitly out of scope for now.
 
-## Product direction
+## Main app shell
+- Responsive Persian RTL dashboard and navigation.
+- Home page with a branded hero and illustrative game catalogue cards.
+- Games catalogue with global search and local favorites.
+- Guest profile page, notification popover, basic settings dialog, and informative coming-soon states.
+- Dedicated placeholder pages for Friends and Leaderboard.
+- React + TypeScript + Vite, with UI tests for main interactions.
 
-- A polished, responsive Persian (fa-IR) web/PWA experience.
-- Start with local two-player backgammon.
-- Use a second small game (such as Tic-Tac-Toe) to prove the game-module contract is reusable.
-- Design explicit boundaries for the platform shell, game SDK, and individual games.
-- Consider online multiplayer, accounts, rankings, and Android packaging only after the local-game foundation is correct.
+## Run locally
+Requirements: Node.js compatible with the Vite version in package.json.
 
-## Current repository status
+    npm ci
+    npm test
+    npm run typecheck
+    npm run build
+    npm run dev
 
-This repository is still at a bootstrap/documentation stage. The default branch contains project archives and audit notes rather than a complete, directly buildable application source tree. Do not assume a working production build, secure game sandbox, complete backgammon rules, or end-to-end browser tests are present.
+## Scope boundary
+This milestone does **not** implement backgammon, chess, tic-tac-toe, card games, online multiplayer, registered accounts, backend persistence, rankings, or production security infrastructure. Catalogue artwork is illustrative. The UI must not imply that an unfinished game is playable.
 
-Read [AGENTS.md](AGENTS.md) and [the engineering baseline](docs/ENGINEERING_BASELINE.md) before implementing features. The project-specific agent skill is available under .agents/skills and .claude/skills.
-
-## Engineering principles
-
-Correct rules before polish, explicit module contracts, deny-by-default permissions, a distinctive RTL design, automated tests, and verifiable previews. Keep work on feature branches and submit reviewable pull requests. Never claim a test or security control exists until it has been implemented and verified.
+Read AGENTS.md, .agents/skills/playora-engineering/SKILL.md and docs/ENGINEERING_BASELINE.md before substantive changes.
