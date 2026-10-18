@@ -37,9 +37,7 @@ jobs:
       - name: Type-check
         run: npm run typecheck
       - name: Build for GitHub Pages
-        run: npm run build
-        env:
-          GITHUB_PAGES: "true"
+        run: npm run build -- --base=/playora_app/
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
