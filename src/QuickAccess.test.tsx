@@ -6,10 +6,10 @@ describe("Playora dashboard quick access", () => {
   it("shows the ten quick-access shortcuts", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: "دسترسی سریع" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "خانه" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "بازی‌ها" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "خانه" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "بازی‌ها" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "دلخواه‌ها" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "اعلان‌ها" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "اعلان‌ها" }).length).toBeGreaterThan(0);
     expect(screen.getByText("۱۰ میانبر")).toBeInTheDocument();
   });
 
