@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import "./quick-access.css";
 import { Activity, ArrowLeft, Bell, Check, ChevronDown, CircleHelp, Clock3, Compass, Gamepad2, Gift, Grid2X2, Heart, Home, Info, Medal, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, Sparkles, Swords, Trophy, Users, X } from "lucide-react";
 
 type Page = "home" | "games" | "friends" | "leaderboard" | "profile";
