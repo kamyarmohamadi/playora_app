@@ -1,0 +1,51 @@
+name: Playora browser preview
+
+on:
+  push:
+    branches:
+      - feature/playora-dashboard-polish-2026-10-19
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: playora-browser-preview
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Verify and publish browser preview
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+      - name: Type-check
+        run: npm run typecheck
+      - name: Build for GitHub Pages
+        run: npm run build -- --base=/playora_app/
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Deploy browser preview
+        id: deployment
+        uses: actions/deploy-pages@v4

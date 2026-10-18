@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
+import "./quick-access.css";
 import { Activity, ArrowLeft, Bell, Check, ChevronDown, CircleHelp, Clock3, Compass, Gamepad2, Gift, Grid2X2, Heart, Home, Info, Medal, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, Sparkles, Swords, Trophy, Users, X } from "lucide-react";
 
 type Page = "home" | "games" | "friends" | "leaderboard" | "profile";
@@ -47,11 +48,13 @@ function EmptyPage({type,onGames}:{type:"friends"|"leaderboard";onGames:()=>void
 export default function App() {
   const [page,setPage]=useState<Page>("home"),[query,setQuery]=useState(""),[toast,setToast]=useState("");
   const [mobileOpen,setMobileOpen]=useState(false),[profileOpen,setProfileOpen]=useState(false),[alertsOpen,setAlertsOpen]=useState(false),[settingsOpen,setSettingsOpen]=useState(false);
-  const [saved,setSaved]=useState<string[]>(["backgammon"]);
-  const visibleGames=useMemo(()=>games.filter(g=>[g.title,g.category,g.description].some(s=>s.toLocaleLowerCase("fa").includes(query.trim().toLocaleLowerCase("fa")))),[query]);
-  const go=(p:Page)=>{setPage(p);setMobileOpen(false);setProfileOpen(false);setAlertsOpen(false);if(p!=="games")setQuery("");};
+  const [saved,setSaved]=useState<string[]>(["backgammon"]),[favoritesOnly,setFavoritesOnly]=useState(false);
+  const visibleGames=useMemo(()=>games.filter(g=>(!favoritesOnly||saved.includes(g.id))&&[g.title,g.category,g.description].some(s=>s.toLocaleLowerCase("fa").includes(query.trim().toLocaleLowerCase("fa")))),[query,saved,favoritesOnly]);
+  const go=(p:Page)=>{setPage(p);setMobileOpen(false);setProfileOpen(false);setAlertsOpen(false);setFavoritesOnly(false);if(p!=="games")setQuery("");};
   const inform=(name:string)=>setToast("بخش «"+name+"» هنوز در حال آماده‌سازی است.");
   const toggleSaved=(id:string)=>setSaved(current=>current.includes(id)?current.filter(x=>x!==id):[...current,id]);
+  const openFavorites=()=>{setPage("games");setQuery("");setFavoritesOnly(true);setMobileOpen(false);setProfileOpen(false);setAlertsOpen(false);};
+  const activateShortcut=(id:string)=>{switch(id){case "home":go("home");break;case "games":go("games");break;case "favorites":openFavorites();break;case "friends":go("friends");break;case "leaderboard":go("leaderboard");break;case "profile":go("profile");break;case "alerts":setAlertsOpen(true);setProfileOpen(false);break;case "challenges":inform("چالش‌های روزانه");break;case "rewards":inform("جایزه‌ها");break;case "support":inform("پشتیبانی");break;default:break;}};
 
   return <div className="app" dir="rtl">
     <header className="topbar">
@@ -86,8 +89,27 @@ export default function App() {
           <div className="section-title"><div><span className="eyebrow">انتخاب با توئه</span><h2>بازی‌های پیشنهادی</h2><p>چند انتخاب برای شروع ماجراجویی‌ات</p></div><button className="text-link" onClick={()=>go("games")}>همهٔ بازی‌ها <ArrowLeft size={15}/></button></div>
           <div className="games-grid">{games.slice(0,3).map(g=><GameCard key={g.id} game={g} saved={saved.includes(g.id)} onToggleSave={()=>toggleSaved(g.id)} onSelect={inform}/>)}</div>
           <section className="friends-promo"><span><Users size={21}/></span><div><b>بازی با دوستات یه چیز دیگه‌ست</b><p>فضای چندنفره و دعوت از دوست‌ها در مسیر توسعهٔ Playora قرار داره.</p></div><button className="btn outline" onClick={()=>go("friends")}>بخش دوستان <ArrowLeft size={15}/></button></section>
+          <section className="quick-access" aria-labelledby="quick-access-title">
+            <div className="quick-access-heading"><div><span className="eyebrow">همه‌چیز دم دستته</span><h2 id="quick-access-title">دسترسی سریع</h2><p>میانبر بخش‌های مختلف Playora</p></div><span className="quick-access-count">۱۰ میانبر</span></div>
+            <div className="quick-access-grid">
+              {[
+                {id:"home",label:"خانه",icon:Home},
+                {id:"games",label:"بازی‌ها",icon:Grid2X2},
+                {id:"favorites",label:"دلخواه‌ها",icon:Heart},
+                {id:"friends",label:"دوستان",icon:Users},
+                {id:"leaderboard",label:"برترین‌ها",icon:Trophy},
+                {id:"profile",label:"پروفایل",icon:Medal},
+                {id:"challenges",label:"چالش روزانه",icon:Activity,soon:true},
+                {id:"rewards",label:"جایزه‌ها",icon:Gift,soon:true},
+                {id:"alerts",label:"اعلان‌ها",icon:Bell},
+                {id:"support",label:"پشتیبانی",icon:MessageCircle,soon:true}
+              ].map(({id,label,icon:Icon,soon})=><button key={id} className={"quick-access-item"+(soon?" quick-access-soon":"")} onClick={()=>activateShortcut(id)} aria-label={label}>
+                <span className="quick-access-icon"><Icon size={19}/></span><span className="quick-access-label">{label}</span>{soon&&<small>به‌زودی</small>}
+              </button>)}
+            </div>
+          </section>
         </>}
-        {page==="games"&&<><div className="page-heading catalog-heading"><div><span className="eyebrow"><i/> کتابخانهٔ سرگرمی</span><h1>یه بازی برای حال خوبت</h1><p>بازی‌ها رو بگرد و انتخاب‌های موردعلاقه‌ات رو نگه دار.</p></div><span className="saved-count"><Heart size={16}/>{saved.length} بازی دلخواه</span></div><div className="catalog-tools"><span><b>{String(visibleGames.length).padStart(2,"۰")}</b> بازی در کتابخانه</span><button onClick={()=>setQuery("")}><X size={14}/> پاک کردن جست‌وجو</button></div>
+        {page==="games"&&<><div className="page-heading catalog-heading"><div><span className="eyebrow"><i/> کتابخانهٔ سرگرمی</span><h1>{favoritesOnly?"بازی‌های دلخواه تو":"یه بازی برای حال خوبت"}</h1><p>{favoritesOnly?"بازی‌هایی که برای دسترسی سریع ذخیره کردی.":"بازی‌ها رو بگرد و انتخاب‌های موردعلاقه‌ات رو نگه دار."}</p></div><span className="saved-count"><Heart size={16}/>{saved.length} بازی دلخواه</span></div><div className="catalog-tools"><span><b>{String(visibleGames.length).padStart(2,"۰")}</b> بازی در کتابخانه</span><button onClick={()=>setQuery("")}><X size={14}/> پاک کردن جست‌وجو</button></div>
           {visibleGames.length?<div className="games-grid catalog-grid">{visibleGames.map(g=><GameCard key={g.id} game={g} saved={saved.includes(g.id)} showSave onToggleSave={()=>toggleSaved(g.id)} onSelect={inform}/>)}</div>:<div className="no-results"><Search size={26}/><h2>چیزی پیدا نکردیم</h2><p>اسم بازی دیگه‌ای رو جست‌وجو کن یا عبارتت رو کوتاه‌تر کن.</p><button className="btn primary" onClick={()=>setQuery("")}>نمایش همهٔ بازی‌ها</button></div>}
           <div className="note"><Info size={16}/><span>فعلاً روی پوستهٔ اصلی Playora کار می‌کنیم؛ منطق اجرای بازی‌ها در مرحله‌ای جداگانه توسعه داده می‌شود.</span></div></>}
         {(page==="friends"||page==="leaderboard")&&<EmptyPage type={page} onGames={()=>go("games")}/>}
