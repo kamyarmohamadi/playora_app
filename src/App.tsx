@@ -4,9 +4,9 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import type { LucideIcon } from "lucide-react";
 import { applyTicTacToeMove, chooseTicTacToeBotMove, createTicTacToeState } from "./games/tictactoe";
-import type { TicTacToeState } from "./games/tictactoe";
+import type { TicTacToeMark, TicTacToeState } from "./games/tictactoe";
 import {
-  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown,
+  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords,
   Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
   Languages, LockKeyhole, LogIn, Medal, Menu, Puzzle, Search, Settings,
   ShieldCheck, Sparkles, Spade, Ticket, Trophy, UserRound, Users,
@@ -15,10 +15,11 @@ import {
 import "./index.css";
 
 type Locale = "en" | "fa";
-type Page = "home" | "games" | "tournaments" | "friends" | "leaderboard" | "wallet" | "profile" | "settings";
+type Page = "home" | "games" | "online" | "tournaments" | "friends" | "leaderboard" | "wallet" | "profile" | "settings";
 type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
+type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; winner_user_id: string | null; state_version: number };
 type Game = {
   id: string;
   title: Record<Locale, string>;
@@ -45,7 +46,7 @@ const gameList: Game[] = [
 
 const copy: Record<Locale, Record<string, string>> = {
   en: {
-    navHome: "Home", navGames: "Games", navTournaments: "Tournaments", navFriends: "Friends", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
+    navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
     search: "Search games, modes, and more", coins: "Playora Coins", demo: "Preview mode",
     eyebrow: "THE NEXT MOVE IS YOURS", heroTitle: "Your skills.", heroTitle2: "Your victory.", heroBody: "Meet your next rival. Master your favorite games. Make every move count.", findGame: "Explore games", viewTournaments: "View tournaments", liveLabel: "GLOBAL GAME NETWORK", notLive: "UI preview · online play is not connected",
     quickAccess: "Jump back in", allGames: "All games", seeAll: "View all", popular: "Popular games", popularSub: "Choose your next challenge",
@@ -70,7 +71,7 @@ const copy: Record<Locale, Record<string, string>> = {
     passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
-    navHome: "خانه", navGames: "بازی‌ها", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
+    navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
     search: "جست‌وجوی بازی و حالت‌ها", coins: "سکه‌های پلیورا", demo: "حالت پیش‌نمایش",
     eyebrow: "حرکت بعدی با توست", heroTitle: "مهارت تو.", heroTitle2: "پیروزی تو.", heroBody: "حریف بعدی‌ات را پیدا کن، بازی محبوبت را یاد بگیر و هر حرکت را مهم کن.", findGame: "کشف بازی‌ها", viewTournaments: "دیدن تورنومنت‌ها", liveLabel: "شبکه جهانی بازی", notLive: "پیش‌نمایش رابط · بازی آنلاین متصل نیست",
     quickAccess: "دسترسی سریع", allGames: "همه بازی‌ها", seeAll: "مشاهده همه", popular: "بازی‌های محبوب", popularSub: "چالش بعدی‌ات را انتخاب کن",
@@ -105,6 +106,7 @@ const categories: { id: Category; key: string }[] = [
 const navigation: { id: Page; key: string; icon: LucideIcon }[] = [
   { id: "home", key: "navHome", icon: Home },
   { id: "games", key: "navGames", icon: Grid2X2 },
+  { id: "online", key: "navOnline", icon: Swords },
   { id: "tournaments", key: "navTournaments", icon: Trophy },
   { id: "friends", key: "navFriends", icon: Users },
   { id: "leaderboard", key: "navRank", icon: BarChart3 },
@@ -153,7 +155,7 @@ function GameCard({ game, locale, onOpen, saved, onSave, t }: {
         <div className="game-card-copy">
           <div className="game-card-heading">
             <div><h3>{game.title[locale]}</h3><p>{game.subtitle[locale]}</p></div>
-            <span className="game-status"><span />{t("soon")}</span>
+            <span className={"game-status " + (game.id === "tictactoe" ? "status-practice" : "")}><span />{t(game.id === "tictactoe" ? "practiceAvailable" : "soon")}</span>
           </div>
           <div className="game-card-meta"><span><Users size={14} />{game.players[locale]}</span><span>{t(game.category)}</span><ArrowUpRight size={15} className="game-arrow" /></div>
         </div>
@@ -539,7 +541,7 @@ export default function App() {
                 <span className="hero-eyebrow"><Sparkles size={14} />{t("eyebrow")}</span>
                 <h1>{t("heroTitle")}<br /><span>{t("heroTitle2")}</span></h1>
                 <p>{t("heroBody")}</p>
-                <div className="hero-actions"><button className="btn-gradient" onClick={() => go("games")}>{t("findGame")}<ArrowRight size={17} /></button><button className="btn-ghost" onClick={() => go("tournaments")}><Trophy size={16} />{t("viewTournaments")}</button></div>
+                <div className="hero-actions"><button className="btn-gradient" onClick={() => go("games")}>{t("findGame")}<ArrowRight size={17} /></button><button className="btn-ghost" onClick={() => go("online")}><Swords size={16} />{t("findRival")}</button></div>
                 <div className="hero-trust"><span><ShieldCheck size={14} />{t("safePlay")}</span><i /><span><Zap size={14} />{t("matchMade")}</span></div>
               </div>
               <div className="hero-artwork" aria-hidden="true">
