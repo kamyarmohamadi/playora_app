@@ -206,3 +206,21 @@
 .profile-edit-message.is-success{color:#65dfbf}
 .profile-edit-message.is-error{color:#ff9daf}
 @media(max-width:520px){.profile-edit-form{margin-inline:12px;padding:10px}.profile-edit-controls{align-items:stretch;flex-direction:column}.profile-edit-controls .btn-gradient{width:100%}}
+
+
+/* Account deletion is deliberately visually separated from ordinary preferences. */
+.danger-card{border-color:#6b2e49;background:radial-gradient(ellipse at 100% 0%,#8d28401b,transparent 55%),linear-gradient(145deg,#1b1122,#0b1324)}
+.settings-icon.danger{background:#421c31;color:#ff8cae;border:1px solid #76304a}
+.danger-eyebrow{color:#ff8eaa}
+.danger-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:0 14px;border:1px solid #9b3b59;border-radius:10px;background:linear-gradient(110deg,#7e263f,#b62e50);color:#fff1f4;font-size:9px;font-weight:800;box-shadow:0 7px 23px #9e24421c;transition:filter .16s,transform .16s}
+.danger-action:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+.danger-action:disabled{opacity:.46}
+.deletion-backdrop{z-index:130}
+.deletion-modal{border-color:#6b304b;background:radial-gradient(ellipse at 90% 0%,#b52d4b26,transparent 48%),linear-gradient(145deg,#1a1325,#080e1c 78%)}
+.deletion-mark{border-color:#74364f;background:#361a2b;color:#ff9bb4}
+.deletion-warning{display:flex;align-items:flex-start;gap:9px;margin:13px 0;padding:11px;border:1px solid #6e3c4a;border-radius:10px;background:#2c1923;color:#efb9c6;font-size:9px;line-height:1.8}
+.deletion-warning svg{flex:none;margin-top:2px;color:#ff90ac}
+.deletion-error{border-color:#7b304a;background:#2c1723;color:#ffb1c3}
+.deletion-actions{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:9px;margin-top:2px}
+.deletion-actions button{width:100%;min-height:40px}
+@media(max-width:520px){.danger-card .danger-action{width:100%}.deletion-actions{grid-template-columns:1fr}.deletion-modal h2{font-size:21px}}
