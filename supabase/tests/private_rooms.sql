@@ -28,13 +28,17 @@ DECLARE
   v_returned_expiry timestamptz;
   v_seen integer;
   v_expected_turn_rejected boolean := false;
-  v_xp_before bigint;
-  v_rating_before integer;
-  v_matches_before integer;
+  v_one_xp_before bigint;
+  v_one_rating_before integer;
+  v_one_matches_before integer;
+  v_one_balance_before bigint;
+  v_two_xp_before bigint;
+  v_two_rating_before integer;
+  v_two_matches_before integer;
+  v_two_balance_before bigint;
   v_xp_after bigint;
   v_rating_after integer;
   v_matches_after integer;
-  v_balance_before bigint;
   v_balance_after bigint;
   v_second_room uuid;
   v_second_code text;
@@ -63,9 +67,9 @@ BEGIN
   END;
 
   SELECT xp,competitive_rating,matches_played
-  INTO v_xp_before,v_rating_before,v_matches_before
+  INTO v_one_xp_before,v_one_rating_before,v_one_matches_before
   FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
-  SELECT free_coins+purchased_coins+reward_coins INTO v_balance_before
+  SELECT free_coins+purchased_coins+reward_coins INTO v_one_balance_before
   FROM public.coin_wallets WHERE user_id=auth.uid();
 
   -- A second member must not discover the room by UUID before using its invite code.
@@ -74,9 +78,9 @@ BEGIN
   IF v_seen <> 0 THEN RAISE EXCEPTION 'Uninvited member can discover a private room'; END IF;
 
   SELECT xp,competitive_rating,matches_played
-  INTO v_xp_before,v_rating_before,v_matches_before
+  INTO v_two_xp_before,v_two_rating_before,v_two_matches_before
   FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
-  SELECT free_coins+purchased_coins+reward_coins INTO v_balance_before
+  SELECT free_coins+purchased_coins+reward_coins INTO v_two_balance_before
   FROM public.coin_wallets WHERE user_id=auth.uid();
 
   SELECT joined_room_id,joined_game_id,room_status,active_match_id,room_expires_at
@@ -125,28 +129,31 @@ BEGIN
     RAISE EXCEPTION 'Completed private room was not closed';
   END IF;
 
-  SELECT xp,competitive_rating,matches_played
-  INTO v_xp_after,v_rating_after,v_matches_after
-  FROM public.member_game_stats
-  WHERE user_id='00000000-0000-4000-8000-000000000001' AND game_id='tictactoe';
-  -- Read as the test owner is intentionally not available until after this block; check member two now.
-  -- Host's values are rechecked by the admin-level assertion below.
-  IF v_xp_after <> v_xp_before OR v_rating_after <> v_rating_before OR v_matches_after <> v_matches_before THEN
-    -- v_*_before was captured as Member Two above; this query is only meant to validate no reward mutation,
-    -- so defer exact per-member baseline comparisons to the two separate snapshots below.
-    NULL;
-  END IF;
-
+  -- Private games never change XP, competitive rating, ranked match counts, or coins.
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   SELECT xp,competitive_rating,matches_played
   INTO v_xp_after,v_rating_after,v_matches_after
   FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
-  IF v_xp_after <> v_xp_before OR v_rating_after <> v_rating_before OR v_matches_after <> v_matches_before THEN
-    RAISE EXCEPTION 'Private play must not change member XP, rating, or ranked match count';
+  IF v_xp_after <> v_one_xp_before OR v_rating_after <> v_one_rating_before OR v_matches_after <> v_one_matches_before THEN
+    RAISE EXCEPTION 'Private play must not change host XP, rating, or ranked match count';
   END IF;
   SELECT free_coins+purchased_coins+reward_coins INTO v_balance_after
   FROM public.coin_wallets WHERE user_id=auth.uid();
-  IF v_balance_after <> v_balance_before THEN
-    RAISE EXCEPTION 'Private play must not change coin balance';
+  IF v_balance_after <> v_one_balance_before THEN
+    RAISE EXCEPTION 'Private play must not change host coin balance';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
+  SELECT xp,competitive_rating,matches_played
+  INTO v_xp_after,v_rating_after,v_matches_after
+  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
+  IF v_xp_after <> v_two_xp_before OR v_rating_after <> v_two_rating_before OR v_matches_after <> v_two_matches_before THEN
+    RAISE EXCEPTION 'Private play must not change invited member XP, rating, or ranked match count';
+  END IF;
+  SELECT free_coins+purchased_coins+reward_coins INTO v_balance_after
+  FROM public.coin_wallets WHERE user_id=auth.uid();
+  IF v_balance_after <> v_two_balance_before THEN
+    RAISE EXCEPTION 'Private play must not change invited member coin balance';
   END IF;
 
   -- Host can close an unused room; its invite code must stop working immediately.
