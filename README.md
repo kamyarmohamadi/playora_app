@@ -40,3 +40,7 @@ Never place passwords, service-role keys, wallet seed phrases or private keys in
 ## Account deletion and security status
 
 A trusted Supabase Edge Function for account deletion is included in source. It requires `SUPABASE_SERVICE_ROLE_KEY` only as a server secret, checks the caller's verified JWT and recent `auth_time`, cancels unfinished matches without results/rewards, then deletes the Auth user. The UI remains disabled by default: keep `VITE_ACCOUNT_DELETION_ENABLED=false` until both the Edge Function and cleanup migration are deployed and verified in a Supabase project. Never place the service-role key in frontend variables or source control.
+
+## Release process
+
+Use **docs/PRODUCTION_READINESS.md** as the mandatory staging and production gate. Do not enable account deletion or any payment/reward feature until the listed tests and environment setup are complete.
