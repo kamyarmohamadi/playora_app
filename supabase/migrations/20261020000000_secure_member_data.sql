@@ -257,9 +257,19 @@ begin
   values(new.id,50,'free','signup_bonus','signup_bonus:' || new.id::text)
   on conflict (idempotency_key) do nothing;
 
+  -- Create a private, zeroed stats row so every new member sees a real initial rating.
+  insert into public.member_game_stats(user_id,game_id)
+  values(new.id,'tictactoe')
+  on conflict (user_id,game_id) do nothing;
+
   return new;
 end;
 $$;
+-- Ensure existing members have initial stats rows for the first ranked game.
+insert into public.member_game_stats(user_id,game_id)
+select p.user_id,'tictactoe' from public.member_profiles p
+on conflict (user_id,game_id) do nothing;
+
 revoke all on function public.handle_new_member() from public, anon, authenticated;
 revoke all on function public.set_updated_at() from public, anon, authenticated;
 
