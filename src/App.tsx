@@ -83,7 +83,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "Sign in", signUp: "Create account", signOut: "Sign out", resetPassword: "Reset password", forgotPassword: "Forgot password?", backToSignIn: "Back to sign in",
     email: "Email address", password: "Password", displayName: "Display name", continueWithGoogle: "Continue with Google", authUnavailable: "Account services are not connected yet. Configure the Supabase project URL and publishable key, then enable Google OAuth and email redirects.",
     authFailure: "We couldn’t complete that request. Check your details or try again.", checkInbox: "Check your inbox for a confirmation link to finish creating your account.", resetSent: "If an account exists for this email, password reset instructions have been sent.",
-    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", profileXp: "Experience", recentMatches: "Recent ranked matches", noRecentMatches: "No completed ranked matches yet.", resultWin: "Win", resultLoss: "Loss", resultDraw: "Draw", resultCompleted: "Completed", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
+    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", profileXp: "Experience", recentMatches: "Recent ranked matches", noRecentMatches: "No completed ranked matches yet.", editProfile: "Edit profile", saveProfile: "Save changes", profileUpdated: "Profile updated.", profileUpdateFailed: "Profile could not be updated. Please try again.", cancel: "Cancel", resultWin: "Win", resultLoss: "Loss", resultDraw: "Draw", resultCompleted: "Completed", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
     navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
@@ -118,7 +118,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "ورود", signUp: "ساخت حساب", signOut: "خروج از حساب", resetPassword: "بازنشانی رمز عبور", forgotPassword: "رمزت را فراموش کرده‌ای؟", backToSignIn: "بازگشت به ورود",
     email: "نشانی ایمیل", password: "رمز عبور", displayName: "نام نمایشی", continueWithGoogle: "ادامه با گوگل", authUnavailable: "سرویس حساب هنوز متصل نیست. آدرس پروژه و کلید عمومی Supabase را تنظیم کن و ورود گوگل و مسیرهای تأیید ایمیل را فعال کن.",
     authFailure: "درخواست انجام نشد. اطلاعات را بررسی کن یا دوباره تلاش کن.", checkInbox: "برای تکمیل ساخت حساب، ایمیل خود را برای پیوند تأیید بررسی کن.", resetSent: "اگر حسابی با این ایمیل وجود داشته باشد، دستور بازنشانی رمز ارسال شده است.",
-    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", profileXp: "تجربه", recentMatches: "مسابقه‌های رتبه‌دار اخیر", noRecentMatches: "هنوز مسابقه رتبه‌دار تکمیل‌شده‌ای نداری.", resultWin: "برد", resultLoss: "باخت", resultDraw: "مساوی", resultCompleted: "تکمیل‌شده", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
+    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", profileXp: "تجربه", recentMatches: "مسابقه‌های رتبه‌دار اخیر", noRecentMatches: "هنوز مسابقه رتبه‌دار تکمیل‌شده‌ای نداری.", editProfile: "ویرایش پروفایل", saveProfile: "ذخیره تغییرات", profileUpdated: "پروفایل به‌روزرسانی شد.", profileUpdateFailed: "به‌روزرسانی پروفایل انجام نشد. دوباره تلاش کن.", cancel: "انصراف", resultWin: "برد", resultLoss: "باخت", resultDraw: "مساوی", resultCompleted: "تکمیل‌شده", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
   }
 };
 
@@ -226,6 +226,9 @@ export default function App() {
   const [recoveryReady, setRecoveryReady] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [memberProfile, setMemberProfile] = useState<MemberProfile | null>(null);
+  const [profileNameDraft, setProfileNameDraft] = useState("");
+  const [profileSaveBusy, setProfileSaveBusy] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
   const [memberStats, setMemberStats] = useState<MemberGameStats | null>(null);
   const [recentMatches, setRecentMatches] = useState<RankedHistoryRow[]>([]);
@@ -300,6 +303,8 @@ export default function App() {
   useEffect(() => {
     if (!supabase || !session?.user.id) {
       setMemberProfile(null);
+      setProfileNameDraft("");
+      setProfileMessage("");
       setMemberWallet(null);
       setMemberStats(null);
       setRecentMatches([]);
@@ -327,7 +332,9 @@ export default function App() {
       supabase.from("matches").select("id,status,winner_user_id,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
     ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
       if (!active) return;
-      setMemberProfile(!profileResult.error ? profileResult.data as MemberProfile | null : null);
+      const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
+      setMemberProfile(loadedProfile);
+      setProfileNameDraft(loadedProfile?.display_name ?? "");
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
       setMemberStats(!statsResult.error ? statsResult.data as MemberGameStats | null : null);
       setRecentMatches(!historyResult.error && historyResult.data ? historyResult.data as RankedHistoryRow[] : []);
@@ -746,6 +753,38 @@ export default function App() {
     ]).then(([preferenceResult, profileResult]) => {
       if (preferenceResult.error || profileResult.error) setToast(copy[nextLocale].authFailure);
     });
+  };
+
+  const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanName = profileNameDraft.trim();
+    if (!supabase || !session?.user.id || !memberProfile || memberProfile.user_id !== session.user.id) return;
+    if (cleanName.length < 1 || cleanName.length > 32) {
+      setProfileMessage(t("profileUpdateFailed"));
+      return;
+    }
+    if (cleanName === memberProfile.display_name) {
+      setProfileMessage("");
+      return;
+    }
+    setProfileSaveBusy(true);
+    setProfileMessage("");
+    try {
+      const { data, error } = await supabase
+        .from("member_profiles")
+        .update({ display_name: cleanName })
+        .eq("user_id", session.user.id)
+        .select("user_id, username, display_name, avatar_key, locale, created_at")
+        .maybeSingle();
+      if (error || !data || data.user_id !== session.user.id) throw new Error("profile_update_failed");
+      setMemberProfile(data as MemberProfile);
+      setProfileNameDraft(data.display_name);
+      setProfileMessage(t("profileUpdated"));
+    } catch {
+      setProfileMessage(t("profileUpdateFailed"));
+    } finally {
+      setProfileSaveBusy(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -1427,7 +1466,12 @@ export default function App() {
 
           {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
 
-          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{t("member")}</span>}</div><div className="profile-stats">
+          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{t("member")}</span>}</div>
+              {session && memberProfile?.user_id === session.user.id && <form className="profile-edit-form" onSubmit={event => void saveProfile(event)}>
+                <label htmlFor="profile-display-name">{t("displayName")}</label>
+                <div className="profile-edit-controls"><input id="profile-display-name" name="profileDisplayName" value={profileNameDraft} onChange={event => setProfileNameDraft(event.target.value)} minLength={1} maxLength={32} required autoComplete="nickname" /><button className="btn-gradient" type="submit" disabled={profileSaveBusy || profileNameDraft.trim() === memberProfile.display_name}>{profileSaveBusy ? t("loading") : t("saveProfile")}<Check size={14} /></button></div>
+                {profileMessage && <p className={"profile-edit-message " + (profileMessage === t("profileUpdated") ? "is-success" : "is-error")} role="status">{profileMessage}</p>}
+              </form>}<div className="profile-stats">
                 <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.matches_played) : "—"}</b><span>{t("statMatches")}</span></div>
                 <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.wins) : "—"}</b><span>{t("statWins")}</span></div>
                 <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.competitive_rating) : "—"}</b><span>{t("statRating")}</span></div>
