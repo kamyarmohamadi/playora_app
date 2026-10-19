@@ -6,6 +6,40 @@ alter table public.private_rooms
 create unique index if not exists private_rooms_match_unique
   on public.private_rooms(match_id) where match_id is not null;
 
+-- Resolve pgcrypto's installed schema at runtime. On Supabase, extensions are
+-- commonly installed in the "extensions" schema; local PostgreSQL may use public.
+create or replace function public.hash_room_invite_code(p_code text)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_crypto_schema text;
+  v_hash text;
+begin
+  if p_code is null or pg_catalog.char_length(p_code) < 16 or pg_catalog.char_length(p_code) > 128 then
+    raise exception 'invalid_invite_code' using errcode = '22023';
+  end if;
+
+  select n.nspname into v_crypto_schema
+  from pg_catalog.pg_extension e
+  join pg_catalog.pg_namespace n on n.oid=e.extnamespace
+  where e.extname='pgcrypto';
+
+  if v_crypto_schema is null then
+    raise exception 'crypto_extension_unavailable' using errcode = '55000';
+  end if;
+
+  execute pg_catalog.format('select pg_catalog.encode(%I.digest($1, $2), $3)',v_crypto_schema)
+  into v_hash
+  using p_code,'sha256','hex';
+
+  return v_hash;
+end;
+$;
+revoke all on function public.hash_room_invite_code(text) from public, anon, authenticated;
+
 create or replace function public.create_private_room(
   p_game_id text,
   p_max_players integer default 2
@@ -43,8 +77,8 @@ begin
   end if;
 
   -- A fresh 128-bit random invite code; only its SHA-256 hash is persisted.
-  v_code := encode(public.gen_random_bytes(16),'hex');
-  v_hash := encode(public.digest(v_code,'sha256'),'hex');
+  v_code := pg_catalog.replace(pg_catalog.gen_random_uuid()::text,'-','');
+  v_hash := public.hash_room_invite_code(v_code);
 
   insert into public.private_rooms(host_user_id,game_id,status,max_players,expires_at)
   values(v_user_id,p_game_id,'open',p_max_players,now()+interval '24 hours')
@@ -83,7 +117,7 @@ begin
   select r.* into v_room
   from public.private_room_secrets s
   join public.private_rooms r on r.id=s.room_id
-  where s.invite_code_hash=encode(public.digest(lower(trim(p_invite_code)),'sha256'),'hex')
+  where s.invite_code_hash=public.hash_room_invite_code(pg_catalog.lower(pg_catalog.btrim(p_invite_code)))
   for update of r;
 
   if not found then
