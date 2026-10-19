@@ -199,6 +199,63 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) {
+        setSession(data.session);
+        setAuthLoading(false);
+      }
+    }).catch(() => {
+      if (active) setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthLoading(false);
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !session?.user.id) {
+      setMemberProfile(null);
+      setMemberWallet(null);
+      return;
+    }
+    let active = true;
+    const userId = session.user.id;
+    // The authenticated client and RLS jointly enforce ownership. userId comes from the verified session.
+    void Promise.all([
+      supabase.from("member_profiles")
+        .select("user_id, username, display_name, avatar_key, locale, created_at")
+        .eq("user_id", userId).maybeSingle(),
+      supabase.from("coin_wallets")
+        .select("user_id, free_coins, purchased_coins, reward_coins, updated_at")
+        .eq("user_id", userId).maybeSingle(),
+      supabase.from("member_favorites").select("game_id").eq("user_id", userId)
+    ]).then(([profileResult, walletResult, favoriteResult]) => {
+      if (!active) return;
+      setMemberProfile(!profileResult.error ? profileResult.data as MemberProfile | null : null);
+      setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
+      if (!favoriteResult.error && favoriteResult.data) {
+        setFavorites(favoriteResult.data.map(row => row.game_id));
+      }
+    }).catch(() => {
+      if (active) {
+        setMemberProfile(null);
+        setMemberWallet(null);
+      }
+    });
+    return () => { active = false; };
+  }, [session?.user.id]);
+
+  useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = direction;
   }, [locale, direction]);
@@ -218,7 +275,120 @@ export default function App() {
     if (nextPage !== "games") { setSearch(""); setCategory("all"); }
   };
 
-  const toggleFavorite = (id: string) => setFavorites(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const toggleFavorite = (id: string) => {
+    const wasSaved = favorites.includes(id);
+    const next = wasSaved ? favorites.filter(item => item !== id) : [...favorites, id];
+    setFavorites(next);
+    if (supabase && session?.user.id) {
+      const userId = session.user.id;
+      const request = wasSaved
+        ? supabase.from("member_favorites").delete().eq("user_id", userId).eq("game_id", id)
+        : supabase.from("member_favorites").insert({ user_id: userId, game_id: id });
+      void request.then(({ error }) => {
+        if (error) {
+          setFavorites(current => wasSaved ? [...new Set([...current, id])] : current.filter(item => item !== id));
+          setToast(t("favoriteFailed"));
+        }
+      });
+    }
+  };
+
+  const openAuth = (mode: "signin" | "signup" | "reset" = "signin") => {
+    setAuthMode(mode);
+    setAuthMessage("");
+    setPassword("");
+    setAuthOpen(true);
+  };
+
+  const handleAuthSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthMessage("");
+    if (!supabase || !supabaseConfigured) {
+      setAuthMessage(t("authUnavailable"));
+      return;
+    }
+    if (authMode === "signup" && password.length < 12) {
+      setAuthMessage(t("passwordHint"));
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      if (authMode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) throw error;
+        setAuthOpen(false);
+        setPassword("");
+        setToast(t("signInSuccess"));
+      } else if (authMode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { display_name: displayName.trim().slice(0, 32) || "Player", locale },
+            emailRedirectTo: window.location.origin
+          }
+        });
+        if (error) throw error;
+        setAuthMessage(t("checkInbox"));
+        setPassword("");
+      } else {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin
+        });
+        if (error) throw error;
+        setAuthMessage(t("resetSent"));
+      }
+    } catch {
+      setAuthMessage(t("authFailure"));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthMessage("");
+    if (!supabase || !supabaseConfigured) {
+      setAuthMessage(t("authUnavailable"));
+      return;
+    }
+    setAuthBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin }
+      });
+      if (error) throw error;
+    } catch {
+      setAuthMessage(t("authFailure"));
+      setAuthBusy(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!supabase) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) setToast(t("authFailure"));
+    else {
+      setMemberProfile(null);
+      setMemberWallet(null);
+      setFavorites(["chess", "pool"]);
+      setToast(t("signOutSuccess"));
+      setPage("home");
+    }
+  };
+
+  const currentName = session
+    ? (memberProfile?.user_id === session.user.id ? memberProfile.display_name : t("member"))
+    : t("account");
+  const coinBalance = session
+    ? (memberWallet?.user_id === session.user.id
+      ? Number(memberWallet.free_coins) + Number(memberWallet.purchased_coins) + Number(memberWallet.reward_coins)
+      : null)
+    : 50;
+  const formattedCoins = coinBalance === null || !Number.isFinite(coinBalance)
+    ? t("balanceUnavailable")
+    : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(coinBalance);
+
   const notifyGameNotReady = () => setToast(t("gameNotReady"));
 
   const pageMeta: Record<Page, { title: string; subtitle: string }> = {
