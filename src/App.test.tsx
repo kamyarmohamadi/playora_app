@@ -2,17 +2,30 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
+function openNavigation(label: string) {
+  const menu = screen.getByRole("button", { name: "Open menu" });
+  if (menu.getAttribute("aria-expanded") !== "true") fireEvent.click(menu);
+  fireEvent.click(screen.getByRole("button", { name: label }));
+}
+
 describe("Playora global app shell", () => {
-  it("renders an English-first neon dashboard", () => {
+  it("renders an English-first dashboard with a closed right drawer that opens on demand", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /Your skills\./ })).toBeInTheDocument();
+    const menu = screen.getByRole("button", { name: "Open menu" });
+    expect(menu).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("complementary", { hidden: true })).toHaveClass("sidebar");
+    fireEvent.click(menu);
+    expect(screen.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
+    expect(screen.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Explore games" })).toBeInTheDocument();
   });
 
   it("opens the games catalogue and labels games as not ready", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     expect(screen.getByRole("heading", { name: "Find your game" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Chess" })).toBeInTheDocument();
     expect(screen.getByText(/Tic Tac Toe and Checkers practice are playable offline/)).toBeInTheDocument();
@@ -35,7 +48,7 @@ describe("Playora global app shell", () => {
 
   it("keeps wallet deposits disabled in preview mode", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Wallet" }));
+    openNavigation("Wallet");
     expect(screen.getByRole("heading", { name: "Your wallet" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Deposit/ })).toBeDisabled();
     expect(screen.getByText(/Never send assets to this preview/)).toBeInTheDocument();
@@ -43,7 +56,7 @@ describe("Playora global app shell", () => {
 
   it("supports favorites-only filtering", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "Favorites" }));
     expect(screen.getByRole("button", { name: /Remove Chess from favorites/ })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Checkers" })).not.toBeInTheDocument();
@@ -51,7 +64,7 @@ describe("Playora global app shell", () => {
 
   it("labels practice-ready games accurately in the catalogue", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     expect(screen.getAllByText("Practice ready")).toHaveLength(2);
     expect(screen.getByRole("button", { name: "View details: Checkers" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View details: Tic Tac Toe" })).toBeInTheDocument();
@@ -68,7 +81,7 @@ describe("Playora global app shell", () => {
 
   it("opens a no-reward Tic Tac Toe practice match against the bot", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Tic Tac Toe" }));
     expect(screen.getByRole("dialog", { name: "Tic Tac Toe" })).toBeInTheDocument();
     expect(screen.getByText(/awards no XP, rank, coins, or prizes/)).toBeInTheDocument();
@@ -78,7 +91,7 @@ describe("Playora global app shell", () => {
 
   it("opens the no-reward Checkers practice board and supports piece selection", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
     expect(screen.getByRole("dialog", { name: "Checkers" })).toBeInTheDocument();
     expect(screen.getByText(/No rewards\./)).toBeInTheDocument();
@@ -90,7 +103,7 @@ describe("Playora global app shell", () => {
 
   it("plays a Checkers human move and waits for the bot to answer", async () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
     fireEvent.click(screen.getByRole("button", { name: "Square 41, Red piece" }));
     fireEvent.click(screen.getByRole("button", { name: "Square 34" }));
@@ -102,7 +115,7 @@ describe("Playora global app shell", () => {
 
   it("keeps ranked matchmaking behind authenticated account access", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "1v1 Arena" }));
+    openNavigation("1v1 Arena");
     expect(screen.getByRole("heading", { name: "Find a rival" })).toBeInTheDocument();
     expect(screen.getByText(/Sign in to join ranked matchmaking/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Find random opponent" })).not.toBeInTheDocument();
@@ -110,7 +123,7 @@ describe("Playora global app shell", () => {
 
   it("keeps private rooms behind sign-in and does not expose room creation to guests", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Private Rooms" }));
+    openNavigation("Private Rooms");
     expect(screen.getAllByRole("heading", { name: "Private rooms" }).length).toBeGreaterThan(0);
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Create a free room" })).not.toBeInTheDocument();
@@ -120,14 +133,14 @@ describe("Playora global app shell", () => {
 
   it("does not expose account deletion controls to guests", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    openNavigation("Settings");
     expect(screen.queryByRole("button", { name: "Delete account" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Danger zone" })).not.toBeInTheDocument();
   });
 
   it("keeps profile statistics private in guest mode", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Profile" }));
+    openNavigation("Profile");
     expect(screen.getByRole("heading", { name: "Player profile" })).toBeInTheDocument();
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.getAllByRole("button").filter(button => button.getAttribute("aria-label") === "Sign in" || (button.textContent ?? "").trim() === "Sign in").length).toBeGreaterThanOrEqual(2);
@@ -136,7 +149,7 @@ describe("Playora global app shell", () => {
 
   it("keeps friend search and requests behind authentication", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Friends" }));
+    openNavigation("Friends");
     expect(screen.getByRole("heading", { name: "Find your people" })).toBeInTheDocument();
     expect(screen.getAllByText(/Email addresses are never searchable/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
@@ -146,7 +159,7 @@ describe("Playora global app shell", () => {
 
   it("keeps leaderboard data private until sign-in", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+    openNavigation("Leaderboard");
     expect(screen.getAllByRole("heading", { name: "The leaderboard" }).length).toBeGreaterThan(0);
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Refresh" })).not.toBeInTheDocument();
