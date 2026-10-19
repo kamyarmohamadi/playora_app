@@ -1,17 +1,10 @@
 # Playora
 
-Playora is a Persian-first, right-to-left game platform. This milestone focuses on the **main app shell and shared product experience**; game rules and game engines are explicitly out of scope for now.
+Playora is a global, English-first competitive game platform concept with Persian localization. The current feature branch contains a neon competitive-arena interface and the first Supabase/Postgres data-isolation migration.
 
-## Main app shell
-- Responsive Persian RTL dashboard and navigation.
-- Home page with a branded hero and illustrative game catalogue cards.
-- Games catalogue with global search and local favorites.
-- Guest profile page, notification popover, basic settings dialog, and informative coming-soon states.
-- Dedicated placeholder pages for Friends and Leaderboard.
-- React + TypeScript + Vite, with UI tests for main interactions.
+## Run the frontend
 
-## Run locally
-Requirements: Node.js compatible with the Vite version in package.json.
+Requirements: Node.js compatible with the pinned Vite toolchain.
 
     npm ci
     npm test
@@ -19,7 +12,14 @@ Requirements: Node.js compatible with the Vite version in package.json.
     npm run build
     npm run dev
 
-## Scope boundary
-This milestone does **not** implement backgammon, chess, tic-tac-toe, card games, online multiplayer, registered accounts, backend persistence, rankings, or production security infrastructure. Catalogue artwork is illustrative. The UI must not imply that an unfinished game is playable.
+## Current scope
 
-Read AGENTS.md, .agents/skills/playora-engineering/SKILL.md and docs/ENGINEERING_BASELINE.md before substantive changes.
+The frontend is a design preview. It includes the home dashboard, game catalogue and filters, favorites, tournament view, wallet preview, profile/settings layout, and English/Persian direction switching. Cards and tournament items are explicitly labeled as preview/coming soon.
+
+Not live in this branch: account registration/login, persistent user sessions, deployed backend, real game engines, server-authoritative multiplayer, matchmaking, public ranking, friend invitations, rooms, crypto deposit monitoring, wallet-credit operations, prize fulfillment, production deployment or CSP/security headers.
+
+## Security
+
+See docs/SECURITY_MODEL.md and supabase/README.md. The migration scopes member data with RLS and denies client-side writes to authoritative wallet, match, room, tournament and payment state. It requires a Supabase project, schema review, two-user isolation tests and server functions before it can be considered operational.
+
+Never place passwords, service-role keys, wallet seed phrases or private keys in frontend code or source control. Do not enable rewards or paid-entry tournaments until their server-side controls and market eligibility are approved.
