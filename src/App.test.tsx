@@ -68,6 +68,18 @@ describe("Playora global app shell", () => {
     expect(screen.getByRole("button", { name: "Cell 1 X" })).toBeInTheDocument();
   });
 
+  it("opens the no-reward Checkers practice board and supports piece selection", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
+    expect(screen.getByRole("dialog", { name: "Checkers" })).toBeInTheDocument();
+    expect(screen.getByText(/No rewards\./)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Square/ })).toHaveLength(64);
+    const firstRedPiece = screen.getByRole("button", { name: "Square 41, Red piece" });
+    fireEvent.click(firstRedPiece);
+    expect(firstRedPiece).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("keeps ranked matchmaking behind authenticated account access", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "1v1 Arena" }));
