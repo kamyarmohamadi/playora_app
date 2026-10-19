@@ -99,3 +99,5 @@ jobs:
         run: deno check --config supabase/functions/member-self/deno.json supabase/functions/member-self/index.ts
       - name: Type-check account deletion endpoint
         run: deno check --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index.ts
+      - name: Test account deletion request validation
+        run: deno test --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index_test.ts
