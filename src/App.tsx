@@ -333,6 +333,7 @@ export default function App() {
 
   const openAuth = (mode: "signin" | "signup" | "reset" = "signin") => {
     setAuthMode(mode);
+    setRecoveryReady(false);
     setAuthMessage("");
     setPassword("");
     setAuthOpen(true);
@@ -345,7 +346,7 @@ export default function App() {
       setAuthMessage(t("authUnavailable"));
       return;
     }
-    if (authMode === "signup" && password.length < 12) {
+    if ((authMode === "signup" || recoveryReady) && password.length < 12) {
       setAuthMessage(t("passwordHint"));
       return;
     }
@@ -369,6 +370,13 @@ export default function App() {
         if (error) throw error;
         setAuthMessage(t("checkInbox"));
         setPassword("");
+      } else if (recoveryReady) {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+        setRecoveryReady(false);
+        setAuthOpen(false);
+        setPassword("");
+        setToast(t("passwordUpdated"));
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: window.location.origin
@@ -400,6 +408,20 @@ export default function App() {
       setAuthMessage(t("authFailure"));
       setAuthBusy(false);
     }
+  };
+
+  const changeLocale = (nextLocale: Locale) => {
+    setLocale(nextLocale);
+    setToast(copy[nextLocale].settingsSaved);
+    if (!supabase || !session?.user.id) return;
+    const userId = session.user.id;
+    setMemberProfile(current => current ? { ...current, locale: nextLocale } : current);
+    void Promise.all([
+      supabase.from("member_preferences").upsert({ user_id: userId, locale: nextLocale }, { onConflict: "user_id" }),
+      supabase.from("member_profiles").update({ locale: nextLocale }).eq("user_id", userId)
+    ]).then(([preferenceResult, profileResult]) => {
+      if (preferenceResult.error || profileResult.error) setToast(copy[nextLocale].authFailure);
+    });
   };
 
   const handleSignOut = async () => {
