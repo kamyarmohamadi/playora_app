@@ -2,3 +2,6 @@ project_id = "playora"
 
 [functions.member-self]
 verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
