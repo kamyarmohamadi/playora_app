@@ -15,11 +15,12 @@ import {
 import "./index.css";
 
 type Locale = "en" | "fa";
-type Page = "home" | "games" | "online" | "tournaments" | "friends" | "leaderboard" | "wallet" | "profile" | "settings";
+type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | "leaderboard" | "wallet" | "profile" | "settings";
 type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
 type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; winner_user_id: string | null; state_version: number };
+type PrivateRoomRow = { id: string; host_user_id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null };
 type Game = {
   id: string;
   title: Record<Locale, string>;
@@ -46,7 +47,7 @@ const gameList: Game[] = [
 
 const copy: Record<Locale, Record<string, string>> = {
   en: {
-    navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
+    navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRooms: "Private Rooms", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
     search: "Search games, modes, and more", coins: "Playora Coins", demo: "Preview mode",
     eyebrow: "THE NEXT MOVE IS YOURS", heroTitle: "Your skills.", heroTitle2: "Your victory.", heroBody: "Meet your next rival. Master your favorite games. Make every move count.", findGame: "Explore games", viewTournaments: "View tournaments", liveLabel: "GLOBAL GAME NETWORK", notLive: "UI preview · online play is not connected",
     quickAccess: "Jump back in", allGames: "All games", seeAll: "View all", popular: "Popular games", popularSub: "Choose your next challenge",
@@ -54,13 +55,13 @@ const copy: Record<Locale, Record<string, string>> = {
     categoryAll: "All games", categoryStrategy: "Strategy", categoryBoard: "Board", categoryCards: "Card games", categoryPuzzle: "Puzzles",
     gamesTitle: "Find your game", gamesSub: "A growing collection for sharp minds and friendly rivals.", favorites: "Favorites", emptySearch: "No games found", clearSearch: "Clear search",
     soon: "Coming soon", details: "View details", previewNote: "Game engines and live matchmaking are not connected in this preview.",
-    rankTitle: "The leaderboard", rankSub: "Competitive rankings will appear here when verified match results are connected.", friendsTitle: "Find your people", friendsSub: "Friends, invitations, and private rooms will arrive in a future release.",
+    rankTitle: "The leaderboard", rankSub: "Competitive rankings will appear here when verified match results are connected.", friendsTitle: "Find your people", friendsSub: "Friend connections and friend requests will arrive in a future release.", roomsTitle: "Private rooms", roomsSub: "Invite a friend by code. Private matches are free and never affect XP or rating.",
     tournamentsTitle: "Enter the arena", tournamentsSub: "Explore the tournament interface. Entry fees and rewards are disabled in this preview.",
     walletTitle: "Your wallet", walletSub: "Preview-only balance. No funds or cryptocurrency can be sent from this screen.", balance: "Demo balance", deposit: "Deposit", history: "Transaction history", cryptoTitle: "Crypto deposits", cryptoText: "Wallet addresses and on-chain verification are not configured. Never send assets to this preview.", notConnected: "Not connected",
     profileTitle: "Player profile", profileSub: "This is sample UI data, not a signed-in account.", settingsTitle: "Preferences", settingsSub: "Choose your language and review the security model.", language: "Language", english: "English", persian: "فارسی",
     security: "Privacy by design", securityText: "Private account data is intended to be isolated server-side by authenticated user ID and database row-level security. Live authentication is not connected yet.",
     secureNote: "Never put secret keys in browser code. Client-side UI checks do not replace server authorization.", about: "About Playora", help: "Help & support", profileMenu: "Open profile", notifications: "Notifications", noAlerts: "You’re all caught up.", account: "Guest preview", online: "Online competition", privateRooms: "Private rooms", strategy: "Strategy", board: "Board", cards: "Card", puzzle: "Puzzle",
-    gameNotReady: "This game is not playable yet. The card is a design preview.", settingsSaved: "Preference updated for this preview.", walletToast: "Deposits are disabled until the secure backend is configured.", nav: "Main navigation",
+    gameNotReady: "This game is not playable yet. The card is a design preview.", privateRoomOnlyGame: "Private rooms currently support Tic Tac Toe only.", createPrivateRoom: "Create a free room", joinPrivateRoom: "Join with invite code", inviteCode: "Invite code", inviteCreated: "Room created. Copy this code and share it with your friend.", copyInvite: "Copy code", codeCopied: "Invite code copied.", codeCopyFailed: "Copy failed. Select and copy the code manually.", enterInviteCode: "Enter the 32-character invite code", roomList: "Your rooms", noPrivateRooms: "No private rooms yet. Create one to invite a friend.", roomCreated: "Room created", roomOpen: "Waiting for a friend", roomActive: "Match ready", roomClosed: "Closed", roomExpired: "Expired", hostLabel: "Host", playerLabel: "Player", expiresLabel: "Expires", openPrivateMatch: "Open match", leavePrivateRoom: "Leave room", closePrivateRoom: "Close room", privateMatchTitle: "Private match", privateNoRewards: "Private play is free. No coins, XP, rating or prizes are awarded.", privateYourTurn: "Your turn", privateOpponentTurn: "Friend’s turn", privateWin: "You won the private match.", privateLoss: "Your friend won the private match.", privateWaiting: "Waiting for the other player to join…", privateRoomError: "That room could not be opened. Check the invite code or try again.", privateMatchError: "The private match request failed. Please refresh and try again.", noPrivateMatch: "This room has not started a match yet.", roomExpiredHint: "Invite codes expire after 24 hours.", settingsSaved: "Preference updated for this preview.", walletToast: "Deposits are disabled until the secure backend is configured.", nav: "Main navigation",
     statMatches: "Matches", statWins: "Wins", statRating: "Rating", footer: "Play anywhere. Compete with purpose.", rights: "Preview build · Not a live service", matchMade: "Skill-based matchmaking", safePlay: "Built with privacy in mind",
     matchType: "1v1 MATCH", findRival: "Find a rival", randomPairing: "Random opponent matching", balanced: "Skill-aware matchmaking", noGameYet: "Gameplay is not enabled in this build.",
     eventOne: "Chess Champions", eventTwo: "Pool Masters", eventThree: "Ludo League", eventPlayers: "Players", eventTime: "Starts soon", explore: "Explore", mode: "Game mode",
@@ -81,7 +82,7 @@ const copy: Record<Locale, Record<string, string>> = {
     passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
-    navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
+    navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
     search: "جست‌وجوی بازی و حالت‌ها", coins: "سکه‌های پلیورا", demo: "حالت پیش‌نمایش",
     eyebrow: "حرکت بعدی با توست", heroTitle: "مهارت تو.", heroTitle2: "پیروزی تو.", heroBody: "حریف بعدی‌ات را پیدا کن، بازی محبوبت را یاد بگیر و هر حرکت را مهم کن.", findGame: "کشف بازی‌ها", viewTournaments: "دیدن تورنومنت‌ها", liveLabel: "شبکه جهانی بازی", notLive: "پیش‌نمایش رابط · بازی آنلاین متصل نیست",
     quickAccess: "دسترسی سریع", allGames: "همه بازی‌ها", seeAll: "مشاهده همه", popular: "بازی‌های محبوب", popularSub: "چالش بعدی‌ات را انتخاب کن",
@@ -89,13 +90,13 @@ const copy: Record<Locale, Record<string, string>> = {
     categoryAll: "همه بازی‌ها", categoryStrategy: "استراتژی", categoryBoard: "رومیزی", categoryCards: "بازی‌های کارتی", categoryPuzzle: "فکری",
     gamesTitle: "بازی خودت را پیدا کن", gamesSub: "مجموعه‌ای رو به رشد برای ذهن‌های تیز و رقیب‌های دوستانه.", favorites: "دلخواه‌ها", emptySearch: "بازی‌ای پیدا نشد", clearSearch: "پاک‌کردن جست‌وجو",
     soon: "به‌زودی", details: "جزئیات", previewNote: "موتور بازی و سیستم پیدا کردن حریف هنوز متصل نیست.",
-    rankTitle: "جدول برترین‌ها", rankSub: "پس از اتصال نتایج تأییدشده بازی، رتبه‌بندی رقابتی اینجا نمایش داده می‌شود.", friendsTitle: "دوستانت را پیدا کن", friendsSub: "دوستان، دعوت‌ها و اتاق‌های خصوصی در نسخه بعدی ارائه می‌شوند.",
+    rankTitle: "جدول برترین‌ها", rankSub: "پس از اتصال نتایج تأییدشده بازی، رتبه‌بندی رقابتی اینجا نمایش داده می‌شود.", friendsTitle: "دوستانت را پیدا کن", friendsSub: "ارتباط با دوستان و درخواست دوستی در نسخهٔ بعدی ارائه می‌شود.", roomsTitle: "اتاق‌های خصوصی", roomsSub: "با کد دعوت دوستت را وارد کن. بازی خصوصی رایگان است و XP یا رتبه را تغییر نمی‌دهد.",
     tournamentsTitle: "وارد میدان شو", tournamentsSub: "رابط تورنومنت‌ها را بررسی کن. ورودیه و جایزه در این پیش‌نمایش غیرفعال‌اند.",
     walletTitle: "کیف پول تو", walletSub: "موجودی فقط نمایشی است. از این صفحه پول یا رمزارز ارسال نمی‌شود.", balance: "موجودی نمایشی", deposit: "شارژ", history: "تاریخچه تراکنش", cryptoTitle: "شارژ رمزارزی", cryptoText: "آدرس کیف پول و بررسی زنجیره‌ای تنظیم نشده‌اند. به این پیش‌نمایش دارایی ارسال نکن.", notConnected: "متصل نیست",
     profileTitle: "پروفایل بازیکن", profileSub: "این اطلاعات نمونهٔ رابط است، نه یک حساب واردشده.", settingsTitle: "ترجیحات", settingsSub: "زبان را انتخاب و معماری امنیت را بررسی کن.", language: "زبان", english: "English", persian: "فارسی",
     security: "حریم خصوصی از ابتدا", securityText: "اطلاعات خصوصی حساب باید در سمت سرور با شناسه کاربر احراز هویت‌شده و امنیت سطح ردیف پایگاه داده جدا شود. ورود واقعی هنوز متصل نیست.",
     secureNote: "کلیدهای محرمانه را در کد مرورگر قرار نده. بررسی سمت رابط جایگزین مجوزدهی سمت سرور نیست.", about: "درباره پلیورا", help: "راهنما و پشتیبانی", profileMenu: "بازکردن پروفایل", notifications: "اعلان‌ها", noAlerts: "اعلان جدیدی نداری.", account: "پیش‌نمایش مهمان", online: "رقابت آنلاین", privateRooms: "اتاق خصوصی", strategy: "استراتژی", board: "رومیزی", cards: "کارتی", puzzle: "فکری",
-    gameNotReady: "این بازی هنوز قابل اجرا نیست. کارت صرفاً پیش‌نمایش طراحی است.", settingsSaved: "ترجیح در این پیش‌نمایش تغییر کرد.", walletToast: "تا زمان پیکربندی backend امن، شارژ غیرفعال است.", nav: "ناوبری اصلی",
+    gameNotReady: "این بازی هنوز قابل اجرا نیست. کارت صرفاً پیش‌نمایش طراحی است.", privateRoomOnlyGame: "در حال حاضر اتاق خصوصی فقط از بازی دوز پشتیبانی می‌کند.", createPrivateRoom: "ساخت اتاق رایگان", joinPrivateRoom: "ورود با کد دعوت", inviteCode: "کد دعوت", inviteCreated: "اتاق ساخته شد. کد را کپی کن و برای دوستت بفرست.", copyInvite: "کپی کد", codeCopied: "کد دعوت کپی شد.", codeCopyFailed: "کپی انجام نشد. کد را دستی انتخاب و کپی کن.", enterInviteCode: "کد دعوت ۳۲ نویسه‌ای را وارد کن", roomList: "اتاق‌های تو", noPrivateRooms: "هنوز اتاق خصوصی نداری. یک اتاق بساز و دوستت را دعوت کن.", roomCreated: "اتاق ساخته شد", roomOpen: "در انتظار دوست", roomActive: "مسابقه آماده است", roomClosed: "بسته‌شده", roomExpired: "منقضی‌شده", hostLabel: "میزبان", playerLabel: "بازیکن", expiresLabel: "انقضا", openPrivateMatch: "ورود به مسابقه", leavePrivateRoom: "ترک اتاق", closePrivateRoom: "بستن اتاق", privateMatchTitle: "مسابقه خصوصی", privateNoRewards: "بازی خصوصی رایگان است و سکه، XP، رتبه یا جایزه نمی‌دهد.", privateYourTurn: "نوبت تو", privateOpponentTurn: "نوبت دوستت", privateWin: "تو مسابقه خصوصی را بردی.", privateLoss: "دوستت مسابقه خصوصی را برد.", privateWaiting: "در انتظار ورود بازیکن دیگر…", privateRoomError: "اتاق باز نشد. کد دعوت را بررسی و دوباره تلاش کن.", privateMatchError: "درخواست مسابقه خصوصی انجام نشد. صفحه را تازه‌سازی و دوباره تلاش کن.", noPrivateMatch: "این اتاق هنوز مسابقه‌ای را آغاز نکرده است.", roomExpiredHint: "کد دعوت پس از ۲۴ ساعت منقضی می‌شود.", settingsSaved: "ترجیح در این پیش‌نمایش تغییر کرد.", walletToast: "تا زمان پیکربندی backend امن، شارژ غیرفعال است.", nav: "ناوبری اصلی",
     statMatches: "بازی‌ها", statWins: "بردها", statRating: "رتبه", footer: "هرجا بازی کن. هدفمند رقابت کن.", rights: "نسخه پیش‌نمایش · سرویس زنده نیست", matchMade: "مسابقه‌یابی مبتنی بر مهارت", safePlay: "با توجه به حریم خصوصی ساخته شده",
     matchType: "مسابقه یک‌به‌یک", findRival: "پیداکردن حریف", randomPairing: "تطبیق با حریف تصادفی", balanced: "تطبیق متناسب با مهارت", noGameYet: "بازی در این نسخه فعال نیست.",
     eventOne: "قهرمانان شطرنج", eventTwo: "استادان بیلیارد", eventThree: "لیگ منچ", eventPlayers: "بازیکن", eventTime: "شروع به‌زودی", explore: "بررسی", mode: "حالت بازی",
@@ -129,6 +130,7 @@ const navigation: { id: Page; key: string; icon: LucideIcon }[] = [
   { id: "online", key: "navOnline", icon: Swords },
   { id: "tournaments", key: "navTournaments", icon: Trophy },
   { id: "friends", key: "navFriends", icon: Users },
+  { id: "rooms", key: "navRooms", icon: ShieldCheck },
   { id: "leaderboard", key: "navRank", icon: BarChart3 },
 ];
 
@@ -226,6 +228,15 @@ export default function App() {
   const [onlineMatch, setOnlineMatch] = useState<OnlineMatchSnapshot | null>(null);
   const [onlineSeat, setOnlineSeat] = useState<number | null>(null);
   const [onlineMoveBusy, setOnlineMoveBusy] = useState(false);
+  const [privateRooms, setPrivateRooms] = useState<PrivateRoomRow[]>([]);
+  const [privateRoomBusy, setPrivateRoomBusy] = useState(false);
+  const [privateRoomCode, setPrivateRoomCode] = useState("");
+  const [latestInviteCode, setLatestInviteCode] = useState("");
+  const [privateRoomError, setPrivateRoomError] = useState("");
+  const [privateMatchId, setPrivateMatchId] = useState<string | null>(null);
+  const [privateMatch, setPrivateMatch] = useState<OnlineMatchSnapshot | null>(null);
+  const [privateSeat, setPrivateSeat] = useState<number | null>(null);
+  const [privateMoveBusy, setPrivateMoveBusy] = useState(false);
 
   const t = (key: string) => copy[locale][key] ?? key;
   const direction = locale === "fa" ? "rtl" : "ltr";
