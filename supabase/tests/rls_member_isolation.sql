@@ -34,10 +34,13 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.member_favorites;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One could not see their own favorite'; END IF;
 
-  UPDATE public.member_game_stats SET competitive_rating=5000
-  WHERE user_id='00000000-0000-4000-8000-000000000002';
-  GET DIAGNOSTICS affected = ROW_COUNT;
-  IF affected <> 0 THEN RAISE EXCEPTION 'Member One changed Member Two competitive rating'; END IF;
+  BEGIN
+    UPDATE public.member_game_stats SET competitive_rating=5000
+    WHERE user_id='00000000-0000-4000-8000-000000000002';
+    RAISE EXCEPTION 'Authenticated client changed server-owned competitive rating';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
 
   UPDATE public.member_profiles SET display_name = 'Attempt To Edit Member Two'
   WHERE user_id = '00000000-0000-4000-8000-000000000002';
