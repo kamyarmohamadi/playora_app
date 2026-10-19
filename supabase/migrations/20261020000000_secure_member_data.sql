@@ -239,6 +239,111 @@ create trigger coin_wallets_updated_at before update on public.coin_wallets for 
 drop trigger if exists deposit_requests_updated_at on public.deposit_requests;
 create trigger deposit_requests_updated_at before update on public.deposit_requests for each row execute function public.set_updated_at();
 
+-- All wallet changes pass through this server-only, transactional, idempotent function.
+-- The browser role has no EXECUTE privilege. Never call it with a service key from the client.
+create or replace function public.apply_coin_delta(
+  p_user_id uuid,
+  p_bucket text,
+  p_amount bigint,
+  p_event_type text,
+  p_idempotency_key text,
+  p_reference_id text default null
+)
+returns public.coin_wallets
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_wallet public.coin_wallets;
+  v_existing public.coin_ledger;
+begin
+  if coalesce(auth.role(), 'anon') <> 'service_role' then
+    raise exception 'not_authorized' using errcode = '42501';
+  end if;
+
+  if p_user_id is null
+     or p_bucket not in ('free','purchased','reward')
+     or p_event_type not in ('signup_bonus','purchase','match_entry','match_refund','tournament_reward','admin_adjustment','promotion','reversal')
+     or p_amount = 0
+     or p_amount < -1000000000
+     or p_amount > 1000000000
+     or p_idempotency_key is null
+     or pg_catalog.char_length(p_idempotency_key) < 8
+     or pg_catalog.char_length(p_idempotency_key) > 200
+     or (p_reference_id is not null and pg_catalog.char_length(p_reference_id) > 200)
+  then
+    raise exception 'invalid_wallet_operation' using errcode = '22023';
+  end if;
+
+  if (p_event_type in ('signup_bonus','purchase','match_refund','tournament_reward','promotion') and p_amount < 0)
+     or (p_event_type = 'match_entry' and p_amount > 0)
+     or (p_event_type = 'signup_bonus' and p_bucket <> 'free')
+     or (p_event_type = 'purchase' and p_bucket <> 'purchased')
+     or (p_event_type = 'tournament_reward' and p_bucket <> 'reward')
+  then
+    raise exception 'invalid_wallet_event_direction' using errcode = '22023';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_idempotency_key, 0));
+
+  select * into v_existing
+  from public.coin_ledger
+  where idempotency_key = p_idempotency_key;
+
+  if found then
+    if v_existing.user_id <> p_user_id
+       or v_existing.bucket <> p_bucket
+       or v_existing.amount <> p_amount
+       or v_existing.event_type <> p_event_type
+       or v_existing.reference_id is distinct from p_reference_id
+    then
+      raise exception 'idempotency_key_conflict' using errcode = '23505';
+    end if;
+
+    select * into v_wallet from public.coin_wallets where user_id = p_user_id;
+    if not found then
+      raise exception 'wallet_not_found' using errcode = 'P0002';
+    end if;
+    return v_wallet;
+  end if;
+
+  select * into v_wallet
+  from public.coin_wallets
+  where user_id = p_user_id
+  for update;
+
+  if not found then
+    raise exception 'wallet_not_found' using errcode = 'P0002';
+  end if;
+
+  update public.coin_wallets
+  set free_coins = case when p_bucket = 'free' then free_coins + p_amount else free_coins end,
+      purchased_coins = case when p_bucket = 'purchased' then purchased_coins + p_amount else purchased_coins end,
+      reward_coins = case when p_bucket = 'reward' then reward_coins + p_amount else reward_coins end,
+      updated_at = now()
+  where user_id = p_user_id
+    and (
+      (p_bucket = 'free' and free_coins + p_amount >= 0)
+      or (p_bucket = 'purchased' and purchased_coins + p_amount >= 0)
+      or (p_bucket = 'reward' and reward_coins + p_amount >= 0)
+    )
+  returning * into v_wallet;
+
+  if not found then
+    raise exception 'insufficient_coin_balance' using errcode = '23514';
+  end if;
+
+  insert into public.coin_ledger(user_id, amount, bucket, event_type, reference_id, idempotency_key)
+  values(p_user_id, p_amount, p_bucket, p_event_type, p_reference_id, p_idempotency_key);
+
+  return v_wallet;
+end;
+$;
+
+revoke all on function public.apply_coin_delta(uuid, text, bigint, text, text, text) from public, anon, authenticated;
+grant execute on function public.apply_coin_delta(uuid, text, bigint, text, text, text) to service_role;
+
 alter table public.member_profiles enable row level security;
 alter table public.member_preferences enable row level security;
 alter table public.coin_wallets enable row level security;
