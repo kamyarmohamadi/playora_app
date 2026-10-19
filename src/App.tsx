@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
@@ -264,6 +264,7 @@ export default function App() {
   const [leaderboardBusy, setLeaderboardBusy] = useState(false);
   const [leaderboardError, setLeaderboardError] = useState("");
   const [leaderboardRefresh, setLeaderboardRefresh] = useState(0);
+  const activeUserIdRef = useRef<string | null>(null);
 
   const t = (key: string) => copy[locale][key] ?? key;
   const direction = locale === "fa" ? "rtl" : "ltr";
@@ -280,16 +281,84 @@ export default function App() {
       return;
     }
     let active = true;
+
+    const clearMemberScopedUi = (nextUserId: string | null, previousUserId: string | null) => {
+      setMemberProfile(null);
+      setProfileNameDraft("");
+      setProfileSaveBusy(false);
+      setProfileMessage("");
+      setMemberWallet(null);
+      setMemberStats(null);
+      setRecentMatches([]);
+      setFavorites(nextUserId ? [] : ["chess", "pool"]);
+      setFavoritesOnly(false);
+
+      setOnlineStatus("idle");
+      setOnlineError("");
+      setOnlineBusy(false);
+      setOnlineMatchId(null);
+      setOnlineMatch(null);
+      setOnlineSeat(null);
+      setOnlineMoveBusy(false);
+
+      setPrivateRooms([]);
+      setPrivateRoomBusy(false);
+      setPrivateRoomCode("");
+      setLatestInviteCode("");
+      setPrivateRoomError("");
+      setPrivateMatchId(null);
+      setPrivateMatch(null);
+      setPrivateSeat(null);
+      setPrivateMoveBusy(false);
+
+      setSocialRows([]);
+      setSocialQuery("");
+      setSocialBusy(false);
+      setSocialError("");
+      setLeaderboardRows([]);
+      setLeaderboardBusy(false);
+      setLeaderboardError("");
+
+      setDeleteDialogOpen(false);
+      setDeleteConfirmation("");
+      setDeleteBusy(false);
+      setDeleteMessage("");
+      setAuthOpen(false);
+      setAuthMessage("");
+      setPassword("");
+      setDisplayName("");
+      setSearch("");
+      setCategory("all");
+      setNoticeOpen(false);
+
+      // If one authenticated identity is replaced by another, return to a
+      // neutral page so no member-specific view remains selected.
+      if (previousUserId !== null && nextUserId !== null && previousUserId !== nextUserId) {
+        setPage("home");
+      }
+    };
+
+    const adoptSession = (nextSession: Session | null) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const previousUserId = activeUserIdRef.current;
+      if (previousUserId !== nextUserId) {
+        clearMemberScopedUi(nextUserId, previousUserId);
+      }
+      activeUserIdRef.current = nextUserId;
+      setSession(nextSession);
+    };
+
     void supabase.auth.getSession().then(({ data }) => {
       if (active) {
-        setSession(data.session);
+        adoptSession(data.session);
         setAuthLoading(false);
       }
     }).catch(() => {
       if (active) setAuthLoading(false);
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession);
+      adoptSession(nextSession);
       setAuthLoading(false);
       if (event === "PASSWORD_RECOVERY") {
         setRecoveryReady(true);
