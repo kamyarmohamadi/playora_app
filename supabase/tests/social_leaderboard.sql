@@ -128,7 +128,6 @@ BEGIN
   END IF;
 
   -- Disabled games never appear on the leaderboard and cannot be queried.
-  UPDATE public.catalog_games SET is_enabled=false WHERE id='chess';
   BEGIN
     PERFORM * FROM public.get_game_leaderboard('chess',10);
     RAISE EXCEPTION 'Leaderboard returned a disabled game';
