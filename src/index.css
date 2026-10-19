@@ -246,3 +246,77 @@
 .checkers-piece.is-king{outline:2px solid #ffd87b;outline-offset:-5px;color:#ffe8a2;filter:drop-shadow(0 0 6px #ffc65a55)}
 .checkers-destination-dot{position:absolute;width:25%;height:25%;border:2px solid #9af9e6;border-radius:50%;background:#4de6c344;box-shadow:0 0 10px #50ffdf40;pointer-events:none}
 @media(max-width:520px){.checkers-modal{padding:15px}.checkers-rules-note{font-size:7px}.checkers-board{width:min(100%,360px);padding:3px;border-radius:8px}.checkers-piece{width:78%;height:78%;border-width:1px!important}.checkers-square.is-selected{box-shadow:inset 0 0 0 2px #38e0ff,inset 0 0 10px #32cfff4a}}
+
+
+/* Playora visual refinement v2: desktop drawer + tactile, layered game surfaces */
+.app-body{display:block;min-height:calc(100vh - 76px)}
+.main-content{max-width:1780px;width:100%;margin-inline:auto;padding-inline:clamp(18px,3.2vw,54px)}
+.mobile-menu-btn{display:grid;place-items:center;flex:none;width:39px;height:39px;border:1px solid #284265;border-radius:12px;background:linear-gradient(145deg,#122644,#081429);color:#aeefff;box-shadow:inset 0 1px 0 #ffffff18,0 5px 13px #0005;transition:transform .18s,border-color .18s,box-shadow .18s}
+.mobile-menu-btn:hover{border-color:#3ebbe8;box-shadow:inset 0 1px 0 #ffffff20,0 0 22px #20c9ff18,0 6px 16px #0005;transform:translateY(-1px)}
+.mobile-menu-btn:active{transform:translateY(1px);box-shadow:inset 0 2px 4px #0006}
+.sidebar{position:fixed;z-index:56;top:76px;right:0;bottom:0;left:auto;width:290px;max-width:min(88vw,340px);height:auto;min-height:0;overflow-y:auto;padding:24px 16px 18px;border:1px solid #29456a;border-right:0;border-radius:18px 0 0 0;background:radial-gradient(ellipse at 85% 0%,#244a7a3b,transparent 38%),linear-gradient(180deg,#0c1930 0%,#081225 48%,#070d1b 100%);box-shadow:none;transform:translateX(105%);visibility:hidden;pointer-events:none;transition:transform .24s cubic-bezier(.2,.8,.2,1),visibility .24s;overscroll-behavior:contain}
+.sidebar.sidebar-open{transform:translateX(0);visibility:visible;pointer-events:auto;box-shadow:-22px 0 60px #0009, inset 1px 0 0 #ffffff08;transition-delay:0s}
+.sidebar-context{margin-bottom:25px;padding:10px 9px 13px;border-bottom:1px solid #ffffff12;color:#d5e4ff}
+.sidebar-label{color:#607b9f}
+.secondary-label{margin-top:25px}
+.sidebar-rank-card{border-color:#27536b;background:linear-gradient(145deg,#102a42,#131731);box-shadow:inset 0 1px 0 #ffffff08,0 9px 22px #0003}
+.sidebar-footer{color:#526b8d}
+.nav-item{position:relative;overflow:hidden;border-radius:11px;transition:transform .16s,background .16s,border-color .16s,box-shadow .16s}
+.nav-item:hover{transform:translateX(-2px);border-color:#284d70;background:linear-gradient(100deg,#122b46,#101b35);box-shadow:0 5px 14px #0003}
+.nav-item.active{border-color:#296687;background:linear-gradient(105deg,#113751,#162044 77%,#21153d);box-shadow:inset 0 1px 0 #ffffff12,inset -3px 0 0 #31dcff,0 7px 18px #0003}
+.nav-item.active:after{position:absolute;inset:0;background:linear-gradient(100deg,transparent 55%,#47dfff0b);content:"";pointer-events:none}
+.nav-item.active svg{filter:drop-shadow(0 0 7px #26d8ff77)}
+.mobile-scrim{display:block;position:fixed;z-index:49;inset:76px 0 0;width:100%;border:0;background:#01040dd1;backdrop-filter:blur(5px);animation:scrim-appear .18s ease}
+@keyframes scrim-appear{from{opacity:0}to{opacity:1}}
+.topbar{box-shadow:0 5px 22px #0003}
+.brand-lockup{filter:drop-shadow(0 3px 5px #0004)}
+.brand-mark{filter:drop-shadow(0 4px 7px #00bdf42a)}
+.top-icon-btn,.language-switch,.user-chip{box-shadow:inset 0 1px 0 #ffffff0c,0 4px 12px #0003;transition:transform .16s,border-color .16s,box-shadow .16s}
+.top-icon-btn:hover,.language-switch:hover,.user-chip:hover{transform:translateY(-1px);border-color:#2a6e90;box-shadow:inset 0 1px 0 #ffffff15,0 7px 18px #0005}
+.hero-panel{border-color:#2f568b;box-shadow:0 24px 70px #0005,inset 0 1px 0 #ffffff1a,inset 0 -1px 0 #0005}
+.hero-panel:after{position:absolute;z-index:1;inset:0;border-radius:inherit;background:linear-gradient(120deg,#ffffff08,transparent 22% 70%,#ae62ff0a);content:"";pointer-events:none}
+.hero-copy,.hero-artwork{z-index:2}
+.hero-eyebrow{box-shadow:inset 0 1px 0 #ffffff12,0 4px 13px #0003}
+.btn-gradient{position:relative;border:1px solid #8ccfff5c;background:linear-gradient(155deg,#4beaff 0%,#2587ff 48%,#8651fa 100%);box-shadow:inset 0 1px 0 #ffffff7d,inset 0 -3px 0 #102a8b78,0 8px 0 #0a1a4f,0 12px 22px #165bfa3a;text-shadow:0 1px 2px #14398755;transition:transform .16s,filter .16s,box-shadow .16s}
+.btn-gradient:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 #ffffff88,inset 0 -3px 0 #102a8b78,0 10px 0 #0a1a4f,0 16px 27px #165bfa4a}
+.btn-gradient:active{transform:translateY(3px);box-shadow:inset 0 2px 4px #04133677,0 3px 0 #0a1a4f,0 7px 12px #165bfa22}
+.btn-ghost,.btn-outline{border-color:#34567d;background:linear-gradient(150deg,#122541,#0b172c);box-shadow:inset 0 1px 0 #ffffff15,inset 0 -2px 0 #02081570,0 5px 12px #0003}
+.btn-ghost:hover,.btn-outline:hover{transform:translateY(-1px);border-color:#4aa6cd;box-shadow:inset 0 1px 0 #ffffff1b,0 8px 15px #0004}
+.stat-strip>div{position:relative;overflow:hidden;border-color:#253c60;background:linear-gradient(145deg,#101f39 0%,#0a1428 68%,#081020 100%);box-shadow:inset 0 1px 0 #ffffff12,inset 0 -1px 0 #0007,0 8px 20px #0004;transition:transform .18s,border-color .18s,box-shadow .18s}
+.stat-strip>div:before{position:absolute;top:0;right:10%;left:10%;height:1px;background:linear-gradient(90deg,transparent,#8dbbff5c,transparent);content:""}
+.stat-strip>div:hover{transform:translateY(-2px);border-color:#315a80;box-shadow:inset 0 1px 0 #ffffff17,0 12px 26px #0005}
+.stat-icon,.coins-stat .coin-symbol{border:1px solid #ffffff13;box-shadow:inset 0 1px 0 #ffffff19,inset 0 -3px 0 #0004,0 5px 10px #0004}
+.stat-icon svg,.coin-symbol svg{filter:drop-shadow(0 2px 2px #0006)}
+.game-card{border-color:#2a4063;background:linear-gradient(145deg,#13213b 0%,#0c172c 50%,#080f20 100%);box-shadow:inset 0 1px 0 #ffffff17,inset 0 -1px 0 #0009,0 12px 30px #0005;transform:translateZ(0);transition:transform .2s cubic-bezier(.2,.8,.2,1),border-color .2s,box-shadow .2s}
+.game-card:before{position:absolute;z-index:2;top:0;right:10%;left:10%;height:1px;background:linear-gradient(90deg,transparent,#7edfff65,transparent);content:"";pointer-events:none}
+.game-card:after{position:absolute;z-index:1;inset:0;border-radius:inherit;background:linear-gradient(135deg,#ffffff04,transparent 26% 72%,#765aff08);content:"";pointer-events:none}
+.game-card:hover{transform:translateY(-5px) perspective(900px) rotateX(1deg);border-color:#3c759b;box-shadow:inset 0 1px 0 #ffffff1b,0 21px 38px #0007,0 0 28px #1cbfff0e}
+.game-open{position:relative;z-index:1}
+.game-art{isolation:isolate;perspective:800px;background-color:#0c1831;box-shadow:inset 0 1px 0 #ffffff17,inset 0 -25px 32px #02071247}
+.game-art:before{position:absolute;z-index:4;inset:0;background:linear-gradient(155deg,#ffffff13,transparent 19% 66%,#0004),linear-gradient(180deg,transparent 58%,#061020b0);border-bottom:1px solid #ffffff12;content:"";pointer-events:none}
+.game-art:after{position:absolute;z-index:0;inset:0;background:radial-gradient(ellipse at 50% 25%,#ffffff0a,transparent 48%);box-shadow:inset 0 0 30px #01071340;content:"";pointer-events:none}
+.art-orb{z-index:0!important;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--tone) 30%,transparent))}
+.art-platform{z-index:1;bottom:9px;height:38px;border:1px solid color-mix(in srgb,var(--tone) 65%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--tone) 23%,transparent),#071020c4);box-shadow:0 14px 20px #0008,inset 0 2px 5px #ffffff16,0 0 24px color-mix(in srgb,var(--tone) 18%,transparent);transform:rotateX(68deg)}
+.chess-symbol{z-index:2;color:#f0fcff;text-shadow:0 1px 0 #8ab6d2,0 2px 0 #547baf,0 3px 0 #294d85,0 5px 1px #061125,0 9px 7px #000a,0 0 28px #24d9ff45;transform:translateY(-3px) rotateY(-8deg);filter:drop-shadow(0 7px 7px #0008)}
+.pool-table{z-index:2;border-width:8px;border-top-color:#ca9afa;border-left-color:#a880ed;border-right-color:#57459b;border-bottom-color:#372766;box-shadow:inset 0 3px 5px #ffffff41,0 5px 0 #33245e,0 8px 0 #20183f,0 17px 24px #0009,0 0 22px #22ffdc1a}
+.pool-table b{box-shadow:inset 0 2px 2px #fff,0 3px 5px #061a27}
+.ludo-board{border-width:5px;border-top-color:#f3f0ff;border-left-color:#c7b7f0;border-right-color:#6d4e9c;border-bottom-color:#3a285d;box-shadow:inset 0 2px 2px #fff9,0 5px 0 #392b62,0 9px 0 #251b49,0 18px 27px #0009,0 0 24px #be76ff22;transform:perspective(500px) rotateX(8deg) rotateZ(-8deg)}
+.checker-board{border-width:4px;border-top-color:#d7e5ff;border-left-color:#a1b9e7;border-right-color:#3b4f80;border-bottom-color:#25355e;box-shadow:inset 0 2px 2px #fff6,0 5px 0 #172748,0 10px 22px #000a;transform:perspective(500px) rotateX(8deg) rotateZ(-8deg)}
+.checker-board i.piece:after{box-shadow:inset 0 2px 3px #fff7,0 3px 2px #050c1b,0 5px 5px #0008}
+.card-fan i,.rummy-cards i{box-shadow:inset 0 2px 2px #fff,0 4px 0 #d0d4ed,0 7px 0 #737ca7,0 14px 24px #0009;border-top-color:#fff}
+.card-fan i:first-child,.rummy-cards i:first-child{filter:drop-shadow(0 4px 3px #0005)}
+.card-fan i:nth-child(2),.rummy-cards i:nth-child(2){box-shadow:inset 0 2px 2px #fff,0 4px 0 #d7b5d7,0 7px 0 #8b4c9c,0 14px 24px #0009}
+.art-badge{z-index:5;border-color:color-mix(in srgb,var(--tone) 45%,#ffffff22);background:linear-gradient(145deg,#172843ed,#070f20ed);box-shadow:inset 0 1px 0 #ffffff24,0 5px 11px #0008,0 0 17px color-mix(in srgb,var(--tone) 12%,transparent)}
+.favorite-btn{z-index:5;border-color:#385071;background:linear-gradient(145deg,#172a46,#08142a);box-shadow:inset 0 1px 0 #ffffff14,0 5px 10px #0006}
+.favorite-btn:hover,.favorite-btn.is-saved{box-shadow:inset 0 1px 0 #ffffff22,0 5px 13px #0007,0 0 15px #eb4cff19}
+.game-card-copy{position:relative;z-index:3}
+.tournament-banner,.event-hero{border-color:#473982;box-shadow:inset 0 1px 0 #ffffff19,inset 0 -1px 0 #0008,0 14px 29px #0005}
+.tournament-trophy,.event-hero-icon{border-color:#8c6fc36e;background:linear-gradient(145deg,#3c2d70,#151a37 74%);box-shadow:inset 0 1px 0 #ffffff25,inset 0 -4px 0 #080d20,0 9px 18px #0005,0 0 24px #a154ff12}
+.event-game-icon{border:1px solid #ffffff17;box-shadow:inset 0 1px 0 #ffffff1c,inset 0 -3px 0 #0005,0 6px 13px #0004}
+.wallet-balance-card,.crypto-info-card,.profile-card,.settings-card{box-shadow:inset 0 1px 0 #ffffff13,inset 0 -1px 0 #0009,0 13px 30px #0005}
+.wallet-actions button,.language-option,.crypto-list,.profile-stats>div{box-shadow:inset 0 1px 0 #ffffff0d,inset 0 -2px 0 #0005,0 5px 11px #0003}
+.btn-gradient:focus-visible,.btn-ghost:focus-visible,.nav-item:focus-visible{outline-offset:4px}
+@media(max-width:1200px){.app-body{display:block}.sidebar{right:0;left:auto;top:76px}.main-content{padding-inline:23px}}
+@media(max-width:950px){.app-body{display:block}.sidebar{right:0;left:auto;top:76px}.main-content{padding:24px 17px 17px}}
+@media(max-width:700px){.topbar{height:64px;padding:0 11px;gap:9px}.mobile-menu-btn{display:grid;width:34px;height:34px}.app-body{display:block;min-height:calc(100vh - 64px)}.sidebar{top:64px;right:0;left:auto;width:282px;max-width:88vw;min-height:0;transform:translateX(105%)}.sidebar.sidebar-open{transform:translateX(0)}.mobile-scrim{inset:64px 0 0}.main-content{padding:20px 12px 18px}}
+@media(prefers-reduced-motion:reduce){.sidebar,.nav-item,.game-card,.btn-gradient,.btn-ghost,.btn-outline{transition:none!important}}
