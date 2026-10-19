@@ -374,7 +374,7 @@ begin
 
   return v_wallet;
 end;
-$;
+$$;
 revoke all on function public.apply_coin_delta(uuid, text, bigint, text, text, text) from public, anon, authenticated;
 grant execute on function public.apply_coin_delta(uuid, text, bigint, text, text, text) to service_role;
 
@@ -410,7 +410,7 @@ begin
   if p_board->>2 = 'O' and p_board->>4 = 'O' and p_board->>6 = 'O' then return 'O'; end if;
   return null;
 end;
-$;
+$$;
 revoke all on function public.find_tictactoe_winner(jsonb) from public, anon, authenticated;
 
 -- A member may only enqueue themselves; opponents are selected by the server,
@@ -536,7 +536,7 @@ begin
 
   return query select 'matched'::text, v_match_id;
 end;
-$;
+$$;
 revoke all on function public.queue_for_random_match(text) from public, anon;
 grant execute on function public.queue_for_random_match(text) to authenticated;
 
@@ -559,7 +559,7 @@ begin
   get diagnostics v_count = row_count;
   return v_count > 0;
 end;
-$;
+$$;
 revoke all on function public.cancel_random_match_queue(text) from public, anon;
 grant execute on function public.cancel_random_match_queue(text) to authenticated;
 
@@ -730,7 +730,7 @@ begin
     'state_version',v_match.state_version,'winner_mark',null
   );
 end;
-$;
+$$;
 revoke all on function public.submit_tictactoe_move(uuid,integer) from public, anon;
 grant execute on function public.submit_tictactoe_move(uuid,integer) to authenticated;
 
