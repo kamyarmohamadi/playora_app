@@ -73,7 +73,7 @@ describe("Playora global app shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "1v1 Arena" }));
     expect(screen.getByRole("heading", { name: "Find a rival" })).toBeInTheDocument();
     expect(screen.getByText(/Sign in to join ranked matchmaking/)).toBeInTheDocument();
-    expect(screen.getByText(/Tic Tac Toe is the only online ranked mode/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Find random opponent" })).not.toBeInTheDocument();
   });
 
   it("shows notices without claiming online play is active", () => {
