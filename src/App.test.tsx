@@ -68,6 +68,14 @@ describe("Playora global app shell", () => {
     expect(screen.getByRole("button", { name: "Cell 1 X" })).toBeInTheDocument();
   });
 
+  it("keeps ranked matchmaking behind authenticated account access", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "1v1 Arena" }));
+    expect(screen.getByRole("heading", { name: "Find a rival" })).toBeInTheDocument();
+    expect(screen.getByText(/Sign in to join ranked matchmaking/)).toBeInTheDocument();
+    expect(screen.getByText(/Tic Tac Toe is the only online ranked mode/)).toBeInTheDocument();
+  });
+
   it("shows notices without claiming online play is active", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
