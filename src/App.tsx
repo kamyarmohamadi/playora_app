@@ -113,7 +113,7 @@ function BrandMark() {
 function GameArtwork({ game }: { game: Game }) {
   const Icon = game.icon;
   return (
-    <div className={\`game-art art-\${game.art} tone-\${game.color}\`} aria-hidden="true">
+    <div className={`game-art art-${game.art} tone-${game.color}`} aria-hidden="true">
       <span className="art-orb orb-one" /><span className="art-orb orb-two" />
       <div className="art-platform" />
       {game.art === "chess" && <div className="chess-symbol">♞</div>}
@@ -134,7 +134,7 @@ function GameCard({ game, locale, onOpen, saved, onSave, t }: {
 }) {
   return (
     <article className="game-card">
-      <button className="game-open" onClick={() => onOpen(game)} aria-label={\`\${t("details")}: \${game.title[locale]}\`}>
+      <button className="game-open" onClick={() => onOpen(game)} aria-label={`${t("details")}: ${game.title[locale]}`}>
         <GameArtwork game={game} />
         <div className="game-card-copy">
           <div className="game-card-heading">
@@ -144,7 +144,7 @@ function GameCard({ game, locale, onOpen, saved, onSave, t }: {
           <div className="game-card-meta"><span><Users size={14} />{game.players[locale]}</span><span>{t(game.category)}</span><ArrowUpRight size={15} className="game-arrow" /></div>
         </div>
       </button>
-      <button className={\`favorite-btn \${saved ? "is-saved" : ""}\`} aria-label={saved ? \`Remove \${game.title[locale]} from favorites\` : \`Add \${game.title[locale]} to favorites\`} onClick={onSave}>
+      <button className={`favorite-btn ${saved ? "is-saved" : ""}`} aria-label={saved ? `Remove ${game.title[locale]} from favorites` : `Add ${game.title[locale]} to favorites`} onClick={onSave}>
         <Heart size={15} fill={saved ? "currentColor" : "none"} />
       </button>
     </article>
@@ -214,7 +214,7 @@ export default function App() {
   };
 
   return (
-    <div className={\`app-shell locale-\${locale}\`} dir={direction} lang={locale}>
+    <div className={`app-shell locale-${locale}`} dir={direction} lang={locale}>
       <header className="topbar">
         <button className="mobile-menu-btn" aria-label={mobileNavOpen ? "Close menu" : "Open menu"} onClick={() => setMobileNavOpen(!mobileNavOpen)}>{mobileNavOpen ? <X size={20} /> : <Menu size={20} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
@@ -234,20 +234,20 @@ export default function App() {
       </header>
 
       <div className="app-body">
-        <aside className={\`sidebar \${mobileNavOpen ? "sidebar-open" : ""}\`}>
+        <aside className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`}>
           <div className="sidebar-context"><span className="context-icon"><Gamepad2 size={15} /></span><span>PLAY<span>SPACE</span></span></div>
           <p className="sidebar-label">{locale === "en" ? "DISCOVER" : "کشف و بازی"}</p>
           <nav className="sidebar-nav" aria-label={t("nav")}>
             {navigation.map(item => {
               const Icon = item.icon;
-              return <button key={item.id} className={\`nav-item \${page === item.id ? "active" : ""}\`} onClick={() => go(item.id)}><Icon size={18} /><span>{t(item.key)}</span>{page === item.id && <i className="nav-active-dot" />}</button>;
+              return <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => go(item.id)}><Icon size={18} /><span>{t(item.key)}</span>{page === item.id && <i className="nav-active-dot" />}</button>;
             })}
           </nav>
           <p className="sidebar-label secondary-label">{locale === "en" ? "YOUR SPACE" : "فضای تو"}</p>
           <nav className="sidebar-nav">
             {extraNavigation.map(item => {
               const Icon = item.icon;
-              return <button key={item.id} className={\`nav-item \${page === item.id ? "active" : ""}\`} onClick={() => go(item.id)}><Icon size={18} /><span>{t(item.key)}</span></button>;
+              return <button key={item.id} className={`nav-item ${page === item.id ? "active" : ""}`} onClick={() => go(item.id)}><Icon size={18} /><span>{t(item.key)}</span></button>;
             })}
           </nav>
           <div className="sidebar-spacer" />
@@ -308,7 +308,7 @@ export default function App() {
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
           </>}
 
-          {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:TargetIcon, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event,i) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={\`event-game-icon tone-\${event.color}\`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
+          {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:TargetIcon, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event,i) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
 
           {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
           {page === "leaderboard" && <EmptyState icon={Trophy} title={t("rankTitle")} text={t("rankSub")} />}
