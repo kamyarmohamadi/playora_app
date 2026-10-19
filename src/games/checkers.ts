@@ -146,7 +146,7 @@ export function applyCheckersMove(state: CheckersState, from: number, to: number
   const movedPiece = { player: piece.player, king: piece.king || becomesKing } as const;
   board[to] = movedPiece;
 
-  const quietPlies = legalMove.captured !== null || becomesKing ? 0 : state.quietPlies + 1;
+  const quietPlies = legalMove.captured !== null ? 0 : state.quietPlies + 1;
 
   // American checkers ends the turn when a man is crowned, even if the new king
   // would be able to continue capturing from the promotion square.
