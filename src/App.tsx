@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ComponentProps } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, BadgeCheck, BarChart3,
-  Check, ChevronDown, ChevronRight, CircleHelp, Clock3, Coins, Compass,
-  Crown, CreditCard, Dices, Gamepad2, Globe2, Grid2X2, Heart, Home,
-  Languages, LockKeyhole, LogIn, Medal, Menu, Puzzle, Search, Settings,
-  ShieldCheck, Sparkles, Spade, Swords, Ticket, Trophy, UserRound, Users,
+  Activity, ArrowRight, ArrowUpRight, Bell, BarChart3, Check, ChevronDown,
+  Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
+  Languages, LockKeyhole, Medal, Menu, Puzzle, Search, Settings,
+  ShieldCheck, Sparkles, Spade, Ticket, Trophy, UserRound, Users,
   Wallet, X, Zap
 } from "lucide-react";
 import "./index.css";
@@ -28,7 +26,7 @@ type Game = {
 
 const gameList: Game[] = [
   { id: "chess", title: { en: "Chess", fa: "شطرنج" }, subtitle: { en: "Think three moves ahead", fa: "چند حرکت جلوتر فکر کن" }, category: "strategy", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Crown, art: "chess", color: "cyan", featured: true },
-  { id: "pool", title: { en: "Pool", fa: "بیلیارد" }, subtitle: { en: "Precision meets pressure", fa: "دقت در اوج هیجان" }, category: "strategy", players: { en: "2 players", fa: "۲ بازیکن" }, icon: TargetIcon, art: "pool", color: "violet", featured: true },
+  { id: "pool", title: { en: "Pool", fa: "بیلیارد" }, subtitle: { en: "Precision meets pressure", fa: "دقت در اوج هیجان" }, category: "strategy", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Activity, art: "pool", color: "violet", featured: true },
   { id: "ludo", title: { en: "Ludo", fa: "منچ" }, subtitle: { en: "A classic, reimagined", fa: "یک بازی کلاسیک با حال‌وهوای تازه" }, category: "board", players: { en: "2–4 players", fa: "۲ تا ۴ بازیکن" }, icon: Dices, art: "ludo", color: "pink", featured: true },
   { id: "checkers", title: { en: "Checkers", fa: "چکرز" }, subtitle: { en: "Own the board", fa: "صفحه را در اختیار بگیر" }, category: "board", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Grid2X2, art: "checkers", color: "blue" },
   { id: "hokm", title: { en: "Hokm", fa: "حکم" }, subtitle: { en: "Read the table", fa: "میز را هوشمندانه بخوان" }, category: "cards", players: { en: "4 players", fa: "۴ بازیکن" }, icon: Spade, art: "cards", color: "gold" },
@@ -37,9 +35,6 @@ const gameList: Game[] = [
   { id: "rummy", title: { en: "Rummy", fa: "رامی" }, subtitle: { en: "Build your winning hand", fa: "دست برنده‌ات را بساز" }, category: "cards", players: { en: "2–4 players", fa: "۲ تا ۴ بازیکن" }, icon: Spade, art: "rummy", color: "pink" }
 ];
 
-function TargetIcon(props: ComponentProps<LucideIcon>) {
-  return <Activity {...props} />;
-}
 
 const copy: Record<Locale, Record<string, string>> = {
   en: {
@@ -308,7 +303,7 @@ export default function App() {
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
           </>}
 
-          {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:TargetIcon, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event,i) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
+          {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:TargetIcon, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
 
           {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
           {page === "leaderboard" && <EmptyState icon={Trophy} title={t("rankTitle")} text={t("rankSub")} />}
