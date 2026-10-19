@@ -769,6 +769,84 @@ export default function App() {
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
           </>}
 
+          {page === "online" && <section className="online-page">
+            <div className="online-feature-card">
+              <div className="online-feature-copy">
+                <span className="hero-eyebrow"><Swords size={14} />{t("matchType")}</span>
+                <h2>{t("rankedTtt")}</h2>
+                <p>{t("rankedTttDetails")}</p>
+                <div className="online-feature-points">
+                  <span><ShieldCheck size={14} />{t("balanced")}</span>
+                  <span><Users size={14} />{t("randomPairing")}</span>
+                  <span><Medal size={14} />{t("statRating")}</span>
+                </div>
+                <p className="online-small-note">{t("onlineNoRewards")}</p>
+              </div>
+              <div className="online-feature-art" aria-hidden="true">
+                <div className="online-orbit orbit-a" /><div className="online-orbit orbit-b" />
+                <div className="online-versus"><span>X</span><b>VS</b><span>O</span></div>
+                <div className="online-game-grid"><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
+                <span className="online-art-glint">✦</span>
+              </div>
+            </div>
+
+            <div className="online-content-grid">
+              <section className="online-match-panel">
+                <div className="online-panel-heading">
+                  <div><span className="section-eyebrow">{t("onlineTitle")}</span><h2>{onlineMatchId ? t("queueMatched") : t("queueIdle")}</h2></div>
+                  <span className={"online-state-pill state-" + onlineStatus}><i />{onlineStatus === "idle" ? t("queueIdle") : onlineStatus === "queueing" ? t("queueing") : onlineStatus === "waiting" ? t("queueWaiting") : onlineStatus === "matched" ? t("queueMatched") : t("onlineError")}</span>
+                </div>
+
+                {!session && <div className="online-login-prompt"><span className="online-large-icon"><LockKeyhole size={24} /></span><h3>{t("signIn")}</h3><p>{t("onlineNeedsLogin")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
+
+                {session && !onlineMatchId && <div className="online-queue-state">
+                  <div className="online-queue-illustration"><div><Swords size={30} /></div><span className="queue-scan scan-one" /><span className="queue-scan scan-two" /></div>
+                  <p>{onlineStatus === "queueing" ? t("queueing") : onlineStatus === "waiting" ? t("queueWaiting") : onlineStatus === "error" ? (onlineError || t("onlineError")) : t("queueIdle")}</p>
+                  {onlineStatus === "waiting" || onlineStatus === "queueing" ? <button className="btn-ghost" disabled={onlineBusy} onClick={() => void cancelOnlineQueue()}>{onlineBusy ? t("loading") : t("cancelQueue")}<X size={15} /></button> : <button className="btn-gradient" disabled={onlineBusy || authLoading} onClick={() => void startOnlineQueue()}>{onlineBusy ? t("queueing") : t("queueButton")}<ArrowRight size={16} /></button>}
+                  <small>{t("onlineGameEnabled")}</small>
+                </div>}
+
+                {session && onlineMatchId && !onlineMatch && <div className="online-loading-state"><span className="online-loading-spinner" /><p>{t("onlineLoading")}</p></div>}
+
+                {session && onlineMatchId && onlineMatch && onlineSeat && <div className="online-live-match">
+                  <div className="online-player-row">
+                    <div className={"online-player " + (onlineSeat === 1 ? "current-player" : "")}><span className="online-player-mark mark-x">X</span><div><b>{t("yourMark")}</b><small>{t("level")} · {t("member")}</small></div></div>
+                    <span className="online-vs-label">VS</span>
+                    <div className={"online-player " + (onlineSeat === 2 ? "current-player" : "")}><span className="online-player-mark mark-o">O</span><div><b>{t("opponentMark")}</b><small>{t("level")} · {t("statRating")}</small></div></div>
+                  </div>
+                  <div className="ttt-board online-ttt-board" role="group" aria-label={t("gameBoard")}>
+                    {onlineMatch.server_state.board?.map((mark, index) => {
+                      const isMyTurn = onlineMatch.status === "active" && onlineMatch.server_state.current_seat === onlineSeat;
+                      const disabled = mark !== null || !isMyTurn || onlineMoveBusy;
+                      return <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={disabled} onClick={() => void submitOnlineMove(index)}>{mark && <span>{mark}</span>}</button>;
+                    })}
+                  </div>
+                  <div className={"ttt-status " + (onlineMatch.status === "completed" ? "is-complete" : "")} role="status">
+                    <span className="ttt-status-pulse" />
+                    {onlineMatch.status === "completed"
+                      ? (onlineMatch.winner_user_id === session.user.id ? t("onlineWon") : onlineMatch.winner_user_id ? t("onlineLost") : t("onlineDraw"))
+                      : onlineMatch.server_state.current_seat === onlineSeat ? t("onlineYourTurn") : t("onlineOpponentTurn")}
+                  </div>
+                  {onlineError && <p className="online-inline-error" role="alert">{onlineError}</p>}
+                  <div className="online-match-footer"><span>{t("matchIdLabel")}: {onlineMatch.id.slice(0, 8).toUpperCase()}</span>{onlineMatch.status === "completed" && <button className="btn-gradient" onClick={resetOnlineMatch}>{t("playAnother")}<ArrowRight size={15} /></button>}</div>
+                </div>}
+                {session && onlineError && !onlineMatch && onlineStatus === "error" && <p className="online-inline-error" role="alert">{onlineError}</p>}
+              </section>
+
+              <aside className="online-rules-panel">
+                <div className="online-rules-icon"><ShieldCheck size={19} /></div>
+                <h2>{t("onlineRules")}</h2>
+                <ul>
+                  <li><span>01</span><p>{t("onlineRuleOne")}</p></li>
+                  <li><span>02</span><p>{t("onlineRuleTwo")}</p></li>
+                  <li><span>03</span><p>{t("onlineRuleThree")}</p></li>
+                  <li><span>04</span><p>{t("onlineRuleFour")}</p></li>
+                </ul>
+                <div className="online-security-foot"><LockKeyhole size={14} />{t("secureNote")}</div>
+              </aside>
+            </div>
+          </section>}
+
           {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:Activity, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
 
           {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
