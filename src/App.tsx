@@ -281,6 +281,7 @@ export default function App() {
       return;
     }
     let active = true;
+    let authEventVersion = 0;
 
     const clearMemberScopedUi = (nextUserId: string | null, previousUserId: string | null) => {
       setMemberProfile(null);
@@ -333,6 +334,9 @@ export default function App() {
 
       // If one authenticated identity is replaced by another, return to a
       // neutral page so no member-specific view remains selected.
+      if (previousUserId !== nextUserId && nextUserId !== null) {
+        setLocale("en");
+      }
       if (previousUserId !== null && nextUserId !== null && previousUserId !== nextUserId) {
         setPage("home");
       }
@@ -349,15 +353,18 @@ export default function App() {
     };
 
     void supabase.auth.getSession().then(({ data }) => {
-      if (active) {
+      // A later auth event is newer than this startup snapshot; never let a
+      // slow getSession result overwrite a session-change notification.
+      if (active && authEventVersion === 0) {
         adoptSession(data.session);
         setAuthLoading(false);
       }
     }).catch(() => {
-      if (active) setAuthLoading(false);
+      if (active && authEventVersion === 0) setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      authEventVersion += 1;
       adoptSession(nextSession);
       setAuthLoading(false);
       if (event === "PASSWORD_RECOVERY") {
