@@ -792,7 +792,8 @@ grant select (id, game_id, mode, status, state_version, server_state, started_at
 grant select on public.match_participants to authenticated;
 grant select on public.member_game_stats to authenticated;
 grant select on public.matchmaking_queue to authenticated;
-grant select on public.private_rooms to authenticated;
+grant select (id, game_id, status, max_players, expires_at, created_at, match_id)
+  on public.private_rooms to authenticated;
 grant select on public.room_members to authenticated;
 grant select on public.friend_requests to authenticated;
 grant select on public.tournaments to authenticated;
