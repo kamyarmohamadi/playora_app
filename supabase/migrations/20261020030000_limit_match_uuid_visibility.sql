@@ -15,3 +15,6 @@ revoke insert, update, delete on table public.matches from anon, authenticated;
 revoke select on table public.private_rooms from anon, authenticated;
 grant select (id, game_id, status, max_players, expires_at, created_at, match_id)
   on table public.private_rooms to authenticated;
+
+-- Relationship records contain both parties' internal auth UUIDs; clients use scoped RPCs.
+revoke select on table public.friend_requests from anon, authenticated;
