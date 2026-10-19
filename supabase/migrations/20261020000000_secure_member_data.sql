@@ -288,7 +288,7 @@ returns public.coin_wallets
 language plpgsql
 security definer
 set search_path = ''
-as $apply_coin_delta$
+as $
 declare
   v_wallet public.coin_wallets;
   v_existing public.coin_ledger;
@@ -374,7 +374,7 @@ begin
 
   return v_wallet;
 end;
-$apply_coin_delta$;
+$;
 revoke all on function public.apply_coin_delta(uuid, text, bigint, text, text, text) from public, anon, authenticated;
 grant execute on function public.apply_coin_delta(uuid, text, bigint, text, text, text) to service_role;
 
@@ -384,7 +384,7 @@ returns text
 language plpgsql
 immutable
 set search_path = ''
-as $find_tictactoe_winner$
+as $
 begin
   if p_board is null or pg_catalog.jsonb_typeof(p_board) <> 'array'
      or pg_catalog.jsonb_array_length(p_board) <> 9 then
@@ -410,7 +410,7 @@ begin
   if p_board->>2 = 'O' and p_board->>4 = 'O' and p_board->>6 = 'O' then return 'O'; end if;
   return null;
 end;
-$find_tictactoe_winner$;
+$;
 revoke all on function public.find_tictactoe_winner(jsonb) from public, anon, authenticated;
 
 -- A member may only enqueue themselves; opponents are selected by the server,
@@ -420,7 +420,7 @@ returns table(queue_status text, matched_match_id uuid)
 language plpgsql
 security definer
 set search_path = ''
-as $queue_for_random_match$
+as $
 declare
   v_user_id uuid := auth.uid();
   v_rating integer;
@@ -536,7 +536,7 @@ begin
 
   return query select 'matched'::text, v_match_id;
 end;
-$queue_for_random_match$;
+$;
 revoke all on function public.queue_for_random_match(text) from public, anon;
 grant execute on function public.queue_for_random_match(text) to authenticated;
 
@@ -545,7 +545,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $cancel_random_match_queue$
+as $
 declare
   v_user_id uuid := auth.uid();
   v_count integer;
@@ -559,7 +559,7 @@ begin
   get diagnostics v_count = row_count;
   return v_count > 0;
 end;
-$cancel_random_match_queue$;
+$;
 revoke all on function public.cancel_random_match_queue(text) from public, anon;
 grant execute on function public.cancel_random_match_queue(text) to authenticated;
 
@@ -570,7 +570,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $submit_tictactoe_move$
+as $
 declare
   v_user_id uuid := auth.uid();
   v_user_seat integer;
@@ -730,7 +730,7 @@ begin
     'state_version',v_match.state_version,'winner_mark',null
   );
 end;
-$submit_tictactoe_move$;
+$;
 revoke all on function public.submit_tictactoe_move(uuid,integer) from public, anon;
 grant execute on function public.submit_tictactoe_move(uuid,integer) to authenticated;
 
