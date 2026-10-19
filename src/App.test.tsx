@@ -58,6 +58,16 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByRole("button", { name: "Sign in", exact: true }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
+  it("opens a no-reward Tic Tac Toe practice match against the bot", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    fireEvent.click(screen.getByRole("button", { name: "View details: Tic Tac Toe" }));
+    expect(screen.getByRole("dialog", { name: "Tic Tac Toe" })).toBeInTheDocument();
+    expect(screen.getByText(/awards no XP, rank, coins, or prizes/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cell 1" }));
+    expect(screen.getByRole("button", { name: "Cell 1 X" })).toBeInTheDocument();
+  });
+
   it("shows notices without claiming online play is active", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
