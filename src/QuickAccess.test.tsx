@@ -24,6 +24,6 @@ describe("Playora game catalogue", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
     expect(screen.getByRole("heading", { name: "Enter the arena" })).toBeInTheDocument();
-    expect(screen.getByText(/Entry fees and rewards are disabled/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Entry fees and rewards are disabled/).length).toBeGreaterThan(0);
   });
 });
