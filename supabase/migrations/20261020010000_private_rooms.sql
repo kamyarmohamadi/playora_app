@@ -8,7 +8,7 @@ create unique index if not exists private_rooms_match_unique
 
 create or replace function public.create_private_room(
   p_game_id text,
-  p_max_players smallint default 2
+  p_max_players integer default 2
 )
 returns table(created_room_id uuid, invite_code text, room_expires_at timestamptz)
 language plpgsql
