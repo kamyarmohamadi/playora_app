@@ -111,21 +111,24 @@ BEGIN
   END;
   IF NOT v_against_turn THEN RAISE EXCEPTION 'Move after match completion was accepted'; END IF;
 
-  -- A new queue entry may be created, but same-opponent rematching is suppressed for 24 hours.
+  -- Queue both members again. Even though both are waiting, their recent rematch
+  -- must be filtered out for 24 hours; both members remain queued, not matched.
   SELECT queue_status INTO v_rematch_status FROM public.queue_for_random_match('tictactoe');
   IF v_rematch_status <> 'waiting' THEN
-    RAISE EXCEPTION 'Recent-opponent rematch should be suppressed for 24 hours';
+    RAISE EXCEPTION 'Member Two should wait rather than immediately rematch the same opponent';
   END IF;
-  SELECT cancel_random_match_queue('tictactoe') INTO v_cancelled;
-  IF NOT v_cancelled THEN RAISE EXCEPTION 'Member Two could not cancel their own queue entry'; END IF;
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   SELECT queue_status INTO v_rematch_status FROM public.queue_for_random_match('tictactoe');
   IF v_rematch_status <> 'waiting' THEN
-    RAISE EXCEPTION 'Member One should wait rather than immediately rematch the same opponent';
+    RAISE EXCEPTION 'Recent-opponent rematch should be suppressed for 24 hours';
   END IF;
+
   SELECT cancel_random_match_queue('tictactoe') INTO v_cancelled;
   IF NOT v_cancelled THEN RAISE EXCEPTION 'Member One could not cancel their own queue entry'; END IF;
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
+  SELECT cancel_random_match_queue('tictactoe') INTO v_cancelled;
+  IF NOT v_cancelled THEN RAISE EXCEPTION 'Member Two could not cancel their own queue entry'; END IF;
 END
 $ranked_tictactoe$;
 
