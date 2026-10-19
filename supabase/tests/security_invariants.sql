@@ -105,6 +105,11 @@ BEGIN
     RAISE EXCEPTION 'Members must use room RPCs rather than writing room state directly';
   END IF;
 
+  IF has_function_privilege('authenticated','public.hash_room_invite_code(text)','EXECUTE')
+     OR has_function_privilege('anon','public.hash_room_invite_code(text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Invite-code hashing helper must not be directly callable by client roles';
+  END IF;
+
   IF has_function_privilege('anon','public.create_private_room(text,integer)','EXECUTE')
      OR has_function_privilege('anon','public.join_private_room(text)','EXECUTE')
      OR has_function_privilege('anon','public.leave_private_room(uuid)','EXECUTE')
