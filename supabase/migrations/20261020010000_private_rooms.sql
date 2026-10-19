@@ -13,7 +13,7 @@ returns text
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_crypto_schema text;
   v_hash text;
@@ -37,7 +37,7 @@ begin
 
   return v_hash;
 end;
-$;
+$$;
 revoke all on function public.hash_room_invite_code(text) from public, anon, authenticated;
 
 create or replace function public.create_private_room(
