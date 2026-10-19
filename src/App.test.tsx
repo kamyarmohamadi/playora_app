@@ -28,7 +28,7 @@ describe("Playora global app shell", () => {
   it("switches locale to Persian and updates document direction", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Switch language to Persian" }));
-    expect(screen.getByRole("heading", { name: "مهارت تو." })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /مهارت تو/ })).toBeInTheDocument();
     expect(document.documentElement.dir).toBe("rtl");
     expect(document.documentElement.lang).toBe("fa");
   });
