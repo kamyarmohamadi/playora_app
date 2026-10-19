@@ -69,6 +69,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+      - name: Test wallet ledger idempotency and overdraft protections
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
       - name: Test isolation between two authenticated members
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
       - name: Test ranked Tic Tac Toe matchmaking and server-authoritative outcomes
