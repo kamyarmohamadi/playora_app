@@ -20,8 +20,8 @@ type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
 type MemberGameStats = { user_id: string; game_id: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
-type RankedHistoryRow = { id: string; status: string; winner_user_id: string | null; finished_at: string | null; created_at: string; mode: string };
-type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; winner_user_id: string | null; state_version: number };
+type RankedHistoryRow = { id: string; status: string; my_result: "win" | "loss" | "draw" | "forfeit" | null; finished_at: string | null; created_at: string; mode: string };
+type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; my_result?: "win" | "loss" | "draw" | "forfeit" | null; state_version: number };
 type PrivateRoomRow = { id: string; host_user_id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
 type LeaderboardEntry = { rank_position: number | string; username: string; display_name: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
@@ -329,15 +329,19 @@ export default function App() {
       supabase.from("member_favorites").select("game_id").eq("user_id", userId),
       supabase.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
       supabase.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
-      supabase.from("matches").select("id,status,winner_user_id,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
-    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
+      supabase.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5),
+      supabase.from("match_participants").select("match_id,final_result").eq("user_id", userId).order("joined_at", { ascending: false }).limit(5)
+    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult, ownHistoryResult]) => {
       if (!active) return;
       const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
       setMemberProfile(loadedProfile);
       setProfileNameDraft(loadedProfile?.display_name ?? "");
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
       setMemberStats(!statsResult.error ? statsResult.data as MemberGameStats | null : null);
-      setRecentMatches(!historyResult.error && historyResult.data ? historyResult.data as RankedHistoryRow[] : []);
+      const ownResults = new Map((!ownHistoryResult.error && ownHistoryResult.data ? ownHistoryResult.data : []).map(row => [row.match_id, row.final_result as RankedHistoryRow["my_result"]]));
+      setRecentMatches(!historyResult.error && !ownHistoryResult.error && historyResult.data
+        ? (historyResult.data as Omit<RankedHistoryRow, "my_result">[]).map(row => ({ ...row, my_result: ownResults.get(row.id) ?? null })).filter(row => row.my_result !== null) as RankedHistoryRow[]
+        : []);
       if (!favoriteResult.error && favoriteResult.data) {
         setFavorites(favoriteResult.data.map(row => row.game_id));
       } else {
@@ -423,10 +427,10 @@ export default function App() {
       try {
         const [matchResult, seatResult] = await Promise.all([
           db.from("matches")
-            .select("id, status, server_state, winner_user_id, state_version")
+            .select("id, status, server_state, state_version")
             .eq("id", onlineMatchId).maybeSingle(),
           db.from("match_participants")
-            .select("seat")
+            .select("seat, final_result")
             .eq("match_id", onlineMatchId)
             .eq("user_id", userId)
             .maybeSingle()
@@ -439,7 +443,7 @@ export default function App() {
             (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
           throw new Error("invalid_match_state");
         }
-        setOnlineMatch(rawMatch);
+        setOnlineMatch({ ...rawMatch, my_result: seatResult.data.final_result as OnlineMatchSnapshot["my_result"] });
         setOnlineSeat(Number(seatResult.data.seat));
         if (rawMatch.status === "active") {
           timer = window.setTimeout(() => void pollMatch(), 1200);
@@ -509,10 +513,10 @@ export default function App() {
       try {
         const [matchResult, seatResult] = await Promise.all([
           db.from("matches")
-            .select("id,status,server_state,winner_user_id,state_version")
+            .select("id,status,server_state,state_version")
             .eq("id", privateMatchId).maybeSingle(),
           db.from("match_participants")
-            .select("seat")
+            .select("seat,final_result")
             .eq("match_id", privateMatchId)
             .eq("user_id", userId)
             .maybeSingle()
@@ -527,7 +531,7 @@ export default function App() {
             (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
           throw new Error("invalid_private_match_state");
         }
-        setPrivateMatch(rawMatch);
+        setPrivateMatch({ ...rawMatch, my_result: seatResult.data.final_result as OnlineMatchSnapshot["my_result"] });
         setPrivateSeat(Number(seatResult.data.seat));
         setPrivateRoomError("");
         if (rawMatch.status === "active") {
@@ -1264,7 +1268,7 @@ export default function App() {
                   <div className={"ttt-status " + (onlineMatch.status === "completed" ? "is-complete" : "")} role="status">
                     <span className="ttt-status-pulse" />
                     {onlineMatch.status === "completed"
-                      ? (onlineMatch.winner_user_id === session.user.id ? t("onlineWon") : onlineMatch.winner_user_id ? t("onlineLost") : t("onlineDraw"))
+                      ? (onlineMatch.my_result === "win" ? t("onlineWon") : onlineMatch.my_result === "draw" ? t("onlineDraw") : t("onlineLost"))
                       : onlineMatch.server_state.current_seat === onlineSeat ? t("onlineYourTurn") : t("onlineOpponentTurn")}
                   </div>
                   {onlineError && <p className="online-inline-error" role="alert">{onlineError}</p>}
@@ -1341,7 +1345,7 @@ export default function App() {
                       return <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={disabled} onClick={() => void submitPrivateMove(index)}>{mark && <span>{mark}</span>}</button>;
                     })}
                   </div>
-                  <div className={"ttt-status " + (privateMatch.status === "completed" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{privateMatch.status === "completed" ? (privateMatch.winner_user_id === session.user.id ? t("privateWin") : privateMatch.winner_user_id ? t("privateLoss") : t("onlineDraw")) : privateMatch.server_state.current_seat === privateSeat ? t("privateYourTurn") : t("privateOpponentTurn")}</div>
+                  <div className={"ttt-status " + (privateMatch.status === "completed" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{privateMatch.status === "completed" ? (privateMatch.my_result === "win" ? t("privateWin") : privateMatch.my_result === "draw" ? t("onlineDraw") : t("privateLoss")) : privateMatch.server_state.current_seat === privateSeat ? t("privateYourTurn") : t("privateOpponentTurn")}</div>
                   {privateRoomError && <p className="private-room-error" role="alert">{privateRoomError}</p>}
                   <div className="online-match-footer"><span>{t("matchIdLabel")}: {privateMatch.id.slice(0,8).toUpperCase()}</span>{privateMatch.status === "completed" && <button className="btn-gradient" onClick={closePrivateMatchView}>{t("roomList")}<ArrowRight size={14} /></button>}</div>
                 </div>}
@@ -1481,7 +1485,7 @@ export default function App() {
                 <div className="profile-history-heading"><div><span className="section-eyebrow">{t("online")}</span><h3>{t("recentMatches")}</h3></div><span>{recentMatches.length}</span></div>
                 {recentMatches.length === 0 ? <p className="profile-history-empty">{t("noRecentMatches")}</p> : <div className="profile-history-list">
                   {recentMatches.map(match => {
-                    const resultKey = match.winner_user_id === null ? "resultDraw" : match.winner_user_id === session.user.id ? "resultWin" : "resultLoss";
+                    const resultKey = match.my_result === "draw" ? "resultDraw" : match.my_result === "win" ? "resultWin" : "resultLoss";
                     return <article className="profile-history-row" key={match.id}>
                       <span className={"profile-result-dot result-" + resultKey.slice(6).toLowerCase()} />
                       <div className="profile-history-copy"><b>{t(resultKey)}</b><small dir="ltr">{match.id.slice(0, 8).toUpperCase()} · {new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { dateStyle: "medium" }).format(new Date(match.finished_at ?? match.created_at))}</small></div>
