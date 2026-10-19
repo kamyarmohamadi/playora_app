@@ -236,7 +236,7 @@ declare
 begin
   safe_locale := case when new.raw_user_meta_data ->> 'locale' in ('en','fa') then new.raw_user_meta_data ->> 'locale' else 'en' end;
   safe_display_name := left(coalesce(nullif(trim(new.raw_user_meta_data ->> 'display_name'),''),'Player'),32);
-  generated_username := 'player_' || substr(replace(new.id::text,'-',''),1,16);
+  generated_username := 'player_' || substr(md5(new.id::text),1,16);
 
   insert into public.member_profiles(user_id,username,display_name,locale)
   values(new.id,generated_username,safe_display_name,safe_locale)
