@@ -1342,7 +1342,7 @@ export default function App() {
   return (
     <div className={`app-shell locale-${locale}`} dir={direction} lang={locale}>
       <header className="topbar">
-        <button className="mobile-menu-btn" aria-label={mobileNavOpen ? "Close menu" : "Open menu"} onClick={() => setMobileNavOpen(!mobileNavOpen)}>{mobileNavOpen ? <X size={20} /> : <Menu size={20} />}</button>
+        <button className="mobile-menu-btn" aria-label={locale === "en" ? (mobileNavOpen ? "Close menu" : "Open menu") : (mobileNavOpen ? "بستن منو" : "باز کردن منو")} aria-expanded={mobileNavOpen} aria-controls="playora-navigation-drawer" onClick={() => setMobileNavOpen(!mobileNavOpen)}>{mobileNavOpen ? <X size={20} /> : <Menu size={20} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
           <BrandMark /><span className="brand-word">PLAYORA<span>.</span></span>
         </button>
@@ -1360,7 +1360,7 @@ export default function App() {
       </header>
 
       <div className="app-body">
-        <aside className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`}>
+        <aside id="playora-navigation-drawer" className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`} aria-hidden={!mobileNavOpen}>
           <div className="sidebar-context"><span className="context-icon"><Gamepad2 size={15} /></span><span>PLAY<span>SPACE</span></span></div>
           <p className="sidebar-label">{locale === "en" ? "DISCOVER" : "کشف و بازی"}</p>
           <nav className="sidebar-nav" aria-label={t("nav")}>
@@ -1383,7 +1383,7 @@ export default function App() {
           <div className="sidebar-footer"><BrandMark /><span>PLAYORA © 2026</span></div>
         </aside>
 
-        {mobileNavOpen && <button className="mobile-scrim" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} />}
+        {mobileNavOpen && <button className="mobile-scrim" aria-label={locale === "en" ? "Close navigation" : "بستن ناوبری"} onClick={() => setMobileNavOpen(false)} />}
 
         <main className="main-content">
           {page !== "home" && <div className="page-title-row"><div><span className="page-kicker">{t("liveLabel")}</span><h1>{pageMeta[page].title}</h1><p>{pageMeta[page].subtitle}</p></div>{page === "games" && <span className="result-count">{filteredGames.length} {t("allGames").toLocaleLowerCase(locale)}</span>}</div>}
