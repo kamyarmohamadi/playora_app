@@ -901,6 +901,7 @@ export default function App() {
     online: { title: t("onlineTitle"), subtitle: t("onlineSub") },
     tournaments: { title: t("tournamentsTitle"), subtitle: t("tournamentsSub") },
     friends: { title: t("friendsTitle"), subtitle: t("friendsSub") },
+    rooms: { title: t("roomsTitle"), subtitle: t("roomsSub") },
     leaderboard: { title: t("rankTitle"), subtitle: t("rankSub") },
     wallet: { title: t("walletTitle"), subtitle: t("walletSub") },
     profile: { title: t("profileTitle"), subtitle: t("profileSub") },
@@ -1083,6 +1084,89 @@ export default function App() {
           {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:Activity, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
 
           {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
+
+          {page === "rooms" && <section className="private-rooms-page">
+            {!session ? <div className="private-room-login">
+              <span className="private-room-symbol"><LockKeyhole size={24} /></span>
+              <h2>{t("signIn")}</h2>
+              <p>{t("accountRequired")}</p>
+              <button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button>
+            </div> : <>
+              {privateMatchId && <div className="private-live-card">
+                <div className="private-live-heading">
+                  <div><span className="section-eyebrow">{t("privateMatchTitle")}</span><h2>{t("privateRoomOnlyGame")}</h2></div>
+                  <button className="btn-ghost" onClick={closePrivateMatchView}>{t("closeGame")}<X size={14} /></button>
+                </div>
+                <p className="private-no-reward"><ShieldCheck size={15} />{t("privateNoRewards")}</p>
+                {!privateMatch && <div className="online-loading-state"><span className="online-loading-spinner" /><p>{t("onlineLoading")}</p></div>}
+                {privateMatch && privateSeat !== null && <>
+                  <div className="online-player-row">
+                    <div className={"online-player " + (privateSeat === 1 ? "current-player" : "")}><span className={"online-player-mark " + (privateSeat === 1 ? "mark-x" : "mark-o")}>{privateSeat === 1 ? "X" : "O"}</span><div><b>{t("yourMark")}</b><small>{privateSeat === 1 ? "X" : "O"}</small></div></div>
+                    <span className="online-vs-label">VS</span>
+                    <div className={"online-player " + (privateSeat === 2 ? "current-player" : "")}><span className={"online-player-mark " + (privateSeat === 1 ? "mark-o" : "mark-x")}>{privateSeat === 1 ? "O" : "X"}</span><div><b>{t("opponentMark")}</b><small>{privateSeat === 1 ? "O" : "X"}</small></div></div>
+                  </div>
+                  <div className="ttt-board online-ttt-board" role="group" aria-label={t("gameBoard")}>
+                    {privateMatch.server_state.board?.map((mark, index) => <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={privateMatch.status !== "active" || privateMoveBusy || privateMatch.server_state.current_seat !== privateSeat || mark !== null} onClick={() => void submitPrivateMove(index)}>{mark && <span>{mark}</span>}</button>)}
+                  </div>
+                  <div className={"ttt-status " + (privateMatch.status !== "active" ? "is-complete" : "")} role="status">
+                    <span className="ttt-status-pulse" />
+                    {privateMatch.status === "completed"
+                      ? privateMatch.winner_user_id === null ? t("onlineDraw") : privateMatch.winner_user_id === session.user.id ? t("privateWin") : t("privateLoss")
+                      : privateMatch.server_state.current_seat === privateSeat ? t("privateYourTurn") : t("privateOpponentTurn")}
+                  </div>
+                  {privateRoomError && <p className="online-inline-error" role="alert">{privateRoomError}</p>}
+                </>}
+              </div>}
+
+              <div className="private-room-actions-grid">
+                <section className="private-room-action-card">
+                  <div className="private-room-card-icon"><Dices size={19} /></div>
+                  <span className="section-eyebrow">FREE · 1V1</span>
+                  <h2>{t("createPrivateRoom")}</h2>
+                  <p>{t("privateRoomOnlyGame")} {t("roomExpiredHint")}</p>
+                  <button className="btn-gradient" disabled={privateRoomBusy} onClick={() => void createPrivateRoom()}>{privateRoomBusy ? t("loading") : t("createPrivateRoom")}<ArrowRight size={15} /></button>
+                </section>
+                <section className="private-room-action-card">
+                  <div className="private-room-card-icon"><Ticket size={19} /></div>
+                  <span className="section-eyebrow">INVITE ONLY</span>
+                  <h2>{t("joinPrivateRoom")}</h2>
+                  <p>{t("privateNoRewards")}</p>
+                  <form className="private-room-join-form" onSubmit={event => void joinPrivateRoom(event)}>
+                    <label htmlFor="private-room-code">{t("inviteCode")}</label>
+                    <input id="private-room-code" name="inviteCode" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={32} minLength={32} pattern="[0-9a-fA-F]{32}" value={privateRoomCode} onChange={event => setPrivateRoomCode(event.target.value)} placeholder={t("enterInviteCode")} required />
+                    <button className="btn-gradient" type="submit" disabled={privateRoomBusy || privateRoomCode.trim().length !== 32}>{privateRoomBusy ? t("loading") : t("joinPrivateRoom")}<ArrowRight size={15} /></button>
+                  </form>
+                </section>
+              </div>
+
+              {latestInviteCode && <section className="private-invite-card">
+                <div><span className="section-eyebrow">{t("roomCreated")}</span><h2>{t("inviteCode")}</h2><p>{t("inviteCreated")}</p></div>
+                <code className="private-invite-code">{latestInviteCode}</code>
+                <button className="btn-gradient" onClick={() => void copyInviteCode()}><Check size={15} />{t("copyInvite")}</button>
+              </section>}
+
+              {privateRoomError && !privateMatchId && <p className="online-inline-error" role="alert">{privateRoomError}</p>}
+
+              <section className="private-room-list-panel">
+                <div className="private-room-list-heading"><div><span className="section-eyebrow">{t("roomList")}</span><h2>{t("roomList")}</h2></div><button className="btn-ghost" disabled={privateRoomBusy} onClick={() => setPrivateRoomRefresh(value => value + 1)}><Activity size={14} />{t("refresh")}</button></div>
+                {privateRooms.length === 0 ? <div className="private-room-empty"><span><Users size={22} /></span><p>{t("noPrivateRooms")}</p></div> : <div className="private-room-list">
+                  {privateRooms.map(room => {
+                    const isHost = room.host_user_id === session.user.id;
+                    const statusLabel = room.status === "open" ? t("roomOpen") : room.status === "active" ? t("roomActive") : room.status === "expired" ? t("roomExpired") : t("roomClosed");
+                    return <article className="private-room-row" key={room.id}>
+                      <span className={"private-room-status status-" + room.status}><i />{statusLabel}</span>
+                      <div className="private-room-row-info"><b>{t("privateRoomOnlyGame")}</b><small>{t("hostLabel")}: {isHost ? t("you") : t("playerLabel")} · {t("expiresLabel")}: {new Date(room.expires_at).toLocaleString(locale === "fa" ? "fa-IR" : "en-US")}</small><code>{room.id.slice(0, 8).toUpperCase()}</code></div>
+                      <div className="private-room-row-actions">
+                        {room.match_id && <button className="btn-gradient" onClick={() => openPrivateMatch(room.match_id!)}>{t("openPrivateMatch")}<ArrowRight size={14} /></button>}
+                        {room.status === "open" && <button className="btn-ghost" disabled={privateRoomBusy} onClick={() => void leavePrivateRoom(room)}>{isHost ? t("closePrivateRoom") : t("leavePrivateRoom")}<X size={14} /></button>}
+                      </div>
+                    </article>;
+                  })}
+                </div>}
+              </section>
+            </>}
+          </section>}
+
           {page === "leaderboard" && <EmptyState icon={Trophy} title={t("rankTitle")} text={t("rankSub")} />}
 
           {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
