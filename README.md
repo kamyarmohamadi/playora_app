@@ -1,6 +1,6 @@
 # Playora
 
-Playora is a global, English-first competitive game platform concept with Persian localization. The current feature branch contains a neon competitive-arena interface and the first Supabase/Postgres data-isolation migration.
+Playora is an English-first competitive games platform with Persian localization (RTL), a neon arena visual system, account flows and per-member data isolation.
 
 ## Run the frontend
 
@@ -12,14 +12,26 @@ Requirements: Node.js compatible with the pinned Vite toolchain.
     npm run build
     npm run dev
 
-## Current scope
+Copy .env.example to .env.local and configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY only after you create a Supabase project. Without those values, account and server-connected features fail closed and explain that the backend is not configured.
 
-The frontend is a design preview. It includes the home dashboard, game catalogue and filters, favorites, tournament view, wallet preview, profile/settings layout, and English/Persian direction switching. Cards and tournament items are explicitly labeled as preview/coming soon.
+## Implemented in this branch
 
-Not live in this branch: account registration/login, persistent user sessions, deployed backend, real game engines, server-authoritative multiplayer, matchmaking, public ranking, friend invitations, rooms, crypto deposit monitoring, wallet-credit operations, prize fulfillment, production deployment or CSP/security headers.
+- English and Persian interface, RTL switching, game catalogue and favorites.
+- Supabase Auth flows for email/password sign-in, account creation, email confirmation, password reset, and Google OAuth (requires provider configuration).
+- Local Tic Tac Toe practice against an optimal bot; practice awards no XP, rank, coins or prizes.
+- Server-authoritative ranked Tic Tac Toe: random matchmaking, move/turn validation, result resolution, XP/rating updates and recent-opponent rematch suppression.
+- Private Tic Tac Toe rooms with one-time invite codes, invite hashes at rest, room creation/join/leave APIs and no rewards or rating changes.
+- PostgreSQL row-level security policies, member-scoped wallet/ledger reads, and a transactional idempotent server-only coin operation.
+- A member-self Edge Function that returns only the authenticated member's records while preserving RLS.
+
+## Not yet a live production service
+
+No Supabase project is currently wired into this repository, and no production database migration or Edge Function has been deployed. Therefore real sign-in, matchmaking, rooms and private accounts cannot work from a deployed website until project URL, keys, Auth providers, migrations, Edge Function secrets and hosting configuration are supplied and tested.
+
+Also not live: other game engines, real-time WebSocket transport (current match state uses polling), crypto deposit confirmation, paid entry, tournaments with awards, prize fulfillment, external wallet transfers and production monitoring. The catalog and UI must not be treated as proof that those features are launched.
 
 ## Security
 
-See docs/SECURITY_MODEL.md and supabase/README.md. The migration scopes member data with RLS and denies client-side writes to authoritative wallet, match, room, tournament and payment state. It requires a Supabase project, schema review, two-user isolation tests and server functions before it can be considered operational.
+See docs/SECURITY_MODEL.md and supabase/README.md. RLS and server-owned RPCs are tested in CI with PostgreSQL, including cross-member isolation and ranked/private Tic Tac Toe match integrity. CI tests do not replace a reviewed test against the actual Supabase project before launch.
 
-Never place passwords, service-role keys, wallet seed phrases or private keys in frontend code or source control. Do not enable rewards or paid-entry tournaments until their server-side controls and market eligibility are approved.
+Never place passwords, service-role keys, wallet seed phrases or private keys in frontend code or source control. Do not enable deposits, paid entry or convertible prizes until server-side payment verification and market-specific legal review are complete.
