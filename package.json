@@ -11,10 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "lucide-react": "^0.468.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@supabase/supabase-js": "2.118.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.8.0",
