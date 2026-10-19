@@ -1316,9 +1316,98 @@ export default function App() {
 
           {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:Activity, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
 
-          {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
+          {page === "friends" && <section className="social-page">
+            <div className="social-feature-panel">
+              <div className="social-feature-icon"><Users size={26} /></div>
+              <div className="social-feature-copy"><span className="section-eyebrow">{t("friendsTitle")}</span><h2>{t("friendSearchTitle")}</h2><p>{t("friendsSub")}</p></div>
+              <div className="social-feature-lock"><LockKeyhole size={16} />{t("secureNote")}</div>
+            </div>
+            {!session && <div className="social-login-panel"><div className="social-login-icon"><LockKeyhole size={24} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
+            {session && <>
+              <section className="social-search-card">
+                <div className="social-card-heading"><div><span className="section-eyebrow">{t("friendsTitle")}</span><h2>{t("friendSearchTitle")}</h2></div><span className="social-search-symbol"><Search size={18} /></span></div>
+                <p>{t("friendSearchBody")}</p>
+                <form className="social-search-form" onSubmit={event => void sendFriendRequest(event)}>
+                  <label className="social-username-field"><span>{t("friendUsername")}</span><input aria-label={t("friendUsername")} name="username" type="text" autoComplete="off" spellCheck={false} minLength={3} maxLength={24} pattern="[A-Za-z0-9_]{3,24}" placeholder="player_123abc" value={socialQuery} onChange={event => setSocialQuery(event.target.value)} required /></label>
+                  <button className="btn-gradient" type="submit" disabled={socialBusy || !socialQuery.trim()}>{socialBusy ? t("loading") : t("sendRequest")}<ArrowRight size={15} /></button>
+                </form>
+                <div className="social-privacy-note"><ShieldCheck size={14} />{t("secureNote")}</div>
+              </section>
+              {socialError && <p className="private-room-error" role="alert">{socialError}</p>}
+              <section className="social-section">
+                <div className="social-section-heading"><div><span className="section-eyebrow">{t("incomingRequests")}</span><h2>{t("incomingRequests")}</h2></div><span className="social-count">{socialRows.filter(row => row.relationship_type === "incoming").length}</span></div>
+                {socialRows.filter(row => row.relationship_type === "incoming").length === 0
+                  ? <div className="social-empty-row">{socialBusy ? t("loading") : t("noIncomingRequests")}</div>
+                  : <div className="social-list">{socialRows.filter(row => row.relationship_type === "incoming").map(relationship => <article className="social-row" key={relationship.request_id}>
+                      <span className="social-avatar">{(relationship.other_display_name || relationship.other_username).charAt(0).toLocaleUpperCase(locale)}</span>
+                      <div className="social-person"><b>{relationship.other_display_name || relationship.other_username}</b><span>@{relationship.other_username}</span></div>
+                      <span className="social-state state-incoming">{t("requestIncoming")}</span>
+                      <div className="social-row-actions"><button className="btn-gradient" disabled={socialBusy} onClick={() => void respondToFriendRequest(relationship,"accepted")}><Check size={14} />{t("acceptRequest")}</button><button className="btn-outline" disabled={socialBusy} onClick={() => void respondToFriendRequest(relationship,"declined")}>{t("declineRequest")}</button><button className="btn-ghost" disabled={socialBusy} onClick={() => void respondToFriendRequest(relationship,"blocked")}>{t("blockRequest")}</button></div>
+                    </article>)}</div>}
+              </section>
+              <section className="social-section">
+                <div className="social-section-heading"><div><span className="section-eyebrow">{t("yourFriends")}</span><h2>{t("yourFriends")}</h2></div><span className="social-count">{socialRows.filter(row => row.relationship_type === "friend").length}</span></div>
+                {socialRows.filter(row => row.relationship_type === "friend").length === 0
+                  ? <div className="social-empty-row">{socialBusy ? t("loading") : t("noFriendsYet")}</div>
+                  : <div className="social-list">{socialRows.filter(row => row.relationship_type === "friend").map(relationship => <article className="social-row" key={relationship.request_id}>
+                      <span className="social-avatar friend-avatar">{(relationship.other_display_name || relationship.other_username).charAt(0).toLocaleUpperCase(locale)}</span>
+                      <div className="social-person"><b>{relationship.other_display_name || relationship.other_username}</b><span>@{relationship.other_username}</span></div>
+                      <span className="social-state state-friend"><Check size={13} />{t("friendStatus")}</span>
+                    </article>)}</div>}
+              </section>
+              <section className="social-section">
+                <div className="social-section-heading"><div><span className="section-eyebrow">{t("outgoingRequests")}</span><h2>{t("outgoingRequests")}</h2></div><span className="social-count">{socialRows.filter(row => row.relationship_type === "outgoing").length}</span></div>
+                {socialRows.filter(row => row.relationship_type === "outgoing").length === 0
+                  ? <div className="social-empty-row">{socialBusy ? t("loading") : t("noOutgoingRequests")}</div>
+                  : <div className="social-list">{socialRows.filter(row => row.relationship_type === "outgoing").map(relationship => <article className="social-row" key={relationship.request_id}>
+                      <span className="social-avatar">{(relationship.other_display_name || relationship.other_username).charAt(0).toLocaleUpperCase(locale)}</span>
+                      <div className="social-person"><b>{relationship.other_display_name || relationship.other_username}</b><span>@{relationship.other_username}</span></div>
+                      <span className="social-state state-outgoing">{t("requestOutgoing")}</span>
+                    </article>)}</div>}
+              </section>
+              <section className="social-section">
+                <div className="social-section-heading"><div><span className="section-eyebrow">{t("blockedPeople")}</span><h2>{t("blockedPeople")}</h2></div><span className="social-count">{socialRows.filter(row => row.relationship_type === "blocked").length}</span></div>
+                {socialRows.filter(row => row.relationship_type === "blocked").length === 0
+                  ? <div className="social-empty-row">{socialBusy ? t("loading") : t("noBlockedPeople")}</div>
+                  : <div className="social-list">{socialRows.filter(row => row.relationship_type === "blocked").map(relationship => <article className="social-row" key={relationship.request_id}>
+                      <span className="social-avatar blocked-avatar"><ShieldCheck size={17} /></span>
+                      <div className="social-person"><b>{relationship.other_display_name || relationship.other_username}</b><span>@{relationship.other_username}</span></div>
+                      <span className="social-state state-blocked">{t("blockedStatus")}</span>
+                    </article>)}</div>}
+              </section>
+            </>}
+          </section>}
 
-          {page === "leaderboard" && <EmptyState icon={Trophy} title={t("rankTitle")} text={t("rankSub")} />}
+          {page === "leaderboard" && <section className="leaderboard-page">
+            <div className="leaderboard-hero">
+              <div className="leaderboard-hero-icon"><Trophy size={29} /></div>
+              <div className="leaderboard-hero-copy"><span className="section-eyebrow">{t("rankTitle")}</span><h2>{t("rankTitle")}</h2><p>{t("rankSub")}</p></div>
+              <span className="leaderboard-game-pill"><Grid2X2 size={14} />Tic Tac Toe</span>
+            </div>
+            {!session && <div className="social-login-panel"><div className="social-login-icon"><LockKeyhole size={24} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
+            {session && <>
+              <div className="leaderboard-toolbar"><div><b>{t("rankTitle")}</b><span>{t("leaderboardHint")}</span></div><button className="btn-ghost" disabled={leaderboardBusy} onClick={() => setLeaderboardRefresh(value => value + 1)}><Activity size={15} />{leaderboardBusy ? t("loading") : t("leaderboardRefresh")}</button></div>
+              {leaderboardError && <p className="private-room-error" role="alert">{leaderboardError}</p>}
+              {leaderboardBusy && leaderboardRows.length === 0
+                ? <div className="leaderboard-empty"><span className="online-loading-spinner" /><p>{t("leaderboardLoading")}</p></div>
+                : leaderboardRows.length === 0
+                  ? <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("leaderboardEmpty")}</h3><p>{t("leaderboardHint")}</p></div>
+                  : <div className="leaderboard-table-wrap">
+                    <div className="leaderboard-table-header"><span>{t("leaderboardRank")}</span><span>{t("member")}</span><span>{t("leaderboardRating")}</span><span>{t("leaderboardXp")}</span><span>{t("leaderboardMatches")}</span><span>{t("leaderboardWins")}</span></div>
+                    <div className="leaderboard-list">{leaderboardRows.map(entry => {
+                      const rank = Number(entry.rank_position);
+                      return <article className={"leaderboard-row " + (rank <= 3 ? "is-top" : "")} key={entry.username}>
+                        <span className={"leaderboard-rank rank-" + Math.min(rank,3)}>{rank === 1 ? "♛" : rank === 2 ? "Ⅱ" : rank === 3 ? "Ⅲ" : "#" + rank}</span>
+                        <div className="leaderboard-player"><span className="leaderboard-avatar">{(entry.display_name || entry.username).charAt(0).toLocaleUpperCase(locale)}</span><div><b>{entry.display_name || entry.username}</b><small>@{entry.username}</small></div></div>
+                        <b className="leaderboard-value rating-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.competitive_rating))}</b>
+                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.xp))}</span>
+                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.matches_played))}</span>
+                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.wins))}</span>
+                      </article>;
+                    })}</div>
+                  </div>}
+            </>}
+          </section>}
 
           {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
 
