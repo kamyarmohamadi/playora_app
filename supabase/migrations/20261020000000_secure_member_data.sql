@@ -795,7 +795,7 @@ grant select on public.matchmaking_queue to authenticated;
 grant select (id, game_id, status, max_players, expires_at, created_at, match_id)
   on public.private_rooms to authenticated;
 grant select on public.room_members to authenticated;
-grant select on public.friend_requests to authenticated;
+-- Friend relationship rows are exposed only through security-definer RPCs, not direct table reads.
 grant select on public.tournaments to authenticated;
 grant select on public.tournament_entries to authenticated;
 grant select on public.deposit_requests to authenticated;
