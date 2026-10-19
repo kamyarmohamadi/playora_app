@@ -86,6 +86,15 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByText(/Private play is free\. No coins, XP, rating or prizes are awarded/).length).toBeGreaterThan(0);
   });
 
+  it("keeps profile statistics private in guest mode", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Profile" }));
+    expect(screen.getByRole("heading", { name: "Player profile" })).toBeInTheDocument();
+    expect(screen.getByText("Account required")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Recent ranked matches" })).not.toBeInTheDocument();
+  });
+
   it("keeps friend search and requests behind authentication", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Friends" }));
