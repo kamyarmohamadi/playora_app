@@ -91,7 +91,7 @@ describe("Playora global app shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Profile" }));
     expect(screen.getByRole("heading", { name: "Player profile" })).toBeInTheDocument();
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Sign in", exact: true }).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByRole("button").filter(button => button.getAttribute("aria-label") === "Sign in" || (button.textContent ?? "").trim() === "Sign in").length).toBeGreaterThanOrEqual(2);
     expect(screen.queryByRole("heading", { name: "Recent ranked matches" })).not.toBeInTheDocument();
   });
 
