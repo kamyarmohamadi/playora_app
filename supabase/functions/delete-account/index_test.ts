@@ -80,3 +80,41 @@ Deno.test("unsupported methods fail before any backend secret is required", asyn
   assert(response.status === 405, "Expected HTTP 405");
   assert(response.headers.get("allow") === "POST, OPTIONS", "Expected an explicit Allow header");
 });
+
+
+Deno.test("rejects unapproved origins and missing authentication without upstream calls", async () => {
+  const names = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "PLAYORA_ALLOWED_ORIGINS"];
+  const saved = new Map(names.map(name => [name, Deno.env.get(name)]));
+  Deno.env.set("SUPABASE_URL", "https://project.example.supabase.co");
+  Deno.env.set("SUPABASE_ANON_KEY", "test-publishable-key");
+  Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-role-key");
+  Deno.env.set("PLAYORA_ALLOWED_ORIGINS", "https://app.playora.example");
+  try {
+    const disallowedOrigin = await handleDeleteAccount(new Request("https://project.example.supabase.co/functions/v1/delete-account", {
+      method: "POST",
+      headers: { origin: "https://attacker.example", "content-type": "application/json" },
+      body: '{"confirmation":"DELETE"}',
+    }));
+    assert(disallowedOrigin.status === 403, "Unapproved browser origin must be rejected");
+
+    const preflight = await handleDeleteAccount(new Request("https://project.example.supabase.co/functions/v1/delete-account", {
+      method: "OPTIONS",
+      headers: { origin: "https://app.playora.example" },
+    }));
+    assert(preflight.status === 204, "Allowlisted preflight should succeed");
+    assert(preflight.headers.get("access-control-allow-origin") === "https://app.playora.example", "CORS must echo only the allowlisted origin");
+
+    const missingBearer = await handleDeleteAccount(new Request("https://project.example.supabase.co/functions/v1/delete-account", {
+      method: "POST",
+      headers: { origin: "https://app.playora.example", "content-type": "application/json" },
+      body: '{"confirmation":"DELETE"}',
+    }));
+    assert(missingBearer.status === 401, "A recent-login token is required before upstream calls");
+  } finally {
+    for (const name of names) {
+      const value = saved.get(name);
+      if (value === undefined) Deno.env.delete(name);
+      else Deno.env.set(name, value);
+    }
+  }
+});
