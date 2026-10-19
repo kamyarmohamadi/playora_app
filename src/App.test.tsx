@@ -86,6 +86,25 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByText(/Private play is free\. No coins, XP, rating or prizes are awarded/).length).toBeGreaterThan(0);
   });
 
+  it("keeps friend search and requests behind authentication", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Friends" }));
+    expect(screen.getByRole("heading", { name: "Find your people" })).toBeInTheDocument();
+    expect(screen.getByText(/Email addresses are never searchable/)).toBeInTheDocument();
+    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Player username" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send request" })).not.toBeInTheDocument();
+  });
+
+  it("keeps leaderboard data private until sign-in", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+    expect(screen.getAllByRole("heading", { name: "The leaderboard" }).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Refresh" })).not.toBeInTheDocument();
+    expect(screen.queryByText("@player_000000")).not.toBeInTheDocument();
+  });
+
   it("shows notices without claiming online play is active", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
