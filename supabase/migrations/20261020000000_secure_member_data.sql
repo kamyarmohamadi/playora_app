@@ -256,6 +256,14 @@ alter table public.tournament_entries enable row level security;
 alter table public.deposit_requests enable row level security;
 alter table public.security_audit_events enable row level security;
 
+-- Make the default posture explicit even if project-level default privileges change.
+revoke all on table
+  public.member_profiles, public.member_preferences, public.coin_wallets, public.coin_ledger,
+  public.catalog_games, public.member_favorites, public.matches, public.match_participants,
+  public.private_rooms, public.private_room_secrets, public.room_members, public.friend_requests,
+  public.tournaments, public.tournament_entries, public.deposit_requests, public.security_audit_events
+from anon, authenticated;
+
 -- Explicit grants: table ownership and privileged service access stay server-side.
 grant usage on schema public to authenticated;
 grant select on public.member_profiles to authenticated;
