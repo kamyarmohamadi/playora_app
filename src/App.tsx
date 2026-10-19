@@ -7,6 +7,8 @@ import { gameList } from "./catalog/gameRegistry";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import { applyTicTacToeMove, chooseTicTacToeBotMove, createTicTacToeState } from "./games/tictactoe";
 import type { TicTacToeMark, TicTacToeState } from "./games/tictactoe";
+import { applyCheckersMove, chooseCheckersBotMove, createCheckersState, getCheckersLegalMoves } from "./games/checkers";
+import type { CheckersState } from "./games/checkers";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords,
   Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
@@ -61,7 +63,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "Sign in", signUp: "Create account", signOut: "Sign out", resetPassword: "Reset password", forgotPassword: "Forgot password?", backToSignIn: "Back to sign in",
     email: "Email address", password: "Password", displayName: "Display name", continueWithGoogle: "Continue with Google", authUnavailable: "Account services are not connected yet. Configure the Supabase project URL and publishable key, then enable Google OAuth and email redirects.",
     authFailure: "We couldn’t complete that request. Check your details or try again.", checkInbox: "Check your inbox for a confirmation link to finish creating your account.", resetSent: "If an account exists for this email, password reset instructions have been sent.",
-    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", accountDangerTitle: "Danger zone", accountDangerBody: "Permanently delete your Playora account and its profile data. This cannot be undone.", deleteAccountNotEnabled: "Account deletion becomes available after the secure server endpoint is configured and enabled.", deleteAccount: "Delete account", deleteAccountConfirm: "Confirm account deletion", deleteAccountInstruction: "This permanently removes your account. Any active matches are cancelled without rewards.", deleteAccountWarning: "Enter DELETE to confirm. For safety, sign in again if your current session is older than 10 minutes.", deleteAccountBusy: "Deleting account…", deleteAccountSuccess: "Your account has been deleted.", deleteAccountFailed: "Account deletion could not be completed. Sign in again and retry, or contact support.", typeDelete: "Type DELETE", profileXp: "Experience", recentMatches: "Recent ranked matches", noRecentMatches: "No completed ranked matches yet.", editProfile: "Edit profile", saveProfile: "Save changes", profileUpdated: "Profile updated.", profileUpdateFailed: "Profile could not be updated. Please try again.", cancel: "Cancel", resultWin: "Win", resultLoss: "Loss", resultDraw: "Draw", resultCompleted: "Completed", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
+    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", accountDangerTitle: "Danger zone", accountDangerBody: "Permanently delete your Playora account and its profile data. This cannot be undone.", deleteAccountNotEnabled: "Account deletion becomes available after the secure server endpoint is configured and enabled.", deleteAccount: "Delete account", deleteAccountConfirm: "Confirm account deletion", deleteAccountInstruction: "This permanently removes your account. Any active matches are cancelled without rewards.", deleteAccountWarning: "Enter DELETE to confirm. For safety, sign in again if your current session is older than 10 minutes.", deleteAccountBusy: "Deleting account…", deleteAccountSuccess: "Your account has been deleted.", deleteAccountFailed: "Account deletion could not be completed. Sign in again and retry, or contact support.", typeDelete: "Type DELETE", profileXp: "Experience", recentMatches: "Recent ranked matches", noRecentMatches: "No completed ranked matches yet.", editProfile: "Edit profile", saveProfile: "Save changes", profileUpdated: "Profile updated.", profileUpdateFailed: "Profile could not be updated. Please try again.", cancel: "Cancel", resultWin: "Win", resultLoss: "Loss", resultDraw: "Draw", resultCompleted: "Completed", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell", checkersPracticeTitle: "Checkers · Practice vs Bot", checkersRulesNote: "American checkers: captures are compulsory, multi-jumps continue the same turn, and crowning ends the turn. Draw after 80 consecutive plies without a capture. No rewards.", checkersYourTurn: "Your turn · Red", checkersBotTurn: "Playora Bot is thinking · Black", checkersContinueCapture: "Continue the capture sequence", checkersHumanWon: "You won the checkers game!", checkersBotWon: "Playora Bot won this game.", checkersDraw: "Draw · 80 quiet plies", checkersSquare: "Square", checkersRedPiece: "Red piece", checkersBlackPiece: "Black piece", checkersKing: "King", checkersBoardLabel: "Checkers board"
   },
   fa: {
     navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
@@ -96,7 +98,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "ورود", signUp: "ساخت حساب", signOut: "خروج از حساب", resetPassword: "بازنشانی رمز عبور", forgotPassword: "رمزت را فراموش کرده‌ای؟", backToSignIn: "بازگشت به ورود",
     email: "نشانی ایمیل", password: "رمز عبور", displayName: "نام نمایشی", continueWithGoogle: "ادامه با گوگل", authUnavailable: "سرویس حساب هنوز متصل نیست. آدرس پروژه و کلید عمومی Supabase را تنظیم کن و ورود گوگل و مسیرهای تأیید ایمیل را فعال کن.",
     authFailure: "درخواست انجام نشد. اطلاعات را بررسی کن یا دوباره تلاش کن.", checkInbox: "برای تکمیل ساخت حساب، ایمیل خود را برای پیوند تأیید بررسی کن.", resetSent: "اگر حسابی با این ایمیل وجود داشته باشد، دستور بازنشانی رمز ارسال شده است.",
-    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", accountDangerTitle: "بخش خطرناک", accountDangerBody: "حساب پلیورا و اطلاعات پروفایل تو برای همیشه حذف می‌شود. این کار قابل بازگشت نیست.", deleteAccountNotEnabled: "پس از پیکربندی و فعال‌سازی امن سرویس سمت سرور، امکان حذف حساب فعال می‌شود.", deleteAccount: "حذف حساب", deleteAccountConfirm: "تأیید حذف حساب", deleteAccountInstruction: "این عملیات حساب را برای همیشه حذف می‌کند. مسابقه‌های فعال بدون جایزه لغو می‌شوند.", deleteAccountWarning: "برای تأیید DELETE را وارد کن. برای امنیت، اگر بیش از ۱۰ دقیقه از ورودت گذشته، دوباره وارد حساب شو.", deleteAccountBusy: "در حال حذف حساب…", deleteAccountSuccess: "حساب تو حذف شد.", deleteAccountFailed: "حذف حساب انجام نشد. دوباره وارد شو و تلاش کن یا با پشتیبانی تماس بگیر.", typeDelete: "عبارت DELETE را وارد کن", profileXp: "تجربه", recentMatches: "مسابقه‌های رتبه‌دار اخیر", noRecentMatches: "هنوز مسابقه رتبه‌دار تکمیل‌شده‌ای نداری.", editProfile: "ویرایش پروفایل", saveProfile: "ذخیره تغییرات", profileUpdated: "پروفایل به‌روزرسانی شد.", profileUpdateFailed: "به‌روزرسانی پروفایل انجام نشد. دوباره تلاش کن.", cancel: "انصراف", resultWin: "برد", resultLoss: "باخت", resultDraw: "مساوی", resultCompleted: "تکمیل‌شده", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
+    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", accountDangerTitle: "بخش خطرناک", accountDangerBody: "حساب پلیورا و اطلاعات پروفایل تو برای همیشه حذف می‌شود. این کار قابل بازگشت نیست.", deleteAccountNotEnabled: "پس از پیکربندی و فعال‌سازی امن سرویس سمت سرور، امکان حذف حساب فعال می‌شود.", deleteAccount: "حذف حساب", deleteAccountConfirm: "تأیید حذف حساب", deleteAccountInstruction: "این عملیات حساب را برای همیشه حذف می‌کند. مسابقه‌های فعال بدون جایزه لغو می‌شوند.", deleteAccountWarning: "برای تأیید DELETE را وارد کن. برای امنیت، اگر بیش از ۱۰ دقیقه از ورودت گذشته، دوباره وارد حساب شو.", deleteAccountBusy: "در حال حذف حساب…", deleteAccountSuccess: "حساب تو حذف شد.", deleteAccountFailed: "حذف حساب انجام نشد. دوباره وارد شو و تلاش کن یا با پشتیبانی تماس بگیر.", typeDelete: "عبارت DELETE را وارد کن", profileXp: "تجربه", recentMatches: "مسابقه‌های رتبه‌دار اخیر", noRecentMatches: "هنوز مسابقه رتبه‌دار تکمیل‌شده‌ای نداری.", editProfile: "ویرایش پروفایل", saveProfile: "ذخیره تغییرات", profileUpdated: "پروفایل به‌روزرسانی شد.", profileUpdateFailed: "به‌روزرسانی پروفایل انجام نشد. دوباره تلاش کن.", cancel: "انصراف", resultWin: "برد", resultLoss: "باخت", resultDraw: "مساوی", resultCompleted: "تکمیل‌شده", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه", checkersPracticeTitle: "چکرز · تمرین با ربات", checkersRulesNote: "قواعد چکرز آمریکایی: گرفتن مهره اجباری است، پرش‌های زنجیره‌ای در همان نوبت ادامه می‌یابند و شاه‌شدن نوبت را تمام می‌کند. پس از ۸۰ نیم‌نوبت بدون گرفتن مهره، بازی مساوی است. جایزه‌ای ندارد.", checkersYourTurn: "نوبت تو · قرمز", checkersBotTurn: "ربات پلیورا در حال فکر کردن است · سیاه", checkersContinueCapture: "دنبالهٔ گرفتن مهره را کامل کن", checkersHumanWon: "تو بازی چکرز را بردی!", checkersBotWon: "ربات پلیورا این بازی را برد.", checkersDraw: "مساوی · ۸۰ نیم‌نوبت بدون گرفتن مهره", checkersSquare: "خانه", checkersRedPiece: "مهره قرمز", checkersBlackPiece: "مهره سیاه", checkersKing: "شاه", checkersBoardLabel: "صفحه چکرز"
   }
 };
 
@@ -216,6 +218,8 @@ export default function App() {
   const [recentMatches, setRecentMatches] = useState<RankedHistoryRow[]>([]);
   const [activeGame, setActiveGame] = useState<Game | null>(null);
   const [ticTacToeState, setTicTacToeState] = useState<TicTacToeState | null>(null);
+  const [checkersState, setCheckersState] = useState<CheckersState | null>(null);
+  const [selectedCheckersFrom, setSelectedCheckersFrom] = useState<number | null>(null);
   const [onlineStatus, setOnlineStatus] = useState<"idle" | "queueing" | "waiting" | "matched" | "error">("idle");
   const [onlineError, setOnlineError] = useState("");
   const [onlineBusy, setOnlineBusy] = useState(false);
@@ -432,6 +436,20 @@ export default function App() {
     });
     return () => { active = false; };
   }, [session?.user.id]);
+
+  useEffect(() => {
+    if (activeGame?.id !== "checkers" || !checkersState || checkersState.status !== "playing" || checkersState.currentPlayer !== "black") return;
+    const timer = window.setTimeout(() => {
+      setCheckersState(current => {
+        if (!current || current.status !== "playing" || current.currentPlayer !== "black") return current;
+        const move = chooseCheckersBotMove(current);
+        if (!move) return { ...current, status: "won", winner: "red", forcedFrom: null };
+        return applyCheckersMove(current, move.from, move.to);
+      });
+      setSelectedCheckersFrom(null);
+    }, 360);
+    return () => window.clearTimeout(timer);
+  }, [activeGame?.id, checkersState]);
 
   useEffect(() => {
     if (activeGame?.id !== "tictactoe" || !ticTacToeState || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "O") return;
@@ -959,6 +977,17 @@ export default function App() {
     if (game.id === "tictactoe") {
       setToast("");
       setTicTacToeState(createTicTacToeState());
+      setCheckersState(null);
+      setSelectedCheckersFrom(null);
+      setActiveGame(game);
+      setMobileNavOpen(false);
+      return;
+    }
+    if (game.id === "checkers") {
+      setToast("");
+      setCheckersState(createCheckersState());
+      setSelectedCheckersFrom(null);
+      setTicTacToeState(null);
       setActiveGame(game);
       setMobileNavOpen(false);
       return;
@@ -969,10 +998,45 @@ export default function App() {
     setTicTacToeState(current => current ? applyTicTacToeMove(current, index) : current);
   };
   const restartTicTacToe = () => setTicTacToeState(createTicTacToeState());
-  const closeTicTacToe = () => {
+  const restartCheckers = () => {
+    setCheckersState(createCheckersState());
+    setSelectedCheckersFrom(null);
+  };
+  const closePracticeGame = () => {
     setActiveGame(null);
     setTicTacToeState(null);
+    setCheckersState(null);
+    setSelectedCheckersFrom(null);
   };
+  const makeCheckersMove = (index: number) => {
+    setCheckersState(current => {
+      if (!current || current.status !== "playing" || current.currentPlayer !== "red") return current;
+      const legalMoves = getCheckersLegalMoves(current);
+      const selectedMove = selectedCheckersFrom === null ? undefined :
+        legalMoves.find(move => move.from === selectedCheckersFrom && move.to === index);
+      if (selectedMove) {
+        const next = applyCheckersMove(current, selectedMove.from, selectedMove.to);
+        setSelectedCheckersFrom(next.forcedFrom);
+        return next;
+      }
+      const piece = current.board[index];
+      if (piece?.player === "red" && legalMoves.some(move => move.from === index)) {
+        setSelectedCheckersFrom(index);
+        return current;
+      }
+      setSelectedCheckersFrom(current.forcedFrom);
+      return current;
+    });
+  };
+  const legalCheckersMoves = checkersState ? getCheckersLegalMoves(checkersState) : [];
+  const selectedCheckersDestinations = new Set(
+    legalCheckersMoves.filter(move => move.from === selectedCheckersFrom).map(move => move.to)
+  );
+  const checkersStatus = !checkersState ? "" :
+    checkersState.status === "won" ? (checkersState.winner === "red" ? t("checkersHumanWon") : t("checkersBotWon")) :
+    checkersState.status === "draw" ? t("checkersDraw") :
+    checkersState.forcedFrom !== null ? t("checkersContinueCapture") :
+    checkersState.currentPlayer === "red" ? t("checkersYourTurn") : t("checkersBotTurn");
   const ticTacToeStatus = !ticTacToeState ? "" :
     ticTacToeState.status === "won" ? (ticTacToeState.winner === "X" ? t("youWin") : t("botWins")) :
     ticTacToeState.status === "draw" ? t("draw") :
@@ -1660,11 +1724,11 @@ export default function App() {
         </main>
       </div>
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
-      {activeGame?.id === "tictactoe" && ticTacToeState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeTicTacToe(); }}>
+      {activeGame?.id === "tictactoe" && ticTacToeState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closePracticeGame(); }}>
         <section className="game-modal" role="dialog" aria-modal="true" aria-labelledby="ttt-title">
           <div className="game-modal-top">
             <span className="practice-badge"><Dices size={14} />{t("practiceTitle")}</span>
-            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closeTicTacToe}><X size={18} /></button>
+            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closePracticeGame}><X size={18} /></button>
           </div>
           <h2 id="ttt-title">{activeGame.title[locale]}</h2>
           <p className="game-practice-note"><ShieldCheck size={15} />{t("practiceNoRewards")}</p>
@@ -1673,7 +1737,7 @@ export default function App() {
             {ticTacToeState.board.map((mark, index) => <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={mark !== null || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "X"} onClick={() => makeTicTacToeMove(index)}>{mark && <span>{mark}</span>}</button>)}
           </div>
           <div className={"ttt-status " + (ticTacToeState.status !== "playing" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{ticTacToeStatus}</div>
-          <div className="game-modal-actions"><button type="button" className="btn-ghost" onClick={closeTicTacToe}>{t("closeGame")}</button><button type="button" className="btn-gradient" onClick={restartTicTacToe}><Activity size={15} />{t("restartGame")}</button></div>
+          <div className="game-modal-actions"><button type="button" className="btn-ghost" onClick={closePracticeGame}>{t("closeGame")}</button><button type="button" className="btn-gradient" onClick={restartTicTacToe}><Activity size={15} />{t("restartGame")}</button></div>
         </section>
       </div>}
       {deleteDialogOpen && session && <div className="auth-backdrop deletion-backdrop" role="presentation" onMouseDown={event => { if (!deleteBusy && event.target === event.currentTarget) setDeleteDialogOpen(false); }}>
