@@ -534,7 +534,7 @@ export default function App() {
 
           {page === "games" && <>
             <div className="catalog-toolbar"><div className="category-tabs" role="group" aria-label={t("mode")}>{categories.map(item => <button key={item.id} className={category === item.id ? "selected" : ""} onClick={() => setCategory(item.id)}>{t(item.key)}</button>)}</div><button className={`favorites-filter ${favoritesOnly ? "selected" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(value => !value)}><Heart size={15} fill={favoritesOnly ? "currentColor" : "none"} />{t("favorites")}</button></div>
-            {filteredGames.length > 0 ? <div className="games-grid catalog-grid">{filteredGames.map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={notifyGameNotReady} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}</div> : <EmptyState icon={Search} title={t("emptySearch")} text={t("clearSearch")} />}
+            {filteredGames.length > 0 ? <div className="games-grid catalog-grid">{filteredGames.map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={openGame} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}</div> : <EmptyState icon={Search} title={t("emptySearch")} text={t("clearSearch")} />}
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
           </>}
 
@@ -553,6 +553,22 @@ export default function App() {
         </main>
       </div>
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
+      {activeGame?.id === "tictactoe" && ticTacToeState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closeTicTacToe(); }}>
+        <section className="game-modal" role="dialog" aria-modal="true" aria-labelledby="ttt-title">
+          <div className="game-modal-top">
+            <span className="practice-badge"><Dices size={14} />{t("practiceTitle")}</span>
+            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closeTicTacToe}><X size={18} /></button>
+          </div>
+          <h2 id="ttt-title">{activeGame.title[locale]}</h2>
+          <p className="game-practice-note"><ShieldCheck size={15} />{t("practiceNoRewards")}</p>
+          <div className="ttt-player-strip"><span className="ttt-player human"><b>X</b><span>{locale === "en" ? "You" : "تو"}</span></span><span className="ttt-vs">VS</span><span className="ttt-player bot"><b>O</b><span>{locale === "en" ? "Playora Bot" : "ربات پلیورا"}</span></span></div>
+          <div className="ttt-board" aria-label={t("gameBoard")}>
+            {ticTacToeState.board.map((mark, index) => <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={mark !== null || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "X"} onClick={() => makeTicTacToeMove(index)}>{mark && <span>{mark}</span>}</button>)}
+          </div>
+          <div className={"ttt-status " + (ticTacToeState.status !== "playing" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{ticTacToeStatus}</div>
+          <div className="game-modal-actions"><button type="button" className="btn-ghost" onClick={closeTicTacToe}>{t("closeGame")}</button><button type="button" className="btn-gradient" onClick={restartTicTacToe}><Activity size={15} />{t("restartGame")}</button></div>
+        </section>
+      </div>}
       {authOpen && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
         <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
           <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span><button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button></div>
