@@ -152,3 +152,51 @@
 @media(max-width:1050px){.online-content-grid{grid-template-columns:minmax(0,1fr)}.online-rules-panel ul{grid-template-columns:repeat(2,minmax(0,1fr))}.online-rules-panel li p{font-size:9px}}
 @media(max-width:700px){.online-page{gap:11px}.online-feature-card{grid-template-columns:1fr;min-height:0;border-radius:15px}.online-feature-copy{padding:18px 16px 0}.online-feature-copy h2{font-size:19px;margin:12px 0 6px}.online-feature-copy>p{font-size:9px}.online-feature-points{gap:6px;margin-top:13px}.online-feature-points span{font-size:7px;padding:6px}.online-feature-copy .online-small-note{font-size:7px;margin-top:9px}.online-feature-art{min-height:168px}.online-orbit{width:220px;height:130px}.online-orbit.orbit-b{width:175px;height:108px}.online-versus span{width:49px;height:49px;font-size:21px;border-radius:14px}.online-match-panel,.online-rules-panel{padding:13px;border-radius:13px}.online-panel-heading{gap:6px;margin-bottom:10px}.online-panel-heading h2{font-size:13px}.online-state-pill{font-size:7px;padding:5px;max-width:50%}.online-login-prompt,.online-queue-state,.online-loading-state{min-height:245px;padding:13px}.online-player-row{gap:3px}.online-player{gap:5px;padding:5px}.online-player-mark{width:29px;height:29px;border-radius:8px}.online-player b{font-size:8px}.online-player small{font-size:6px}.online-ttt-board{width:min(100%,300px);gap:6px;padding:7px}.online-match-footer{font-size:7px}.online-match-footer .btn-gradient{font-size:7px;padding-inline:8px}.online-rules-panel h2{font-size:14px}.online-rules-panel ul{grid-template-columns:1fr;gap:10px}.online-rules-panel li p{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.queue-scan,.online-loading-spinner{animation:none}}
+
+
+/* Private rooms */
+.private-rooms-page{display:grid;gap:18px}
+.private-room-login{display:grid;justify-items:center;gap:12px;max-width:540px;margin:20px auto;padding:35px 24px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,#101d37,#081225);text-align:center}
+.private-room-symbol{display:grid;place-items:center;width:54px;height:54px;border:1px solid #31527d;border-radius:16px;background:#102846;color:#7be8ff;box-shadow:0 0 28px #24c5ff13}
+.private-room-login h2{margin:0;color:#f5f8ff;font-size:22px}
+.private-room-login p{max-width:340px;margin:0 0 6px;color:#8ea4c5;font-size:10px;line-height:1.9}
+.private-room-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.private-room-action-card{display:flex;min-width:0;flex-direction:column;align-items:flex-start;gap:9px;padding:20px;border:1px solid var(--line);border-radius:16px;background:radial-gradient(ellipse at 100% 0%,#2569a71a,transparent 48%),linear-gradient(145deg,#0c1830,#081225)}
+.private-room-card-icon{display:grid;place-items:center;width:39px;height:39px;border:1px solid #2d5679;border-radius:12px;background:#102641;color:#75e5ff}
+.private-room-action-card .section-eyebrow{margin-top:3px;color:#7d91b2}
+.private-room-action-card h2{margin:0;color:#f0f5ff;font-size:16px;letter-spacing:-.2px}
+.private-room-action-card p{margin:0 0 5px;color:#8298b9;font-size:9px;line-height:1.9}
+.private-room-action-card>.btn-gradient{min-height:38px;margin-top:auto;font-size:9px}
+.private-room-join-form{display:grid;width:100%;gap:9px;margin-top:auto}
+.private-room-join-form label{color:#9eb1d0;font-size:9px;font-weight:700}
+.private-room-join-form input{width:100%;min-height:39px;padding:0 10px;border:1px solid #2a4163;border-radius:9px;outline:none;background:#061021;color:#f2f7ff;font:11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.4px}
+.private-room-join-form input:focus{border-color:#3cbadf;box-shadow:0 0 0 3px #39d4ff13}
+.private-room-join-form input::placeholder{color:#566d90;font:9px inherit;letter-spacing:0}
+.private-room-join-form .btn-gradient{min-height:38px;justify-content:center;font-size:9px}
+.private-invite-card{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;align-items:center;gap:15px;padding:17px 19px;border:1px solid #327394;border-radius:15px;background:linear-gradient(110deg,#0e2a3d,#0b1930 75%);box-shadow:0 0 28px #2ac8ff09}
+.private-invite-card h2{margin:4px 0;color:#f2f8ff;font-size:15px}
+.private-invite-card p{margin:0;color:#8da7c9;font-size:9px;line-height:1.8}
+.private-invite-code{padding:10px 12px;border:1px dashed #3d7b9a;border-radius:9px;background:#071526;color:#8cecff;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1px;overflow-wrap:anywhere}
+.private-invite-card .btn-gradient{min-height:37px;white-space:nowrap;font-size:9px}
+.private-room-list-panel{padding:18px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#0b162c,#071020)}
+.private-room-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.private-room-list-heading h2{margin:4px 0 0;color:#f2f6ff;font-size:16px}
+.private-room-list-heading .btn-ghost{min-height:32px;font-size:9px}
+.private-room-empty{display:grid;justify-items:center;gap:10px;padding:27px 10px;color:#8196b7;text-align:center}
+.private-room-empty span{display:grid;place-items:center;width:44px;height:44px;border:1px solid #263d5c;border-radius:13px;background:#0d1c34;color:#75dffa}
+.private-room-empty p{max-width:320px;margin:0;font-size:10px;line-height:1.9}
+.private-room-list{display:grid;gap:9px}
+.private-room-row{display:grid;grid-template-columns:145px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px;border:1px solid #203551;border-radius:12px;background:#091528}
+.private-room-status{display:flex;align-items:center;gap:7px;width:max-content;max-width:100%;padding:6px 8px;border:1px solid #2a415f;border-radius:8px;background:#0e2039;color:#9ab1d1;font-size:8px;font-weight:700;line-height:1.5}
+.private-room-status i{width:6px;height:6px;flex:none;border-radius:50%;background:#8296b2}
+.private-room-status.status-open{border-color:#286456;background:#0b2929;color:#84e8c4}.private-room-status.status-open i{background:#41dbad;box-shadow:0 0 8px #41dbad66}
+.private-room-status.status-active{border-color:#285d88;background:#0b2340;color:#7ddaff}.private-room-status.status-active i{background:#43d9ff;box-shadow:0 0 8px #43d9ff66}
+.private-room-status.status-closed{border-color:#4a3c5b;background:#19152a;color:#baadd1}.private-room-status.status-closed i{background:#9d7cc4}
+.private-room-status.status-expired{border-color:#634531;background:#261b15;color:#e5b88c}.private-room-status.status-expired i{background:#d89a5e}
+.private-room-row-info{display:grid;min-width:0;gap:4px}.private-room-row-info b{color:#dce8fb;font-size:10px}.private-room-row-info small{overflow-wrap:anywhere;color:#7d92b3;font-size:8px;line-height:1.7}.private-room-row-info code{width:max-content;max-width:100%;color:#5c779e;font:8px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.6px}
+.private-room-row-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}.private-room-row-actions button{min-height:31px;padding:0 9px;font-size:8px}
+.private-live-card{max-width:570px;width:100%;margin:0 auto;padding:18px;border:1px solid #2b537d;border-radius:18px;background:radial-gradient(ellipse at 50% 0%,#233c7330,transparent 44%),linear-gradient(145deg,#0d1b35,#071020);box-shadow:0 16px 46px #0002}
+.private-live-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.private-live-heading h2{margin:4px 0;color:#f1f6ff;font-size:17px}.private-live-heading button{min-height:32px;font-size:8px}
+.private-no-reward{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;padding:10px;border:1px solid #263f5e;border-radius:9px;background:#08162a;color:#91a8ca;font-size:9px;line-height:1.8}.private-no-reward svg{flex:none;color:#69e5ce}
+@media(max-width:850px){.private-room-row{grid-template-columns:1fr auto}.private-room-status{grid-column:1/-1}.private-room-row-info{grid-column:1}.private-room-row-actions{grid-column:2;grid-row:2}.private-invite-card{grid-template-columns:1fr auto}.private-invite-code{grid-column:1}.private-invite-card .btn-gradient{grid-column:2;grid-row:2}}
+@media(max-width:620px){.private-room-actions-grid{grid-template-columns:1fr}.private-room-action-card{padding:16px}.private-room-row{grid-template-columns:1fr}.private-room-status,.private-room-row-info,.private-room-row-actions{grid-column:auto;grid-row:auto}.private-room-row-actions{justify-content:flex-start}.private-room-row-actions button{flex:1}.private-invite-card{grid-template-columns:1fr}.private-invite-code,.private-invite-card .btn-gradient{grid-column:auto;grid-row:auto}.private-room-list-panel{padding:13px}.private-live-card{padding:13px}}
