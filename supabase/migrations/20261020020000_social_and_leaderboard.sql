@@ -86,8 +86,8 @@ begin
     raise exception 'not_authorized' using errcode = '42501';
   end if;
 
-  if p_username is null or pg_catalog.char_length(pg_catalog.trim(p_username)) not between 3 and 24
-     or pg_catalog.trim(p_username) !~ '^[a-zA-Z0-9_]{3,24}$' then
+  if p_username is null or pg_catalog.char_length(pg_catalog.btrim(p_username)) not between 3 and 24
+     or pg_catalog.btrim(p_username) !~ '^[a-zA-Z0-9_]{3,24}$' then
     raise exception 'member_not_found' using errcode = 'P0002';
   end if;
 
@@ -114,7 +114,7 @@ begin
 
   select p.user_id into v_target_id
   from public.member_profiles p
-  where pg_catalog.lower(p.username)=pg_catalog.lower(pg_catalog.trim(p_username))
+  where pg_catalog.lower(p.username)=pg_catalog.lower(pg_catalog.btrim(p_username))
     and p.user_id <> v_user_id
   limit 1;
 
@@ -122,6 +122,13 @@ begin
   if v_target_id is null then
     raise exception 'member_not_found' using errcode = 'P0002';
   end if;
+
+  -- Serialize both directions of the same pair to avoid duplicate simultaneous requests.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(
+      least(v_user_id::text,v_target_id::text) || ':' || greatest(v_user_id::text,v_target_id::text), 31
+    )
+  );
 
   if exists (
     select 1 from public.friend_requests fr
@@ -208,7 +215,7 @@ begin
   if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
-  if p_action not in ('accepted','declined','blocked') then
+  if p_action is null or p_action not in ('accepted','declined','blocked') then
     raise exception 'invalid_relationship_action' using errcode = '22023';
   end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user_id::text, 29));
