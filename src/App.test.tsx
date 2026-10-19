@@ -49,6 +49,15 @@ describe("Playora global app shell", () => {
     expect(screen.queryByRole("heading", { name: "Checkers" })).not.toBeInTheDocument();
   });
 
+  it("opens the account dialog and explains missing backend configuration", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+    expect(screen.getByText(/Account services are not connected yet/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
+  });
+
   it("shows notices without claiming online play is active", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
