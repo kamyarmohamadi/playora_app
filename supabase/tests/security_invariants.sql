@@ -62,6 +62,10 @@ BEGIN
     RAISE EXCEPTION 'Authenticated role must not mutate deposit requests directly';
   END IF;
 
+  IF has_column_privilege('authenticated','public.matches','winner_user_id','SELECT') THEN
+    RAISE EXCEPTION 'Authenticated members must not directly read match winner auth UUIDs';
+  END IF;
+
   IF has_table_privilege('authenticated','public.matches','INSERT')
      OR has_table_privilege('authenticated','public.matches','UPDATE')
      OR has_table_privilege('authenticated','public.matches','DELETE') THEN
