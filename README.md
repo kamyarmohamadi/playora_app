@@ -35,3 +35,7 @@ Also not live: other game engines, real-time WebSocket transport (current match 
 See docs/SECURITY_MODEL.md and supabase/README.md. RLS and server-owned RPCs are tested in CI with PostgreSQL, including cross-member isolation and ranked/private Tic Tac Toe match integrity. CI tests do not replace a reviewed test against the actual Supabase project before launch.
 
 Never place passwords, service-role keys, wallet seed phrases or private keys in frontend code or source control. Do not enable deposits, paid entry or convertible prizes until server-side payment verification and market-specific legal review are complete.
+
+## Account deletion and security status
+
+A trusted Supabase Edge Function for account deletion is included in source. It requires `SUPABASE_SERVICE_ROLE_KEY` only as a server secret, checks the caller's verified JWT and recent `auth_time`, cancels unfinished matches without results/rewards, then deletes the Auth user. The UI remains disabled by default: keep `VITE_ACCOUNT_DELETION_ENABLED=false` until both the Edge Function and cleanup migration are deployed and verified in a Supabase project. Never place the service-role key in frontend variables or source control.
