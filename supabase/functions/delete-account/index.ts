@@ -3,6 +3,36 @@ import { createClient } from "@supabase/supabase-js";
 const json = (body: unknown, status: number, headers: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers });
 
+async function readBodyWithLimit(request: Request, limit: number): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel().catch(() => undefined);
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+}
+
 function decodeVerifiedPayload(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split(".")[1];
@@ -66,8 +96,8 @@ Deno.serve(async (request: Request) => {
 
   let body: unknown;
   try {
-    const rawBody = await request.text();
-    if (rawBody.length > 2_048) return json({ error: "Request is too large." }, 413, headers);
+    const rawBody = await readBodyWithLimit(request, 2_048);
+    if (rawBody === null) return json({ error: "Request is too large." }, 413, headers);
     body = JSON.parse(rawBody);
   } catch {
     return json({ error: "Invalid request." }, 400, headers);
