@@ -58,8 +58,8 @@ begin
   return query select v_room_id,v_code,v_expires;
 end;
 $$;
-revoke all on function public.create_private_room(text,smallint) from public, anon;
-grant execute on function public.create_private_room(text,smallint) to authenticated;
+revoke all on function public.create_private_room(text,integer) from public, anon;
+grant execute on function public.create_private_room(text,integer) to authenticated;
 
 create or replace function public.join_private_room(p_invite_code text)
 returns table(joined_room_id uuid, joined_game_id text, room_status text, active_match_id uuid, room_expires_at timestamptz)
