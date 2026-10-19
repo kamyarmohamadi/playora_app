@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
@@ -86,6 +86,18 @@ describe("Playora global app shell", () => {
     const firstRedPiece = screen.getByRole("button", { name: "Square 41, Red piece" });
     fireEvent.click(firstRedPiece);
     expect(firstRedPiece).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("plays a Checkers human move and waits for the bot to answer", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Square 41, Red piece" }));
+    fireEvent.click(screen.getByRole("button", { name: "Square 34" }));
+    expect(screen.getByText("Playora Bot is thinking · Black")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Your turn · Red")).toBeInTheDocument();
+    }, { timeout: 2500 });
   });
 
   it("keeps ranked matchmaking behind authenticated account access", () => {
