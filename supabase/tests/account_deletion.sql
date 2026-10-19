@@ -31,8 +31,11 @@ VALUES
   ('10000000-0000-4000-8000-000000000022','00000000-0000-4000-8000-000000000022',2)
 ON CONFLICT (match_id,user_id) DO NOTHING;
 
-INSERT INTO public.matchmaking_queue(user_id,game_id,status,rating_snapshot)
-VALUES ('00000000-0000-4000-8000-000000000021','tictactoe','waiting',1000)
+INSERT INTO public.matchmaking_queue(user_id,game_id,status,rating_snapshot,match_id)
+VALUES
+  ('00000000-0000-4000-8000-000000000021','tictactoe','waiting',1000,null),
+  ('00000000-0000-4000-8000-000000000021','tictactoe','matched',1000,'10000000-0000-4000-8000-000000000021'),
+  ('00000000-0000-4000-8000-000000000022','tictactoe','matched',1000,'10000000-0000-4000-8000-000000000021')
 ON CONFLICT DO NOTHING;
 
 -- One open room hosted by the target, and a second active room hosted by the
@@ -85,7 +88,13 @@ BEGIN
   SELECT count(*) INTO v_count
   FROM public.matchmaking_queue
   WHERE user_id='00000000-0000-4000-8000-000000000021' AND status='cancelled';
-  IF v_count <> 1 THEN RAISE EXCEPTION 'Account deletion did not cancel the member matchmaking queue'; END IF;
+  IF v_count <> 2 THEN RAISE EXCEPTION 'Account deletion did not cancel all target matchmaking records'; END IF;
+
+  SELECT count(*) INTO v_count
+  FROM public.matchmaking_queue
+  WHERE match_id='10000000-0000-4000-8000-000000000021'
+    AND status='cancelled';
+  IF v_count <> 2 THEN RAISE EXCEPTION 'Account deletion did not cancel the survivor queue for an abandoned match'; END IF;
 
   SELECT count(*) INTO v_count
   FROM public.matches
