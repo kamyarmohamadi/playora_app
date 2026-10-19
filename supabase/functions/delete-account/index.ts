@@ -66,7 +66,9 @@ Deno.serve(async (request: Request) => {
 
   let body: unknown;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (rawBody.length > 2_048) return json({ error: "Request is too large." }, 413, headers);
+    body = JSON.parse(rawBody);
   } catch {
     return json({ error: "Invalid request." }, 400, headers);
   }
