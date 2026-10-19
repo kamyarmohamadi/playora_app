@@ -1009,24 +1009,23 @@ export default function App() {
     setSelectedCheckersFrom(null);
   };
   const makeCheckersMove = (index: number) => {
-    setCheckersState(current => {
-      if (!current || current.status !== "playing" || current.currentPlayer !== "red") return current;
-      const legalMoves = getCheckersLegalMoves(current);
-      const selectedMove = selectedCheckersFrom === null ? undefined :
-        legalMoves.find(move => move.from === selectedCheckersFrom && move.to === index);
-      if (selectedMove) {
-        const next = applyCheckersMove(current, selectedMove.from, selectedMove.to);
-        setSelectedCheckersFrom(next.forcedFrom);
-        return next;
-      }
-      const piece = current.board[index];
-      if (piece?.player === "red" && legalMoves.some(move => move.from === index)) {
-        setSelectedCheckersFrom(index);
-        return current;
-      }
-      setSelectedCheckersFrom(current.forcedFrom);
-      return current;
-    });
+    const current = checkersState;
+    if (!current || current.status !== "playing" || current.currentPlayer !== "red") return;
+    const legalMoves = getCheckersLegalMoves(current);
+    const selectedMove = selectedCheckersFrom === null ? undefined :
+      legalMoves.find(move => move.from === selectedCheckersFrom && move.to === index);
+    if (selectedMove) {
+      const nextState = applyCheckersMove(current, selectedMove.from, selectedMove.to);
+      setCheckersState(nextState);
+      setSelectedCheckersFrom(nextState.forcedFrom);
+      return;
+    }
+    const piece = current.board[index];
+    if (piece?.player === "red" && legalMoves.some(move => move.from === index)) {
+      setSelectedCheckersFrom(index);
+      return;
+    }
+    setSelectedCheckersFrom(current.forcedFrom);
   };
   const legalCheckersMoves = checkersState ? getCheckersLegalMoves(checkersState) : [];
   const selectedCheckersDestinations = new Set(
