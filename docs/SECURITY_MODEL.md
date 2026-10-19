@@ -24,7 +24,7 @@ The private GitHub repository is source control only; it does not authenticate P
 3. Perform wallet writes in a database transaction on a trusted server path. Use idempotency keys, unique constraints, non-negative balance constraints and an immutable ledger. Never ship the service-role key.
 4. Matchmaking and game state transitions must be server-authoritative, deterministic where appropriate, and covered by tests for legal and illegal moves.
 5. Validate every request schema; cap body sizes; rate-limit sign-in, friend requests, room creation and deposit-intent creation; use structured logs without passwords, access tokens, seed phrases or full payment credentials.
-6. Apply production security headers at the actual hosting layer. The CSS import of Google Fonts is external; CSP must explicitly account for it or use self-hosted fonts.
+6. Apply production security headers at the actual hosting layer. public/_headers is a template only for hosts that support that convention, not a universal switch. The CSS import of Google Fonts is external; CSP explicitly accounts for it or the fonts must be self-hosted.
 7. Add abuse controls for multiple accounts, signup-bonus farming, collusion, replayed moves, repeated deposits and suspicious result patterns before enabling rewards.
 8. Keep prize-bearing tournaments and any convertible/transferable currency disabled until the exact business model is approved for each market.
 
@@ -34,7 +34,7 @@ supabase/migrations/20261020000000_secure_member_data.sql enables RLS on every t
 
 The migration creates a signup trigger that allocates 50 free demo coins. Before deploying it, confirm that this bonus is desired for the production account lifecycle and add anti-abuse constraints for repeat accounts. The trigger uses a generated username, rather than a user-provided identifier.
 
-Apply the migration to a new/test Supabase project first and test the policies with at least two distinct authenticated users. Check both normal reads and deliberate cross-user ID substitution. Do not deploy to an existing database without reviewing object names and migration conflicts.
+Apply the migration to a new/test Supabase project first, run supabase/tests/security_invariants.sql, and test the policies with at least two distinct authenticated users. Check both normal reads and deliberate cross-user ID substitution. Do not deploy to an existing database without reviewing object names and migration conflicts.
 
 ## Release gate
 
