@@ -529,6 +529,81 @@ export default function App() {
   }, [page, session?.user.id, privateMatchId]);
 
   useEffect(() => {
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "friends") {
+      setSocialRows([]);
+      setSocialError("");
+      setSocialBusy(false);
+      return;
+    }
+    let stopped = false;
+    let timer: number | undefined;
+    const refreshRelationships = async () => {
+      try {
+        const { data, error } = await db.rpc("list_social_relationships");
+        if (stopped) return;
+        if (error) throw error;
+        setSocialRows((data ?? []) as unknown as SocialRelationship[]);
+        setSocialError("");
+        setSocialBusy(false);
+        timer = window.setTimeout(() => void refreshRelationships(), 12000);
+      } catch {
+        if (!stopped) {
+          setSocialRows([]);
+          setSocialError(copy[locale].socialError);
+          setSocialBusy(false);
+          timer = window.setTimeout(() => void refreshRelationships(), 12000);
+        }
+      }
+    };
+    setSocialBusy(true);
+    void refreshRelationships();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, session?.user.id, socialRefresh, locale]);
+
+  useEffect(() => {
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "leaderboard") {
+      setLeaderboardRows([]);
+      setLeaderboardError("");
+      setLeaderboardBusy(false);
+      return;
+    }
+    let stopped = false;
+    let timer: number | undefined;
+    const refreshLeaderboard = async () => {
+      try {
+        const { data, error } = await db.rpc("get_game_leaderboard", {
+          p_game_id: "tictactoe",
+          p_limit: 25
+        });
+        if (stopped) return;
+        if (error) throw error;
+        setLeaderboardRows((data ?? []) as unknown as LeaderboardEntry[]);
+        setLeaderboardError("");
+        setLeaderboardBusy(false);
+        timer = window.setTimeout(() => void refreshLeaderboard(), 15000);
+      } catch {
+        if (!stopped) {
+          setLeaderboardRows([]);
+          setLeaderboardError(copy[locale].leaderboardError);
+          setLeaderboardBusy(false);
+          timer = window.setTimeout(() => void refreshLeaderboard(), 15000);
+        }
+      }
+    };
+    setLeaderboardBusy(true);
+    void refreshLeaderboard();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, session?.user.id, leaderboardRefresh, locale]);
+
+  useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = direction;
   }, [locale, direction]);
@@ -888,6 +963,67 @@ export default function App() {
       setPrivateRoomError(t("privateMatchError"));
     } finally {
       setPrivateMoveBusy(false);
+    }
+  };
+
+  const sendFriendRequest = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !session?.user.id) {
+      openAuth("signin");
+      return;
+    }
+    const username = socialQuery.trim();
+    if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
+      setSocialError(t("usernameInvalid"));
+      return;
+    }
+    setSocialBusy(true);
+    setSocialError("");
+    try {
+      const { data, error } = await supabase.rpc("send_friend_request", { p_username: username });
+      if (error) {
+        if (error.code === "22023" && error.message.toLowerCase().includes("rate")) {
+          throw new Error("rate_limited");
+        }
+        if (error.code === "P0002") throw new Error("member_not_found");
+        throw new Error("social_request_failed");
+      }
+      const result = (Array.isArray(data) ? data[0] : data) as {
+        request_id?: string;
+        relationship_status?: string;
+      } | null;
+      setSocialQuery("");
+      setSocialRefresh(value => value + 1);
+      if (result?.relationship_status === "accepted") setToast(t("alreadyFriends"));
+      else if (result?.relationship_status === "incoming") setToast(t("incomingRequestExists"));
+      else setToast(t("requestSent"));
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "social_request_failed";
+      setSocialError(code === "rate_limited" ? t("socialRateLimit") : code === "member_not_found" ? t("memberNotFound") : t("socialError"));
+    } finally {
+      setSocialBusy(false);
+    }
+  };
+
+  const respondToFriendRequest = async (
+    relationship: SocialRelationship,
+    action: "accepted" | "declined" | "blocked"
+  ) => {
+    if (!supabase || !session?.user.id || relationship.relationship_type !== "incoming") return;
+    setSocialBusy(true);
+    setSocialError("");
+    try {
+      const { error } = await supabase.rpc("respond_friend_request", {
+        p_request_id: relationship.request_id,
+        p_action: action
+      });
+      if (error) throw error;
+      setSocialRefresh(value => value + 1);
+      setToast(action === "accepted" ? t("requestAccepted") : action === "declined" ? t("requestDeclined") : t("requestBlocked"));
+    } catch {
+      setSocialError(t("socialError"));
+    } finally {
+      setSocialBusy(false);
     }
   };
 
