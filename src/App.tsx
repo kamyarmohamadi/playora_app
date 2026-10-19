@@ -587,9 +587,85 @@ export default function App() {
     ticTacToeState.status === "draw" ? t("draw") :
     ticTacToeState.currentPlayer === "X" ? t("yourTurn") : t("botThinking");
 
+  const startOnlineQueue = async () => {
+    if (!supabase || !session?.user.id) {
+      openAuth("signin");
+      return;
+    }
+    setOnlineError("");
+    setOnlineBusy(true);
+    setOnlineStatus("queueing");
+    setOnlineMatchId(null);
+    setOnlineMatch(null);
+    setOnlineSeat(null);
+    try {
+      const { data, error } = await supabase.rpc("queue_for_random_match", { p_game_id: "tictactoe" });
+      if (error) throw error;
+      const result = (Array.isArray(data) ? data[0] : data) as { queue_status?: string; matched_match_id?: string | null } | null;
+      if (result?.queue_status === "matched" && result.matched_match_id) {
+        setOnlineMatchId(result.matched_match_id);
+        setOnlineStatus("matched");
+      } else {
+        setOnlineStatus("waiting");
+      }
+    } catch {
+      setOnlineStatus("error");
+      setOnlineError(t("onlineError"));
+    } finally {
+      setOnlineBusy(false);
+    }
+  };
+
+  const cancelOnlineQueue = async () => {
+    if (!supabase || !session?.user.id) return;
+    setOnlineBusy(true);
+    setOnlineError("");
+    try {
+      const { error } = await supabase.rpc("cancel_random_match_queue", { p_game_id: "tictactoe" });
+      if (error) throw error;
+      setOnlineStatus("idle");
+      setOnlineMatchId(null);
+      setOnlineMatch(null);
+      setOnlineSeat(null);
+    } catch {
+      setOnlineError(t("onlineError"));
+    } finally {
+      setOnlineBusy(false);
+    }
+  };
+
+  const submitOnlineMove = async (index: number) => {
+    if (!supabase || !session?.user.id || !onlineMatchId || !onlineMatch || !onlineSeat) return;
+    if (onlineMatch.status !== "active" || onlineMatch.server_state.current_seat !== onlineSeat ||
+        onlineMatch.server_state.board?.[index] !== null) return;
+    setOnlineMoveBusy(true);
+    setOnlineError("");
+    try {
+      const { error } = await supabase.rpc("submit_tictactoe_move", {
+        p_match_id: onlineMatchId,
+        p_cell_index: index
+      });
+      if (error) throw error;
+    } catch {
+      setOnlineError(t("moveRejected"));
+    } finally {
+      setOnlineMoveBusy(false);
+    }
+  };
+
+  const resetOnlineMatch = () => {
+    setOnlineStatus("idle");
+    setOnlineError("");
+    setOnlineMatchId(null);
+    setOnlineMatch(null);
+    setOnlineSeat(null);
+    setOnlineMoveBusy(false);
+  };
+
   const pageMeta: Record<Page, { title: string; subtitle: string }> = {
     home: { title: t("navHome"), subtitle: t("notLive") },
     games: { title: t("gamesTitle"), subtitle: t("gamesSub") },
+    online: { title: t("onlineTitle"), subtitle: t("onlineSub") },
     tournaments: { title: t("tournamentsTitle"), subtitle: t("tournamentsSub") },
     friends: { title: t("friendsTitle"), subtitle: t("friendsSub") },
     leaderboard: { title: t("rankTitle"), subtitle: t("rankSub") },
