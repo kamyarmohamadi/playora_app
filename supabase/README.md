@@ -1,43 +1,45 @@
 # Supabase setup — Playora
 
-This folder is the backend foundation, not a claim that a live backend already exists.
+This folder documents a backend foundation. It is not evidence that a live Supabase service has been provisioned or deployed.
 
-## 1. Create an isolated development project
+## 1. Create a development project first
 
-1. Create a Supabase project for development and keep production in a separate project.
-2. Keep the project URL and publishable/anon key in environment variables for the browser app only.
-3. Keep the service_role key exclusively in server-side secrets. Never prefix it with VITE_ and never commit it.
-4. Apply migrations/20261020000000_secure_member_data.sql to the development database after inspecting the SQL and comparing it with any existing schema.
-5. Enable email confirmation, configure allowed redirect URLs, password policy, rate limits and abuse detection in Supabase Auth.
-6. Set the Edge Function secret PLAYORA_ALLOWED_ORIGINS to a comma-separated allowlist of exact HTTPS frontend origins (plus localhost during local development). Do not use a wildcard. The member-self endpoint rejects browser origins not on the allowlist.
-7. Test using two real test accounts. Attempt to read each other's profile, wallet, ledger, favorites, deposits, rooms and match data by substituting UUIDs. All cross-member reads and writes must be denied.
+1. Create a separate Supabase project for development and production; do not test against production data.
+2. In Auth, enable email confirmation and configure secure redirect URLs. Configure Google OAuth credentials in Supabase Auth before enabling the Google button.
+3. Create a local .env.local from .env.example and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. These are browser configuration values, not service-role credentials.
+4. Keep the service_role key exclusively in server-side secrets. Never prefix it with VITE_, expose it in browser code or commit it.
+5. Apply migrations in order to a fresh or reviewed compatible project:
+   - supabase/migrations/20261020000000_secure_member_data.sql
+   - supabase/migrations/20261020010000_private_rooms.sql
+6. Only Tic Tac Toe is implemented for server-connected play in this iteration. Other catalog games remain disabled. Do not manually enable incomplete games.
+7. Deploy the authenticated self-service endpoint with: supabase functions deploy member-self.
+8. Set the Edge Function secret PLAYORA_ALLOWED_ORIGINS to a comma-separated list of exact HTTPS frontend origins (and localhost for local development). Do not use a wildcard.
+9. Test email signup/confirmation, sign-in, password recovery and OAuth redirects against this exact project.
 
-## 2. Environment variables
+Do not run supabase db push or apply these migrations to an existing project until table names, policies, extensions and migration conflicts have been reviewed and backed up.
 
-The future frontend integration should use a local .env.local containing:
-- VITE_SUPABASE_URL
-- VITE_SUPABASE_ANON_KEY
+## 2. Member-data isolation tests
 
-Add .env.local, .env.*.local, server secrets and local key material to .gitignore. An anon/publishable key is not a secret, but its safety depends on RLS. A service-role key bypasses RLS and must never reach browser code.
+Run the included PostgreSQL tests in the workflow, or against a disposable PostgreSQL database:
 
-## 3. What the schema intentionally blocks
+    psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020000000_secure_member_data.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020010000_private_rooms.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/tests/ranked_tictactoe.sql
+    psql -v ON_ERROR_STOP=1 -f supabase/tests/private_rooms.sql
 
-Browser clients cannot create wallet credits, edit ledger entries, set a payment to credited, create authoritative matches or choose winners. Implement these as reviewed server-side operations only. A client must never be allowed to send a user_id and amount and thereby credit its own account.
+The included bootstrap is a test-only minimal auth schema shim. It does not replace integration tests against real Supabase Auth/JWTs. In the real project, use at least two distinct authenticated test accounts and attempt cross-member reads/writes by substituting UUIDs. Verify that all cross-member access is denied.
 
-## 4. Database invariant check
+## 3. Wallet and payment boundary
 
-After applying the migration to a disposable test database, run `psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql` with an administrator connection. This checks that RLS is enabled and that authenticated clients have no direct write privileges on authoritative wallet/payment/match tables. It is a static privilege check; also perform actual two-user integration tests in Supabase.
+Browser clients cannot create wallet credits, edit ledger entries, mark a payment verified, or set match winners/rankings. The apply_coin_delta RPC is server-role-only, transactional and idempotent. Do not call it from the browser or expose a service-role key. A real payment processor/on-chain watcher, idempotent transaction reconciliation and incident workflow are not implemented yet; do not enable deposits.
 
-## 5. Still required before production
+Private-room invite codes are generated randomly; only a SHA-256 hash is persisted. The hash helper resolves the installed pgcrypto schema at runtime because Supabase commonly installs extensions in the extensions schema while local PostgreSQL may use public.
 
-- Auth UI and session lifecycle connected to Supabase, plus account recovery and email verification.
-- Server-owned, idempotent wallet transaction functions and an audited ledger.
-- An on-chain watcher/provider for each supported network, with confirmation/reorg policy and a reconciliation workflow. A user-provided screenshot or transaction timestamp is not proof of payment.
-- Server-authoritative rules for each game and a real-time session protocol.
-- Secure matchmaking, friendship/room APIs, ranking/XP calculations, abuse controls and anti-collusion detection.
-- Tested RLS policies, integration tests, rate limits, monitoring, incident response, retention/deletion workflows and actual production headers.
-- Legal approval before enabling paid entry or convertible rewards in a market.
+## 4. Release gate
 
-Do not enable deposit and reward controls in the frontend until the relevant server operation is deployed and tested end-to-end.
+Before production, also complete: real Supabase RLS integration tests, rate limits and abuse controls, monitoring/logging without secrets, backups/recovery, data retention/deletion workflows, dependency/security scans, actual hosting security headers and an independent threat-model review. Do not enable paid entry or prize payouts before server controls and market-specific legal approval.
 
-The file `public/_headers` is a security-header template for static hosts that support the `_headers` convention (for example, compatible Cloudflare Pages/Netlify deployments). It is not automatically enforced on every host; configure equivalent headers in the selected production host and test the effective Content-Security-Policy with the actual Supabase project URL.
+public/_headers is a template for compatible static hosts only. It is not automatically enforced on every hosting provider; configure equivalent headers on the selected host and test the effective CSP against the actual Supabase URL.
