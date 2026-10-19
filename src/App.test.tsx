@@ -15,7 +15,7 @@ describe("Playora global app shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Games" }));
     expect(screen.getByRole("heading", { name: "Find your game" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Chess" })).toBeInTheDocument();
-    expect(screen.getByText("Game engines and live matchmaking are not connected in this preview.")).toBeInTheDocument();
+    expect(screen.getByText(/Tic Tac Toe and Checkers practice are playable offline/)).toBeInTheDocument();
   });
 
   it("filters games from global search", () => {
@@ -47,6 +47,14 @@ describe("Playora global app shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Favorites" }));
     expect(screen.getByRole("button", { name: /Remove Chess from favorites/ })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Checkers" })).not.toBeInTheDocument();
+  });
+
+  it("labels practice-ready games accurately in the catalogue", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    expect(screen.getAllByText("Practice ready")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "View details: Checkers" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View details: Tic Tac Toe" })).toBeInTheDocument();
   });
 
   it("opens the account dialog and explains missing backend configuration", () => {
