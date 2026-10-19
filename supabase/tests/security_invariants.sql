@@ -132,6 +132,10 @@ BEGIN
     RAISE EXCEPTION 'Authenticated members must be able to invoke approved private-room RPCs';
   END IF;
 
+  IF has_table_privilege('authenticated','public.friend_requests','SELECT') THEN
+    RAISE EXCEPTION 'Friend relationship UUIDs must be read only through scoped RPCs';
+  END IF;
+
   IF has_table_privilege('authenticated','public.friend_requests','INSERT')
      OR has_table_privilege('authenticated','public.friend_requests','UPDATE')
      OR has_table_privilege('authenticated','public.friend_requests','DELETE') THEN
