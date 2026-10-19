@@ -105,14 +105,14 @@ BEGIN
     RAISE EXCEPTION 'Members must use room RPCs rather than writing room state directly';
   END IF;
 
-  IF has_function_privilege('anon','public.create_private_room(text,smallint)','EXECUTE')
+  IF has_function_privilege('anon','public.create_private_room(text,integer)','EXECUTE')
      OR has_function_privilege('anon','public.join_private_room(text)','EXECUTE')
      OR has_function_privilege('anon','public.leave_private_room(uuid)','EXECUTE')
      OR has_function_privilege('anon','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
     RAISE EXCEPTION 'Anonymous clients must not invoke private-room RPCs';
   END IF;
 
-  IF NOT has_function_privilege('authenticated','public.create_private_room(text,smallint)','EXECUTE')
+  IF NOT has_function_privilege('authenticated','public.create_private_room(text,integer)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.join_private_room(text)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.leave_private_room(uuid)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
