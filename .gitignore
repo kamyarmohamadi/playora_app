@@ -37,3 +37,10 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/
