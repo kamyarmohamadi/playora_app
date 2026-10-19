@@ -101,6 +101,7 @@ describe("member session isolation", () => {
       expect(screen.getByRole("button", { name: "Open profile" })).toHaveTextContent("Beta Member");
     });
 
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
     fireEvent.click(screen.getByRole("button", { name: "Profile" }));
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Beta Member" })).toBeInTheDocument();
