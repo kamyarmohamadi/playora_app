@@ -84,8 +84,8 @@ BEGIN
 
   SELECT status='completed' INTO v_completed
   FROM public.matches WHERE id=v_match_id;
-  IF NOT v_completed OR (SELECT final_result FROM public.match_participants WHERE match_id=v_match_id AND user_id=auth.uid()) <> 'loss' THEN
-    RAISE EXCEPTION 'Authoritative member-visible match result was not recorded correctly';
+  IF NOT v_completed OR (SELECT final_result FROM public.match_participants WHERE match_id=v_match_id AND user_id=auth.uid()) <> 'win' THEN
+    RAISE EXCEPTION 'Winner must see only their own verified win result';
   END IF;
 
   SELECT xp,competitive_rating,wins INTO v_xp,v_rating,v_wins
