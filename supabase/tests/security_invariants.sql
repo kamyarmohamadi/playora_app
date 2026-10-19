@@ -66,6 +66,10 @@ BEGIN
     RAISE EXCEPTION 'Authenticated members must not directly read match winner auth UUIDs';
   END IF;
 
+  IF has_column_privilege('authenticated','public.private_rooms','host_user_id','SELECT') THEN
+    RAISE EXCEPTION 'Authenticated members must not directly read private-room host auth UUIDs';
+  END IF;
+
   IF has_table_privilege('authenticated','public.matches','INSERT')
      OR has_table_privilege('authenticated','public.matches','UPDATE')
      OR has_table_privilege('authenticated','public.matches','DELETE') THEN
