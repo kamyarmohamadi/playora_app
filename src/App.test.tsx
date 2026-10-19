@@ -2,50 +2,56 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
-describe("Playora main app shell", () => {
-  it("renders the Persian dashboard and navigation", () => {
+describe("Playora global app shell", () => {
+  it("renders an English-first neon dashboard", () => {
     render(<App />);
-    expect(screen.getByRole("heading", { name: /سلام، خوش اومدی/ })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "ناوبری اصلی" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "کشف بازی‌ها" }).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /Your skills\./ })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Explore games" })).toBeInTheDocument();
   });
-  it("opens the catalogue without launching a game", () => {
+
+  it("opens the games catalogue and labels games as not ready", () => {
     render(<App />);
-    fireEvent.click(screen.getAllByRole("button", { name: "بازی‌ها" })[0]);
-    expect(screen.getByRole("heading", { name: "یه بازی برای حال خوبت" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "تخته‌نرد" })).toBeInTheDocument();
-    expect(screen.getByText(/منطق اجرای بازی‌ها در مرحله‌ای جداگانه/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    expect(screen.getByRole("heading", { name: "Find your game" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Chess" })).toBeInTheDocument();
+    expect(screen.getByText("Game engines and live matchmaking are not connected in this preview.")).toBeInTheDocument();
   });
+
   it("filters games from global search", () => {
     render(<App />);
-    fireEvent.change(screen.getAllByRole("textbox", { name: "جست‌وجوی بازی‌ها" })[0], { target: { value: "دوز" } });
-    expect(screen.getByRole("heading", { name: "دوز" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "تخته‌نرد" })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search games, modes, and more" }), { target: { value: "Ludo" } });
+    expect(screen.getByRole("heading", { name: "Ludo" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Chess" })).not.toBeInTheDocument();
   });
-  it("opens guest profile from account menu", () => {
+
+  it("switches locale to Persian and updates document direction", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "حساب کاربری" }));
-    fireEvent.click(screen.getByRole("button", { name: "پروفایل من" }));
-    expect(screen.getByRole("heading", { name: "پروفایل تو" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Switch language to Persian" }));
+    expect(screen.getByRole("heading", { name: "مهارت تو." })).toBeInTheDocument();
+    expect(document.documentElement.dir).toBe("rtl");
+    expect(document.documentElement.lang).toBe("fa");
   });
-  it("opens and closes settings", () => {
+
+  it("keeps wallet deposits disabled in preview mode", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "تنظیمات" }));
-    expect(screen.getByRole("dialog", { name: "تنظیمات Playora" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "متوجه شدم" }));
-    expect(screen.queryByRole("dialog", { name: "تنظیمات Playora" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Wallet" }));
+    expect(screen.getByRole("heading", { name: "Your wallet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Deposit/ })).toBeDisabled();
+    expect(screen.getByText(/Never send assets to this preview/)).toBeInTheDocument();
   });
-  it("shows a placeholder for friends", () => {
+
+  it("supports favorites-only filtering", () => {
     render(<App />);
-    fireEvent.click(screen.getAllByRole("button", { name: /دوستان/ })[0]);
-    expect(screen.getByRole("heading", { name: "دوستات رو اینجا پیدا می‌کنی" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    fireEvent.click(screen.getByRole("button", { name: "Favorites" }));
+    expect(screen.getByRole("button", { name: /Remove Chess from favorites/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Checkers" })).not.toBeInTheDocument();
   });
-  it("adds and removes a game from favorites", () => {
+
+  it("shows notices without claiming online play is active", () => {
     render(<App />);
-    fireEvent.click(screen.getAllByRole("button", { name: "بازی‌ها" })[0]);
-    fireEvent.click(screen.getByRole("button", { name: "افزودن شطرنج به دلخواه‌ها" }));
-    expect(screen.getByRole("button", { name: "حذف شطرنج از دلخواه‌ها" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "حذف شطرنج از دلخواه‌ها" }));
-    expect(screen.getByRole("button", { name: "افزودن شطرنج به دلخواه‌ها" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
+    expect(screen.getByText("You’re all caught up.")).toBeInTheDocument();
   });
 });
