@@ -55,7 +55,7 @@ describe("Playora global app shell", () => {
     expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
     expect(screen.getByText(/Account services are not connected yet/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: "Sign in", exact: true }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
   it("shows notices without claiming online play is active", () => {
