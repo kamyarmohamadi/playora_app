@@ -11,7 +11,7 @@ function openNavigation(label: string) {
 describe("Playora game catalogue", () => {
   it("renders the game category filters", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     expect(screen.getByRole("group", { name: "Game mode" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "All games" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Strategy" })).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("Playora game catalogue", () => {
 
   it("opens the tournament view with reward claims clearly disabled", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+    openNavigation("Tournaments");
     expect(screen.getByRole("heading", { name: "Enter the arena" })).toBeInTheDocument();
     expect(screen.getAllByText(/Entry fees and rewards are disabled/).length).toBeGreaterThan(0);
   });
