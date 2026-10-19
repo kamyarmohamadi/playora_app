@@ -90,7 +90,7 @@ describe("Playora global app shell", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Profile" }));
     expect(screen.getByRole("heading", { name: "Player profile" })).toBeInTheDocument();
-    expect(screen.getByText("Account required")).toBeInTheDocument();
+    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Recent ranked matches" })).not.toBeInTheDocument();
   });
