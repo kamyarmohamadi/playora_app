@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 const json = (body: unknown, status: number, headers: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers });
 
-async function readBodyWithLimit(request: Request, limit: number): Promise<string | null> {
+export async function readBodyWithLimit(request: Request, limit: number): Promise<string | null> {
   const reader = request.body?.getReader();
   if (!reader) return "";
   const chunks: Uint8Array[] = [];
@@ -33,7 +33,7 @@ async function readBodyWithLimit(request: Request, limit: number): Promise<strin
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 
-function decodeVerifiedPayload(token: string): Record<string, unknown> | null {
+export function decodeVerifiedPayload(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split(".")[1];
     if (!payload || payload.length > 16_384) return null;
@@ -47,7 +47,7 @@ function decodeVerifiedPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-Deno.serve(async (request: Request) => {
+export async function handleDeleteAccount(request: Request): Promise<Response> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "private, no-store, max-age=0",
@@ -141,4 +141,8 @@ Deno.serve(async (request: Request) => {
   }
 
   return json({ deleted: true }, 200, headers);
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handleDeleteAccount);
+}
