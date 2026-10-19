@@ -197,7 +197,6 @@ export default function App() {
     setMobileNavOpen(false);
     setNoticeOpen(false);
     if (nextPage !== "games") { setSearch(""); setCategory("all"); }
-    window.scrollTo?.({ top: 0, behavior: "smooth" });
   };
 
   const toggleFavorite = (id: string) => setFavorites(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
