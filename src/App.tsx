@@ -329,17 +329,28 @@ export default function App() {
       supabase.from("member_favorites").select("game_id").eq("user_id", userId),
       supabase.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
       supabase.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
-      supabase.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5),
-      supabase.from("match_participants").select("match_id,final_result").eq("user_id", userId).order("joined_at", { ascending: false }).limit(5)
-    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult, ownHistoryResult]) => {
+      supabase.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
+    ]).then(async ([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
       if (!active) return;
       const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
       setMemberProfile(loadedProfile);
       setProfileNameDraft(loadedProfile?.display_name ?? "");
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
       setMemberStats(!statsResult.error ? statsResult.data as MemberGameStats | null : null);
-      const ownResults = new Map((!ownHistoryResult.error && ownHistoryResult.data ? ownHistoryResult.data : []).map(row => [row.match_id, row.final_result as RankedHistoryRow["my_result"]]));
-      setRecentMatches(!historyResult.error && !ownHistoryResult.error && historyResult.data
+      const historyIds = !historyResult.error && historyResult.data ? historyResult.data.map(row => row.id) : [];
+      let ownResults = new Map<string, RankedHistoryRow["my_result"]>();
+      let historyAccessFailed = false;
+      if (historyIds.length > 0) {
+        const ownHistoryResult = await supabase.from("match_participants")
+          .select("match_id,final_result")
+          .eq("user_id", userId)
+          .in("match_id", historyIds);
+        historyAccessFailed = Boolean(ownHistoryResult.error);
+        if (!ownHistoryResult.error && ownHistoryResult.data) {
+          ownResults = new Map(ownHistoryResult.data.map(row => [row.match_id, row.final_result as RankedHistoryRow["my_result"]]));
+        }
+      }
+      setRecentMatches(!historyResult.error && !historyAccessFailed && historyResult.data
         ? (historyResult.data as Omit<RankedHistoryRow, "my_result">[]).map(row => ({ ...row, my_result: ownResults.get(row.id) ?? null })).filter(row => row.my_result !== null) as RankedHistoryRow[]
         : []);
       if (!favoriteResult.error && favoriteResult.data) {
