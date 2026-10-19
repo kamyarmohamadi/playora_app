@@ -2,6 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
+function openNavigation(label: string) {
+  const menu = screen.getByRole("button", { name: "Open menu" });
+  if (menu.getAttribute("aria-expanded") !== "true") fireEvent.click(menu);
+  fireEvent.click(screen.getByRole("button", { name: label }));
+}
+
 describe("Playora game catalogue", () => {
   it("renders the game category filters", () => {
     render(<App />);
