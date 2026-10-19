@@ -89,6 +89,36 @@ BEGIN
     RAISE EXCEPTION 'Trusted server role must be able to call wallet mutation RPC';
   END IF;
 
+  IF has_table_privilege('authenticated','public.private_room_secrets','SELECT')
+     OR has_table_privilege('authenticated','public.private_room_secrets','INSERT')
+     OR has_table_privilege('authenticated','public.private_room_secrets','UPDATE')
+     OR has_table_privilege('authenticated','public.private_room_secrets','DELETE') THEN
+    RAISE EXCEPTION 'Private-room invite hashes must never be accessible to client roles';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.private_rooms','INSERT')
+     OR has_table_privilege('authenticated','public.private_rooms','UPDATE')
+     OR has_table_privilege('authenticated','public.private_rooms','DELETE')
+     OR has_table_privilege('authenticated','public.room_members','INSERT')
+     OR has_table_privilege('authenticated','public.room_members','UPDATE')
+     OR has_table_privilege('authenticated','public.room_members','DELETE') THEN
+    RAISE EXCEPTION 'Members must use room RPCs rather than writing room state directly';
+  END IF;
+
+  IF has_function_privilege('anon','public.create_private_room(text,smallint)','EXECUTE')
+     OR has_function_privilege('anon','public.join_private_room(text)','EXECUTE')
+     OR has_function_privilege('anon','public.leave_private_room(uuid)','EXECUTE')
+     OR has_function_privilege('anon','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Anonymous clients must not invoke private-room RPCs';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated','public.create_private_room(text,smallint)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.join_private_room(text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.leave_private_room(uuid)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Authenticated members must be able to invoke approved private-room RPCs';
+  END IF;
+
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
