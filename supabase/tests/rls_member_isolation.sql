@@ -22,12 +22,22 @@ BEGIN
   IF current_coins <> 50 THEN RAISE EXCEPTION 'New member demo wallet was not initialized to 50'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % ledger rows, expected 1', visible_count; END IF;
+  SELECT count(*) INTO visible_count FROM public.member_game_stats;
+  IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % game stats rows, expected 1', visible_count; END IF;
+  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe') <> 1000 THEN
+    RAISE EXCEPTION 'New member should start at competitive rating 1000';
+  END IF;
   SELECT count(*) INTO visible_count FROM public.member_favorites;
   IF visible_count <> 0 THEN RAISE EXCEPTION 'Unexpected pre-existing favorites for Member One'; END IF;
 
   INSERT INTO public.member_favorites(user_id,game_id) VALUES(auth.uid(),'chess');
   SELECT count(*) INTO visible_count FROM public.member_favorites;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One could not see their own favorite'; END IF;
+
+  UPDATE public.member_game_stats SET competitive_rating=5000
+  WHERE user_id='00000000-0000-4000-8000-000000000002';
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  IF affected <> 0 THEN RAISE EXCEPTION 'Member One changed Member Two competitive rating'; END IF;
 
   UPDATE public.member_profiles SET display_name = 'Attempt To Edit Member Two'
   WHERE user_id = '00000000-0000-4000-8000-000000000002';
@@ -58,6 +68,11 @@ BEGIN
   IF current_coins <> 50 THEN RAISE EXCEPTION 'Member Two wallet has unexpected balance'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % ledger rows, expected 1', visible_count; END IF;
+  SELECT count(*) INTO visible_count FROM public.member_game_stats;
+  IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % game stats rows, expected 1', visible_count; END IF;
+  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe') <> 1000 THEN
+    RAISE EXCEPTION 'Second member should start at competitive rating 1000';
+  END IF;
   SELECT count(*) INTO visible_count FROM public.member_favorites;
   IF visible_count <> 0 THEN RAISE EXCEPTION 'Member Two can see Member One favorites'; END IF;
 
