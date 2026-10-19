@@ -65,6 +65,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020010000_private_rooms.sql
       - name: Apply social and leaderboard migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020020000_social_and_leaderboard.sql
+      - name: Apply match identifier privacy migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test isolation between two authenticated members
