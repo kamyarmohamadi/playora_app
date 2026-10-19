@@ -42,6 +42,10 @@ DECLARE
   v_balance_after bigint;
   v_second_room uuid;
   v_second_code text;
+  v_cap_room_one uuid;
+  v_cap_room_two uuid;
+  v_cap_code text;
+  v_room_cap_rejected boolean := false;
   v_leave_ok boolean;
 BEGIN
   -- Host creates a free room and receives the invite code exactly once.
@@ -57,6 +61,23 @@ BEGIN
   IF (SELECT count(*) FROM public.room_members WHERE room_id=v_room_id AND user_id=auth.uid()) <> 1 THEN
     RAISE EXCEPTION 'Room creator was not added as host member';
   END IF;
+
+  -- The three-open-room limit must hold even if a member submits repeated create requests.
+  SELECT created_room_id,invite_code INTO v_cap_room_one,v_cap_code
+  FROM public.create_private_room('tictactoe',2);
+  SELECT created_room_id,invite_code INTO v_cap_room_two,v_cap_code
+  FROM public.create_private_room('tictactoe',2);
+  BEGIN
+    PERFORM public.create_private_room('tictactoe',2);
+    v_room_cap_rejected := false;
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    v_room_cap_rejected := true;
+  END;
+  IF NOT v_room_cap_rejected THEN
+    RAISE EXCEPTION 'A host must not exceed three open private rooms';
+  END IF;
+  PERFORM public.leave_private_room(v_cap_room_one);
+  PERFORM public.leave_private_room(v_cap_room_two);
 
   -- Client roles must never be able to read stored invite-code hashes.
   BEGIN
