@@ -22,7 +22,7 @@ type MemberWallet = { user_id: string; free_coins: number | string; purchased_co
 type MemberGameStats = { user_id: string; game_id: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
 type RankedHistoryRow = { id: string; status: string; my_result: "win" | "loss" | "draw" | "forfeit" | null; finished_at: string | null; created_at: string; mode: string };
 type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; my_result?: "win" | "loss" | "draw" | "forfeit" | null; state_version: number };
-type PrivateRoomRow = { id: string; host_user_id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null };
+type PrivateRoomRow = { id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null; my_role: "host" | "player" };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
 type LeaderboardEntry = { rank_position: number | string; username: string; display_name: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
 type Game = {
@@ -486,12 +486,28 @@ export default function App() {
       try {
         const { data, error } = await db
           .from("private_rooms")
-          .select("id,host_user_id,game_id,status,max_players,expires_at,created_at,match_id")
+          .select("id,game_id,status,max_players,expires_at,created_at,match_id")
           .order("created_at", { ascending: false })
           .limit(30);
         if (stopped) return;
         if (error) throw error;
-        setPrivateRooms((data ?? []) as unknown as PrivateRoomRow[]);
+        const visibleRooms = data ?? [];
+        const roomIds = visibleRooms.map(room => room.id);
+        let ownRoles = new Map<string, "host" | "player">();
+        if (roomIds.length > 0) {
+          const { data: membershipRows, error: membershipError } = await db
+            .from("room_members")
+            .select("room_id,role")
+            .eq("user_id", userId)
+            .in("room_id", roomIds);
+          if (membershipError) throw membershipError;
+          ownRoles = new Map((membershipRows ?? []).map(row => [row.room_id, row.role as "host" | "player"]));
+        }
+        const privateRoomRows = visibleRooms.flatMap(room => {
+          const myRole = ownRoles.get(room.id);
+          return myRole ? [{ ...room, my_role: myRole }] : [];
+        });
+        setPrivateRooms(privateRoomRows as PrivateRoomRow[]);
         setPrivateRoomError("");
         timer = window.setTimeout(() => void refreshRooms(), 3500);
       } catch {
@@ -995,7 +1011,7 @@ export default function App() {
         setPrivateSeat(null);
       }
       setPrivateRoomRefresh(value => value + 1);
-      setToast(room.host_user_id === session.user.id ? t("closePrivateRoom") : t("leavePrivateRoom"));
+      setToast(room.my_role === "host" ? t("closePrivateRoom") : t("leavePrivateRoom"));
     } catch {
       setPrivateRoomError(t("privateRoomError"));
     } finally {
@@ -1369,7 +1385,7 @@ export default function App() {
                   {privateRooms.map(room => {
                     const expired = room.status === "expired" || (room.status === "open" && new Date(room.expires_at).getTime() <= Date.now());
                     const stateKey = expired ? "roomExpired" : room.status === "open" ? "roomOpen" : room.status === "active" ? "roomActive" : "roomClosed";
-                    const isHost = room.host_user_id === session.user.id;
+                    const isHost = room.my_role === "host";
                     return <article className="private-room-row" key={room.id}>
                       <span className="private-room-row-icon"><Grid2X2 size={20} /></span>
                       <div className="private-room-row-copy"><h3>{t("privateMatchTitle")} <code>{room.id.slice(0,8).toUpperCase()}</code></h3><p><span>{isHost ? t("hostLabel") : t("playerLabel")}</span><i />{t("expiresLabel")}: {new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(room.expires_at))}</p></div>
