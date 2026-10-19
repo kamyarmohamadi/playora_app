@@ -1,0 +1,37 @@
+name: Refresh Vitest lockfile (one-time maintainer task)
+
+on:
+  push:
+    branches:
+      - feature/playora-neon-ui-member-isolation
+permissions:
+  contents: write
+jobs:
+  refresh-lockfile:
+    if: contains(github.event.head_commit.message, '[refresh-vitest-lock]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/playora-neon-ui-member-isolation
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install fixed Vitest security release and regenerate lockfile
+        run: npm install --save-dev --save-exact vitest@5.0.5
+      - name: Verify audit result
+        run: npm audit --audit-level=moderate
+      - name: Commit updated package manifests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          if git diff --cached --quiet; then
+            echo "Dependency manifests are already current."
+          else
+            git commit -m "chore(deps): refresh Vitest security lock [refresh-vitest-lock-complete]"
+            git push origin HEAD:feature/playora-neon-ui-member-isolation
+          fi
