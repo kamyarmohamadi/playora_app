@@ -43,8 +43,9 @@ BEGIN
     RAISE EXCEPTION 'Second member should be matched to the waiting opponent';
   END IF;
 
-  IF (SELECT count(*) FROM public.match_participants WHERE match_id=v_match_id) <> 2 THEN
-    RAISE EXCEPTION 'A ranked match must have exactly two participants';
+  -- RLS intentionally exposes only the signed-in member's participant row.
+  IF (SELECT count(*) FROM public.match_participants WHERE match_id=v_match_id) <> 1 THEN
+    RAISE EXCEPTION 'Member should see only their own participant row';
   END IF;
   IF (SELECT count(*) FROM public.matches WHERE id=v_match_id AND mode='ranked' AND status='active') <> 1 THEN
     RAISE EXCEPTION 'Match must begin active and ranked';
@@ -133,3 +134,36 @@ END
 $ranked_tictactoe$;
 
 RESET ROLE;
+
+-- As the database test owner, verify both participant rows exist behind the RLS boundary.
+DO $ranked_admin_integrity$
+DECLARE
+  v_match_id uuid;
+  v_participant_count integer;
+  v_winner_id uuid;
+  v_win_rows integer;
+  v_loss_rows integer;
+BEGIN
+  SELECT id,winner_user_id INTO v_match_id,v_winner_id
+  FROM public.matches
+  WHERE game_id='tictactoe' AND mode='ranked' AND status='completed'
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  IF v_match_id IS NULL THEN
+    RAISE EXCEPTION 'No completed ranked match was persisted';
+  END IF;
+  SELECT count(*) INTO v_participant_count FROM public.match_participants WHERE match_id=v_match_id;
+  IF v_participant_count <> 2 THEN
+    RAISE EXCEPTION 'Server must persist exactly two match participants; got %',v_participant_count;
+  END IF;
+  IF v_winner_id <> '00000000-0000-4000-8000-000000000001'::uuid THEN
+    RAISE EXCEPTION 'Completed match winner does not match server-validated X win';
+  END IF;
+  SELECT count(*) INTO v_win_rows FROM public.match_participants WHERE match_id=v_match_id AND final_result='win';
+  SELECT count(*) INTO v_loss_rows FROM public.match_participants WHERE match_id=v_match_id AND final_result='loss';
+  IF v_win_rows <> 1 OR v_loss_rows <> 1 THEN
+    RAISE EXCEPTION 'Match must persist one win and one loss result';
+  END IF;
+END
+$ranked_admin_integrity$;
