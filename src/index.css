@@ -195,3 +195,14 @@
 .profile-history-empty{margin:0;padding:14px 10px;color:#7e93b6;font-size:9px;line-height:1.8;text-align:center}
 .profile-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:700px){.profile-history{margin-inline:12px;padding:11px}.profile-history-row{gap:8px;padding:9px}.profile-result-label{padding:4px 5px;font-size:6px}.profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.profile-edit-form{display:grid;gap:8px;margin:16px 20px 0;padding:14px;border:1px solid #223c5d;border-radius:11px;background:#091429}
+.profile-edit-form>label{color:#9eb3d3;font-size:9px;font-weight:700}
+.profile-edit-controls{display:flex;align-items:center;gap:9px}
+.profile-edit-controls input{width:100%;min-width:0;min-height:38px;padding:0 10px;border:1px solid #294160;border-radius:8px;outline:none;background:#071123;color:#eef5ff;font-size:10px}
+.profile-edit-controls input:focus{border-color:#2c9ac5;box-shadow:0 0 0 3px #22c5ff12}
+.profile-edit-controls .btn-gradient{min-height:38px;flex:none;padding-inline:11px;font-size:8px}
+.profile-edit-message{margin:0;font-size:9px;line-height:1.7}
+.profile-edit-message.is-success{color:#65dfbf}
+.profile-edit-message.is-error{color:#ff9daf}
+@media(max-width:520px){.profile-edit-form{margin-inline:12px;padding:10px}.profile-edit-controls{align-items:stretch;flex-direction:column}.profile-edit-controls .btn-gradient{width:100%}}
