@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
-import type { LucideIcon } from "lucide-react";
+import { gameList } from "./catalog/gameRegistry";
+import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import { applyTicTacToeMove, chooseTicTacToeBotMove, createTicTacToeState } from "./games/tictactoe";
 import type { TicTacToeMark, TicTacToeState } from "./games/tictactoe";
 import {
@@ -25,30 +26,6 @@ type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cance
 type PrivateRoomRow = { id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null; my_role: "host" | "player" };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
 type LeaderboardEntry = { rank_position: number | string; username: string; display_name: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
-type Game = {
-  id: string;
-  title: Record<Locale, string>;
-  subtitle: Record<Locale, string>;
-  category: Exclude<Category, "all">;
-  players: Record<Locale, string>;
-  icon: LucideIcon;
-  art: string;
-  color: string;
-  featured?: boolean;
-};
-
-const gameList: Game[] = [
-  { id: "chess", title: { en: "Chess", fa: "شطرنج" }, subtitle: { en: "Think three moves ahead", fa: "چند حرکت جلوتر فکر کن" }, category: "strategy", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Crown, art: "chess", color: "cyan", featured: true },
-  { id: "pool", title: { en: "Pool", fa: "بیلیارد" }, subtitle: { en: "Precision meets pressure", fa: "دقت در اوج هیجان" }, category: "strategy", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Activity, art: "pool", color: "violet", featured: true },
-  { id: "ludo", title: { en: "Ludo", fa: "منچ" }, subtitle: { en: "A classic, reimagined", fa: "یک بازی کلاسیک با حال‌وهوای تازه" }, category: "board", players: { en: "2–4 players", fa: "۲ تا ۴ بازیکن" }, icon: Dices, art: "ludo", color: "pink", featured: true },
-  { id: "checkers", title: { en: "Checkers", fa: "چکرز" }, subtitle: { en: "Own the board", fa: "صفحه را در اختیار بگیر" }, category: "board", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Grid2X2, art: "checkers", color: "blue" },
-  { id: "hokm", title: { en: "Hokm", fa: "حکم" }, subtitle: { en: "Read the table", fa: "میز را هوشمندانه بخوان" }, category: "cards", players: { en: "4 players", fa: "۴ بازیکن" }, icon: Spade, art: "cards", color: "gold" },
-  { id: "backgammon", title: { en: "Backgammon", fa: "تخته‌نرد" }, subtitle: { en: "Classic strategy, fast turns", fa: "استراتژی کلاسیک و حرکت‌های سریع" }, category: "board", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Grid2X2, art: "backgammon", color: "cyan" },
-  { id: "tictactoe", title: { en: "Tic Tac Toe", fa: "دوز" }, subtitle: { en: "Quick. Clever. Unpredictable.", fa: "سریع، هوشمندانه و غیرقابل‌پیش‌بینی" }, category: "puzzle", players: { en: "2 players", fa: "۲ بازیکن" }, icon: Puzzle, art: "tic", color: "violet" },
-  { id: "rummy", title: { en: "Rummy", fa: "رامی" }, subtitle: { en: "Build your winning hand", fa: "دست برنده‌ات را بساز" }, category: "cards", players: { en: "2–4 players", fa: "۲ تا ۴ بازیکن" }, icon: Spade, art: "rummy", color: "pink" }
-];
-
-
 const copy: Record<Locale, Record<string, string>> = {
   en: {
     navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRooms: "Private Rooms", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
