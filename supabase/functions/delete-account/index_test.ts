@@ -44,11 +44,12 @@ Deno.test("readBodyWithLimit rejects a streamed oversized body without Content-L
       controller.close();
     },
   });
-  const request = new Request("https://playora.test/delete", {
+  const streamInit = {
     method: "POST",
     body: stream,
     duplex: "half",
-  });
+  } as RequestInit & { duplex: "half" };
+  const request = new Request("https://playora.test/delete", streamInit);
   assert(!request.headers.has("content-length"), "Test must omit Content-Length");
   const result = await readBodyWithLimit(request, 2048);
   assert(result === null, "Oversized streamed body must be rejected");
