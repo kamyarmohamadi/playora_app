@@ -163,6 +163,14 @@ BEGIN
     RAISE EXCEPTION 'Authenticated members must be able to use approved social/leaderboard RPCs';
   END IF;
 
+  IF has_function_privilege('authenticated','public.prepare_account_deletion(uuid)','EXECUTE')
+     OR has_function_privilege('anon','public.prepare_account_deletion(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'Account deletion cleanup must not be callable by client roles';
+  END IF;
+  IF NOT has_function_privilege('service_role','public.prepare_account_deletion(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'Trusted server role must be able to prepare account deletion';
+  END IF;
+
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
