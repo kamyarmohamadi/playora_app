@@ -516,6 +516,29 @@ export default function App() {
         </main>
       </div>
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
+      {authOpen && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
+        <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+          <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span><button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button></div>
+          <span className="auth-eyebrow">PLAYORA ACCOUNT</span>
+          <h2 id="auth-modal-title">{authMode === "signup" ? t("signUp") : authMode === "reset" ? t("resetPassword") : t("authTitle")}</h2>
+          <p>{t("authSubtitle")}</p>
+          {!supabaseConfigured && <div className="auth-config-warning" role="status"><ShieldCheck size={17} /><span>{t("authUnavailable")}</span></div>}
+          {authMode !== "reset" && <button type="button" className="google-auth-btn" disabled={!supabaseConfigured || authBusy} onClick={() => void handleGoogleSignIn()}><GoogleGlyph />{t("continueWithGoogle")}</button>}
+          {authMode !== "reset" && <div className="auth-divider"><span>{locale === "en" ? "OR CONTINUE WITH EMAIL" : "یا با ایمیل ادامه بده"}</span></div>}
+          <form className="auth-form" onSubmit={event => void handleAuthSubmit(event)}>
+            {authMode === "signup" && <label>{t("displayName")}<input autoComplete="nickname" name="displayName" type="text" maxLength={32} value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder={t("displayName")} /></label>}
+            <label>{t("email")}<input required autoComplete="email" name="email" type="email" inputMode="email" maxLength={254} value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" /></label>
+            {authMode !== "reset" && <label>{t("password")}<input required autoComplete={authMode === "signup" ? "new-password" : "current-password"} name="password" type="password" minLength={authMode === "signup" ? 12 : undefined} maxLength={128} value={password} onChange={event => setPassword(event.target.value)} placeholder={authMode === "signup" ? t("passwordHint") : "••••••••••••"} /></label>}
+            {authMode === "signin" && <button type="button" className="auth-text-action" onClick={() => { setAuthMode("reset"); setAuthMessage(""); }}>{t("forgotPassword")}</button>}
+            {authMessage && <p className="auth-message" role="status">{authMessage}</p>}
+            <button className="btn-gradient auth-submit" type="submit" disabled={authBusy || !supabaseConfigured}>{authBusy ? t("loading") : authMode === "signup" ? t("signUp") : authMode === "reset" ? t("resetPassword") : t("signIn")}<ArrowRight size={16} /></button>
+          </form>
+          <div className="auth-mode-switch">
+            {authMode === "reset" ? <button type="button" onClick={() => { setAuthMode("signin"); setAuthMessage(""); }}>{t("backToSignIn")}</button> : authMode === "signup" ? <><span>{t("existingAccountPrompt")}</span><button type="button" onClick={() => { setAuthMode("signin"); setAuthMessage(""); }}>{t("signIn")}</button></> : <><span>{t("createAccountPrompt")}</span><button type="button" onClick={() => { setAuthMode("signup"); setAuthMessage(""); }}>{t("signUp")}</button></>}
+          </div>
+          <p className="auth-legal-note"><LockKeyhole size={12} />{t("secureNote")}</p>
+        </section>
+      </div>}
     </div>
   );
 }
