@@ -95,5 +95,7 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check Supabase Edge Functions
-        run: deno check supabase/functions/member-self/index.ts supabase/functions/delete-account/index.ts
+      - name: Type-check member self endpoint
+        run: deno check --config supabase/functions/member-self/deno.json supabase/functions/member-self/index.ts
+      - name: Type-check account deletion endpoint
+        run: deno check --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index.ts
