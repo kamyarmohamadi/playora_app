@@ -52,6 +52,20 @@ BEGIN
     RAISE EXCEPTION 'Authenticated role must not access private room secret hashes';
   END IF;
 
+  IF has_table_privilege('authenticated','public.coin_ledger','UPDATE')
+     OR has_table_privilege('authenticated','public.coin_ledger','DELETE') THEN
+    RAISE EXCEPTION 'Authenticated role must not mutate ledger entries';
+  END IF;
+
+  IF has_function_privilege('authenticated','public.apply_coin_delta(uuid,text,bigint,text,text,text)','EXECUTE')
+     OR has_function_privilege('anon','public.apply_coin_delta(uuid,text,bigint,text,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Wallet mutation RPC must not be executable by client roles';
+  END IF;
+
+  IF NOT has_function_privilege('service_role','public.apply_coin_delta(uuid,text,bigint,text,text,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Trusted server role must be able to call wallet mutation RPC';
+  END IF;
+
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
