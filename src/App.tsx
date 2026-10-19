@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ComponentProps } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, Bell, BadgeCheck, BarChart3,
@@ -36,7 +37,7 @@ const gameList: Game[] = [
   { id: "rummy", title: { en: "Rummy", fa: "رامی" }, subtitle: { en: "Build your winning hand", fa: "دست برنده‌ات را بساز" }, category: "cards", players: { en: "2–4 players", fa: "۲ تا ۴ بازیکن" }, icon: Spade, art: "rummy", color: "pink" }
 ];
 
-function TargetIcon(props: React.ComponentProps<LucideIcon>) {
+function TargetIcon(props: ComponentProps<LucideIcon>) {
   return <Activity {...props} />;
 }
 
@@ -164,6 +165,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<Category>("all");
   const [favorites, setFavorites] = useState<string[]>(["chess", "pool"]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [toast, setToast] = useState("");
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -184,12 +186,14 @@ export default function App() {
 
   const filteredGames = useMemo(() => gameList.filter((game) => {
     const matchesCategory = category === "all" || game.category === category;
+    const matchesFavorite = !favoritesOnly || favorites.includes(game.id);
     const haystack = [game.title[locale], game.title.en, game.subtitle[locale], copy[locale][game.category] ?? game.category].join(" ").toLocaleLowerCase(locale);
-    return matchesCategory && haystack.includes(search.trim().toLocaleLowerCase(locale));
-  }), [category, locale, search]);
+    return matchesCategory && matchesFavorite && haystack.includes(search.trim().toLocaleLowerCase(locale));
+  }), [category, favorites, favoritesOnly, locale, search]);
 
   const go = (nextPage: Page) => {
     setPage(nextPage);
+    if (nextPage !== "games") setFavoritesOnly(false);
     setMobileNavOpen(false);
     setNoticeOpen(false);
     if (nextPage !== "games") { setSearch(""); setCategory("all"); }
@@ -300,8 +304,8 @@ export default function App() {
           </>}
 
           {page === "games" && <>
-            <div className="catalog-toolbar"><div className="category-tabs" role="group" aria-label={t("mode")}>{categories.map(item => <button key={item.id} className={category === item.id ? "selected" : ""} onClick={() => setCategory(item.id)}>{t(item.key)}</button>)}</div><button className="favorites-filter" onClick={() => { const next = page === "games" && category === ("all" as Category) ? "favorites" : "all"; setCategory(next === "favorites" ? "all" : "all"); if (next === "favorites") setSearch("__favorite_view__"); else setSearch(""); }}>{/* Favorites are available from each card; filter retained for future backend integration. */}<Heart size={15} />{t("favorites")}</button></div>
-            {search !== "__favorite_view__" && filteredGames.length > 0 ? <div className="games-grid catalog-grid">{filteredGames.map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={notifyGameNotReady} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}</div> : <EmptyState icon={Search} title={t("emptySearch")} text={t("clearSearch")} />}
+            <div className="catalog-toolbar"><div className="category-tabs" role="group" aria-label={t("mode")}>{categories.map(item => <button key={item.id} className={category === item.id ? "selected" : ""} onClick={() => setCategory(item.id)}>{t(item.key)}</button>)}</div><button className={`favorites-filter ${favoritesOnly ? "selected" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(value => !value)}><Heart size={15} fill={favoritesOnly ? "currentColor" : "none"} />{t("favorites")}</button></div>
+            {filteredGames.length > 0 ? <div className="games-grid catalog-grid">{filteredGames.map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={notifyGameNotReady} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}</div> : <EmptyState icon={Search} title={t("emptySearch")} text={t("clearSearch")} />}
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
           </>}
 
