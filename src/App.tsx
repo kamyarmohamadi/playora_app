@@ -19,6 +19,8 @@ type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | 
 type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
+type MemberGameStats = { user_id: string; game_id: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
+type RankedHistoryRow = { id: string; status: string; winner_user_id: string | null; finished_at: string | null; created_at: string; mode: string };
 type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; winner_user_id: string | null; state_version: number };
 type PrivateRoomRow = { id: string; host_user_id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
@@ -81,7 +83,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "Sign in", signUp: "Create account", signOut: "Sign out", resetPassword: "Reset password", forgotPassword: "Forgot password?", backToSignIn: "Back to sign in",
     email: "Email address", password: "Password", displayName: "Display name", continueWithGoogle: "Continue with Google", authUnavailable: "Account services are not connected yet. Configure the Supabase project URL and publishable key, then enable Google OAuth and email redirects.",
     authFailure: "We couldn’t complete that request. Check your details or try again.", checkInbox: "Check your inbox for a confirmation link to finish creating your account.", resetSent: "If an account exists for this email, password reset instructions have been sent.",
-    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
+    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", profileXp: "Experience", recentMatches: "Recent ranked matches", noRecentMatches: "No completed ranked matches yet.", resultWin: "Win", resultLoss: "Loss", resultDraw: "Draw", resultCompleted: "Completed", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
     navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
@@ -116,7 +118,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "ورود", signUp: "ساخت حساب", signOut: "خروج از حساب", resetPassword: "بازنشانی رمز عبور", forgotPassword: "رمزت را فراموش کرده‌ای؟", backToSignIn: "بازگشت به ورود",
     email: "نشانی ایمیل", password: "رمز عبور", displayName: "نام نمایشی", continueWithGoogle: "ادامه با گوگل", authUnavailable: "سرویس حساب هنوز متصل نیست. آدرس پروژه و کلید عمومی Supabase را تنظیم کن و ورود گوگل و مسیرهای تأیید ایمیل را فعال کن.",
     authFailure: "درخواست انجام نشد. اطلاعات را بررسی کن یا دوباره تلاش کن.", checkInbox: "برای تکمیل ساخت حساب، ایمیل خود را برای پیوند تأیید بررسی کن.", resetSent: "اگر حسابی با این ایمیل وجود داشته باشد، دستور بازنشانی رمز ارسال شده است.",
-    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
+    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", setNewPassword: "تنظیم رمز جدید", passwordUpdated: "رمز عبور با موفقیت تغییر کرد.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", profileXp: "تجربه", recentMatches: "مسابقه‌های رتبه‌دار اخیر", noRecentMatches: "هنوز مسابقه رتبه‌دار تکمیل‌شده‌ای نداری.", resultWin: "برد", resultLoss: "باخت", resultDraw: "مساوی", resultCompleted: "تکمیل‌شده", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
   }
 };
 
@@ -225,6 +227,8 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [memberProfile, setMemberProfile] = useState<MemberProfile | null>(null);
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
+  const [memberStats, setMemberStats] = useState<MemberGameStats | null>(null);
+  const [recentMatches, setRecentMatches] = useState<RankedHistoryRow[]>([]);
   const [activeGame, setActiveGame] = useState<Game | null>(null);
   const [ticTacToeState, setTicTacToeState] = useState<TicTacToeState | null>(null);
   const [onlineStatus, setOnlineStatus] = useState<"idle" | "queueing" | "waiting" | "matched" | "error">("idle");
@@ -297,11 +301,15 @@ export default function App() {
     if (!supabase || !session?.user.id) {
       setMemberProfile(null);
       setMemberWallet(null);
+      setMemberStats(null);
+      setRecentMatches([]);
       setFavorites(["chess", "pool"]);
       return;
     }
     setMemberProfile(null);
     setMemberWallet(null);
+    setMemberStats(null);
+    setRecentMatches([]);
     setFavorites([]);
     let active = true;
     const userId = session.user.id;
@@ -314,11 +322,15 @@ export default function App() {
         .select("user_id, free_coins, purchased_coins, reward_coins, updated_at")
         .eq("user_id", userId).maybeSingle(),
       supabase.from("member_favorites").select("game_id").eq("user_id", userId),
-      supabase.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle()
-    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult]) => {
+      supabase.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
+      supabase.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
+      supabase.from("matches").select("id,status,winner_user_id,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
+    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
       if (!active) return;
       setMemberProfile(!profileResult.error ? profileResult.data as MemberProfile | null : null);
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
+      setMemberStats(!statsResult.error ? statsResult.data as MemberGameStats | null : null);
+      setRecentMatches(!historyResult.error && historyResult.data ? historyResult.data as RankedHistoryRow[] : []);
       if (!favoriteResult.error && favoriteResult.data) {
         setFavorites(favoriteResult.data.map(row => row.game_id));
       } else {
@@ -332,6 +344,8 @@ export default function App() {
       if (active) {
         setMemberProfile(null);
         setMemberWallet(null);
+        setMemberStats(null);
+        setRecentMatches([]);
       }
     });
     return () => { active = false; };
@@ -741,6 +755,8 @@ export default function App() {
     else {
       setMemberProfile(null);
       setMemberWallet(null);
+      setMemberStats(null);
+      setRecentMatches([]);
       setFavorites(["chess", "pool"]);
       setToast(t("signOutSuccess"));
       setPage("home");
