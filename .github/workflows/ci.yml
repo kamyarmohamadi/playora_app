@@ -83,3 +83,17 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
       - name: Test account deletion cleanup without reward side effects
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
+
+
+  edge-functions:
+    name: Edge function type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Supabase Edge Functions
+        run: deno check supabase/functions/member-self/index.ts supabase/functions/delete-account/index.ts
