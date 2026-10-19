@@ -1360,7 +1360,7 @@ export default function App() {
       </header>
 
       <div className="app-body">
-        <aside id="playora-navigation-drawer" className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`} aria-hidden={!mobileNavOpen}>
+        <aside id="playora-navigation-drawer" className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`} aria-hidden={!mobileNavOpen} inert={!mobileNavOpen}>
           <div className="sidebar-context"><span className="context-icon"><Gamepad2 size={15} /></span><span>PLAY<span>SPACE</span></span></div>
           <p className="sidebar-label">{locale === "en" ? "DISCOVER" : "کشف و بازی"}</p>
           <nav className="sidebar-nav" aria-label={t("nav")}>
