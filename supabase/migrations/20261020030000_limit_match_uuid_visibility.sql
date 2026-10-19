@@ -10,3 +10,8 @@ grant select (id, game_id, mode, status, state_version, server_state, started_at
 -- Keep all authoritative writes server-owned. Column visibility never implies
 -- permission to modify match state; mutations still go through verified RPCs.
 revoke insert, update, delete on table public.matches from anon, authenticated;
+
+-- A room member needs room metadata, not the host's internal auth UUID.
+revoke select on table public.private_rooms from anon, authenticated;
+grant select (id, game_id, status, max_players, expires_at, created_at, match_id)
+  on table public.private_rooms to authenticated;
