@@ -86,6 +86,13 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByText(/Private play is free\. No coins, XP, rating or prizes are awarded/).length).toBeGreaterThan(0);
   });
 
+  it("does not expose account deletion controls to guests", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.queryByRole("button", { name: "Delete account" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Danger zone" })).not.toBeInTheDocument();
+  });
+
   it("keeps profile statistics private in guest mode", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Profile" }));
