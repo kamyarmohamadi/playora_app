@@ -219,6 +219,13 @@ export default function App() {
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
   const [activeGame, setActiveGame] = useState<Game | null>(null);
   const [ticTacToeState, setTicTacToeState] = useState<TicTacToeState | null>(null);
+  const [onlineStatus, setOnlineStatus] = useState<"idle" | "queueing" | "waiting" | "matched" | "error">("idle");
+  const [onlineError, setOnlineError] = useState("");
+  const [onlineBusy, setOnlineBusy] = useState(false);
+  const [onlineMatchId, setOnlineMatchId] = useState<string | null>(null);
+  const [onlineMatch, setOnlineMatch] = useState<OnlineMatchSnapshot | null>(null);
+  const [onlineSeat, setOnlineSeat] = useState<number | null>(null);
+  const [onlineMoveBusy, setOnlineMoveBusy] = useState(false);
 
   const t = (key: string) => copy[locale][key] ?? key;
   const direction = locale === "fa" ? "rtl" : "ltr";
@@ -314,6 +321,92 @@ export default function App() {
     }, 280);
     return () => window.clearTimeout(timer);
   }, [activeGame?.id, ticTacToeState]);
+
+  useEffect(() => {
+    if (!supabase || !session?.user.id || page !== "online" || onlineStatus !== "waiting") return;
+    let stopped = false;
+    let timer: number | undefined;
+    const userId = session.user.id;
+    const pollQueue = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("matchmaking_queue")
+          .select("status, match_id")
+          .eq("user_id", userId)
+          .eq("game_id", "tictactoe")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (stopped) return;
+        if (error) throw error;
+        if (data?.status === "matched" && data.match_id) {
+          setOnlineMatchId(data.match_id);
+          setOnlineStatus("matched");
+          return;
+        }
+        if (data?.status === "expired" || data?.status === "cancelled") {
+          setOnlineStatus("idle");
+          setOnlineError(t("onlineError"));
+          return;
+        }
+        timer = window.setTimeout(() => void pollQueue(), 1400);
+      } catch {
+        if (!stopped) {
+          setOnlineStatus("error");
+          setOnlineError(t("onlineError"));
+        }
+      }
+    };
+    void pollQueue();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, onlineStatus, session?.user.id]);
+
+  useEffect(() => {
+    if (!supabase || !session?.user.id || page !== "online" || !onlineMatchId) return;
+    let stopped = false;
+    let timer: number | undefined;
+    const userId = session.user.id;
+    const pollMatch = async () => {
+      try {
+        const [matchResult, seatResult] = await Promise.all([
+          supabase.from("matches")
+            .select("id, status, server_state, winner_user_id, state_version")
+            .eq("id", onlineMatchId).maybeSingle(),
+          supabase.from("match_participants")
+            .select("seat")
+            .eq("match_id", onlineMatchId)
+            .eq("user_id", userId)
+            .maybeSingle()
+        ]);
+        if (stopped) return;
+        if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) throw new Error("match_unavailable");
+        const rawMatch = matchResult.data as unknown as OnlineMatchSnapshot;
+        if (!Array.isArray(rawMatch.server_state?.board) || rawMatch.server_state.board.length !== 9 ||
+            !Number.isInteger(rawMatch.server_state.current_seat) ||
+            (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
+          throw new Error("invalid_match_state");
+        }
+        setOnlineMatch(rawMatch);
+        setOnlineSeat(Number(seatResult.data.seat));
+        if (rawMatch.status === "active") {
+          timer = window.setTimeout(() => void pollMatch(), 1200);
+        }
+      } catch {
+        if (!stopped) {
+          setOnlineError(t("onlineError"));
+          setOnlineStatus("error");
+        }
+      }
+    };
+    void pollMatch();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, session?.user.id, onlineMatchId]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
