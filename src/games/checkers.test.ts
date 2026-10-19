@@ -92,6 +92,16 @@ describe("Checkers engine", () => {
     expect(chooseCheckersBotMove(state)).toEqual({ from: 17, to: 35, captured: 26 });
   });
 
+  it("does not reset the no-capture draw counter when a man is crowned", () => {
+    const board = Array(64).fill(null) as ReturnType<typeof createCheckersState>["board"];
+    board[10] = { player: "red", king: false };
+    board[17] = { player: "black", king: false };
+    const state = blankState({ board, quietPlies: 79 });
+    const next = applyCheckersMove(state, 10, 1);
+    expect(next.board[1]).toEqual({ player: "red", king: true });
+    expect(next.status).toBe("draw");
+  });
+
   it("draws after the documented 80 consecutive non-capture plies", () => {
     const state = createCheckersState();
     const atLimit = { ...state, quietPlies: 79 };
