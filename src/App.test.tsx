@@ -55,7 +55,7 @@ describe("Playora global app shell", () => {
     expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
     expect(screen.getByText(/Account services are not connected yet/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
-    expect(screen.getAllByRole("button", { name: "Sign in", exact: true }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
+    expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
   it("opens a no-reward Tic Tac Toe practice match against the bot", () => {
