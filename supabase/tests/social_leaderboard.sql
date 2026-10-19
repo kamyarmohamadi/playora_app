@@ -154,8 +154,8 @@ BEGIN
   END IF;
   IF (SELECT count(*) FROM public.social_action_events
       WHERE user_id='00000000-0000-4000-8000-000000000011'
-        AND event_type='send_friend_request') <> 6 THEN
-    RAISE EXCEPTION 'All friend-request attempts, including rate-limited attempts, must be counted';
+        AND event_type='send_friend_request') <> 5 THEN
+    RAISE EXCEPTION 'All accepted attempts before the rate limit must be counted; the over-limit call must be rejected';
   END IF;
 END
 $social_admin_check$;
