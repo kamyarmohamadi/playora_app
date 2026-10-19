@@ -1,0 +1,4 @@
+project_id = "playora"
+
+[functions.member-self]
+verify_jwt = true
