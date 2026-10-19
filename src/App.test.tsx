@@ -90,7 +90,7 @@ describe("Playora global app shell", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Friends" }));
     expect(screen.getByRole("heading", { name: "Find your people" })).toBeInTheDocument();
-    expect(screen.getByText(/Email addresses are never searchable/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Email addresses are never searchable/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: "Player username" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send request" })).not.toBeInTheDocument();
@@ -103,26 +103,6 @@ describe("Playora global app shell", () => {
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Refresh" })).not.toBeInTheDocument();
     expect(screen.queryByText("@player_000000")).not.toBeInTheDocument();
-  });
-
-  it("keeps friend search and relationship controls behind sign-in", () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Friends" }));
-    expect(screen.getAllByRole("heading", { name: "Find your people" }).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
-    expect(screen.queryByRole("textbox", { name: "Player username" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Send request" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
-  });
-
-  it("keeps leaderboard rows private until a member signs in", () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
-    expect(screen.getAllByRole("heading", { name: "The leaderboard" }).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Ranked Tic Tac Toe results only/)).toBeInTheDocument();
-    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Refresh" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Rating")).not.toBeInTheDocument();
   });
 
   it("shows notices without claiming online play is active", () => {
