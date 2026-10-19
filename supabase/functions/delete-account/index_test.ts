@@ -1,8 +1,8 @@
 import {
   decodeVerifiedPayload,
   handleDeleteAccount,
-  readBodyWithLimit,
 } from "./index.ts";
+import { readBodyWithLimit } from "../_shared/request.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -33,6 +33,46 @@ Deno.test("readBodyWithLimit accepts a small body and rejects an oversized body"
     body: "x".repeat(100),
   }), 20);
   assert(rejected === null, "Expected oversized request body to be rejected");
+});
+
+Deno.test("readBodyWithLimit rejects a streamed oversized body without Content-Length", async () => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode("a".repeat(1500)));
+      controller.enqueue(encoder.encode("b".repeat(1500)));
+      controller.close();
+    },
+  });
+  const request = new Request("https://playora.test/delete", {
+    method: "POST",
+    body: stream,
+    duplex: "half",
+  });
+  assert(!request.headers.has("content-length"), "Test must omit Content-Length");
+  const result = await readBodyWithLimit(request, 2048);
+  assert(result === null, "Oversized streamed body must be rejected");
+});
+
+Deno.test("readBodyWithLimit rejects invalid UTF-8 and invalid limits", async () => {
+  let invalidUtf8Rejected = false;
+  try {
+    await readBodyWithLimit(new Request("https://playora.test/delete", {
+      method: "POST",
+      body: new Uint8Array([0xc3, 0x28]),
+    }), 32);
+  } catch {
+    invalidUtf8Rejected = true;
+  }
+  assert(invalidUtf8Rejected, "Invalid UTF-8 must be rejected");
+
+  let invalidLimitRejected = false;
+  try {
+    await readBodyWithLimit(new Request("https://playora.test/delete"), -1);
+  } catch (error) {
+    invalidLimitRejected = error instanceof RangeError;
+  }
+  assert(invalidLimitRejected, "Negative limits must be rejected");
 });
 
 Deno.test("unsupported methods fail before any backend secret is required", async () => {
