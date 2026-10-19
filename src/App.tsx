@@ -762,6 +762,7 @@ export default function App() {
         ? supabase.from("member_favorites").delete().eq("user_id", userId).eq("game_id", id)
         : supabase.from("member_favorites").insert({ user_id: userId, game_id: id });
       void request.then(({ error }) => {
+        if (activeUserIdRef.current !== userId) return;
         if (error) {
           setFavorites(current => wasSaved ? [...new Set([...current, id])] : current.filter(item => item !== id));
           setToast(t("favoriteFailed"));
@@ -859,6 +860,7 @@ export default function App() {
       supabase.from("member_preferences").upsert({ user_id: userId, locale: nextLocale }, { onConflict: "user_id" }),
       supabase.from("member_profiles").update({ locale: nextLocale }).eq("user_id", userId)
     ]).then(([preferenceResult, profileResult]) => {
+      if (activeUserIdRef.current !== userId) return;
       if (preferenceResult.error || profileResult.error) setToast(copy[nextLocale].authFailure);
     });
   };
@@ -875,39 +877,43 @@ export default function App() {
       setProfileMessage("");
       return;
     }
+    const userId = session.user.id;
     setProfileSaveBusy(true);
     setProfileMessage("");
     try {
       const { data, error } = await supabase
         .from("member_profiles")
         .update({ display_name: cleanName })
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .select("user_id, username, display_name, avatar_key, locale, created_at")
         .maybeSingle();
-      if (error || !data || data.user_id !== session.user.id) throw new Error("profile_update_failed");
+      if (activeUserIdRef.current !== userId) return;
+      if (error || !data || data.user_id !== userId) throw new Error("profile_update_failed");
       setMemberProfile(data as MemberProfile);
       setProfileNameDraft(data.display_name);
       setProfileMessage(t("profileUpdated"));
     } catch {
-      setProfileMessage(t("profileUpdateFailed"));
+      if (activeUserIdRef.current === userId) setProfileMessage(t("profileUpdateFailed"));
     } finally {
-      setProfileSaveBusy(false);
+      if (activeUserIdRef.current === userId) setProfileSaveBusy(false);
     }
   };
 
   const requestAccountDeletion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!supabase || !session?.user.id || deleteConfirmation !== "DELETE") return;
+    const userId = session.user.id;
     setDeleteBusy(true);
     setDeleteMessage("");
     try {
       const { data, error } = await supabase.functions.invoke("delete-account", {
         body: { confirmation: "DELETE" }
       });
+      if (activeUserIdRef.current !== userId) return;
       if (error || !data || data.deleted !== true) throw new Error("account_delete_failed");
 
-      // The server has already deleted the Auth user; clear local-only state
-      // immediately even if the SDK's sign-out call can no longer reach Auth.
+      // Do not sign out or clear a different member if the session changed
+      // while the deletion request was in flight.
       await supabase.auth.signOut().catch(() => undefined);
       setSession(null);
       setMemberProfile(null);
@@ -929,15 +935,17 @@ export default function App() {
       setDeleteConfirmation("");
       setToast(t("deleteAccountSuccess"));
     } catch {
-      setDeleteMessage(t("deleteAccountFailed"));
+      if (activeUserIdRef.current === userId) setDeleteMessage(t("deleteAccountFailed"));
     } finally {
-      setDeleteBusy(false);
+      if (activeUserIdRef.current === userId) setDeleteBusy(false);
     }
   };
 
   const handleSignOut = async () => {
-    if (!supabase) return;
+    if (!supabase || !session?.user.id) return;
+    const userId = session.user.id;
     const { error } = await supabase.auth.signOut();
+    if (activeUserIdRef.current !== userId) return;
     if (error) setToast(t("authFailure"));
     else {
       setMemberProfile(null);
@@ -990,6 +998,7 @@ export default function App() {
       openAuth("signin");
       return;
     }
+    const userId = session.user.id;
     setOnlineError("");
     setOnlineBusy(true);
     setOnlineStatus("queueing");
@@ -998,6 +1007,7 @@ export default function App() {
     setOnlineSeat(null);
     try {
       const { data, error } = await supabase.rpc("queue_for_random_match", { p_game_id: "tictactoe" });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       const result = (Array.isArray(data) ? data[0] : data) as { queue_status?: string; matched_match_id?: string | null } | null;
       if (result?.queue_status === "matched" && result.matched_match_id) {
@@ -1007,33 +1017,38 @@ export default function App() {
         setOnlineStatus("waiting");
       }
     } catch {
-      setOnlineStatus("error");
-      setOnlineError(t("onlineError"));
+      if (activeUserIdRef.current === userId) {
+        setOnlineStatus("error");
+        setOnlineError(t("onlineError"));
+      }
     } finally {
-      setOnlineBusy(false);
+      if (activeUserIdRef.current === userId) setOnlineBusy(false);
     }
   };
 
   const cancelOnlineQueue = async () => {
     if (!supabase || !session?.user.id) return;
+    const userId = session.user.id;
     setOnlineBusy(true);
     setOnlineError("");
     try {
       const { error } = await supabase.rpc("cancel_random_match_queue", { p_game_id: "tictactoe" });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       setOnlineStatus("idle");
       setOnlineMatchId(null);
       setOnlineMatch(null);
       setOnlineSeat(null);
     } catch {
-      setOnlineError(t("onlineError"));
+      if (activeUserIdRef.current === userId) setOnlineError(t("onlineError"));
     } finally {
-      setOnlineBusy(false);
+      if (activeUserIdRef.current === userId) setOnlineBusy(false);
     }
   };
 
   const submitOnlineMove = async (index: number) => {
     if (!supabase || !session?.user.id || !onlineMatchId || !onlineMatch || !onlineSeat) return;
+    const userId = session.user.id;
     if (onlineMatch.status !== "active" || onlineMatch.server_state.current_seat !== onlineSeat ||
         onlineMatch.server_state.board?.[index] !== null) return;
     setOnlineMoveBusy(true);
@@ -1043,11 +1058,12 @@ export default function App() {
         p_match_id: onlineMatchId,
         p_cell_index: index
       });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
     } catch {
-      setOnlineError(t("moveRejected"));
+      if (activeUserIdRef.current === userId) setOnlineError(t("moveRejected"));
     } finally {
-      setOnlineMoveBusy(false);
+      if (activeUserIdRef.current === userId) setOnlineMoveBusy(false);
     }
   };
 
@@ -1056,6 +1072,7 @@ export default function App() {
       openAuth("signin");
       return;
     }
+    const userId = session.user.id;
     setPrivateRoomBusy(true);
     setPrivateRoomError("");
     try {
@@ -1063,6 +1080,7 @@ export default function App() {
         p_game_id: "tictactoe",
         p_max_players: 2
       });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       const result = (Array.isArray(data) ? data[0] : data) as {
         created_room_id?: string; invite_code?: string; room_expires_at?: string
@@ -1073,9 +1091,9 @@ export default function App() {
       setPrivateRoomRefresh(value => value + 1);
       setToast(t("inviteCreated"));
     } catch {
-      setPrivateRoomError(t("privateRoomError"));
+      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
     } finally {
-      setPrivateRoomBusy(false);
+      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
     }
   };
 
@@ -1085,6 +1103,7 @@ export default function App() {
       openAuth("signin");
       return;
     }
+    const userId = session.user.id;
     const code = privateRoomCode.trim().toLowerCase();
     if (!/^[0-9a-f]{32}$/.test(code)) {
       setPrivateRoomError(t("privateRoomError"));
@@ -1094,6 +1113,7 @@ export default function App() {
     setPrivateRoomError("");
     try {
       const { data, error } = await supabase.rpc("join_private_room", { p_invite_code: code });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       const result = (Array.isArray(data) ? data[0] : data) as {
         joined_room_id?: string; joined_game_id?: string; room_status?: string; active_match_id?: string | null
@@ -1107,18 +1127,20 @@ export default function App() {
         setPrivateSeat(null);
       }
     } catch {
-      setPrivateRoomError(t("privateRoomError"));
+      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
     } finally {
-      setPrivateRoomBusy(false);
+      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
     }
   };
 
   const leavePrivateRoom = async (room: PrivateRoomRow) => {
     if (!supabase || !session?.user.id) return;
+    const userId = session.user.id;
     setPrivateRoomBusy(true);
     setPrivateRoomError("");
     try {
       const { data, error } = await supabase.rpc("leave_private_room", { p_room_id: room.id });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       if (data !== true) throw new Error("room_not_left");
       if (room.match_id && room.match_id === privateMatchId) {
@@ -1129,9 +1151,9 @@ export default function App() {
       setPrivateRoomRefresh(value => value + 1);
       setToast(room.my_role === "host" ? t("closePrivateRoom") : t("leavePrivateRoom"));
     } catch {
-      setPrivateRoomError(t("privateRoomError"));
+      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
     } finally {
-      setPrivateRoomBusy(false);
+      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
     }
   };
 
@@ -1152,6 +1174,7 @@ export default function App() {
 
   const submitPrivateMove = async (index: number) => {
     if (!supabase || !session?.user.id || !privateMatchId || !privateMatch || !privateSeat) return;
+    const userId = session.user.id;
     if (privateMatch.status !== "active" || privateMatch.server_state.current_seat !== privateSeat ||
         privateMatch.server_state.board?.[index] !== null) return;
     setPrivateMoveBusy(true);
@@ -1161,11 +1184,12 @@ export default function App() {
         p_match_id: privateMatchId,
         p_cell_index: index
       });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
     } catch {
-      setPrivateRoomError(t("privateMatchError"));
+      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateMatchError"));
     } finally {
-      setPrivateMoveBusy(false);
+      if (activeUserIdRef.current === userId) setPrivateMoveBusy(false);
     }
   };
 
@@ -1175,6 +1199,7 @@ export default function App() {
       openAuth("signin");
       return;
     }
+    const userId = session.user.id;
     const username = socialQuery.trim();
     if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
       setSocialError(t("usernameInvalid"));
@@ -1184,6 +1209,7 @@ export default function App() {
     setSocialError("");
     try {
       const { data, error } = await supabase.rpc("send_friend_request", { p_username: username });
+      if (activeUserIdRef.current !== userId) return;
       if (error) {
         if (error.code === "22023" && error.message.toLowerCase().includes("rate")) {
           throw new Error("rate_limited");
@@ -1201,10 +1227,11 @@ export default function App() {
       else if (result?.relationship_status === "incoming") setToast(t("incomingRequestExists"));
       else setToast(t("requestSent"));
     } catch (error) {
+      if (activeUserIdRef.current !== userId) return;
       const code = error instanceof Error ? error.message : "social_request_failed";
       setSocialError(code === "rate_limited" ? t("socialRateLimit") : code === "member_not_found" ? t("memberNotFound") : t("socialError"));
     } finally {
-      setSocialBusy(false);
+      if (activeUserIdRef.current === userId) setSocialBusy(false);
     }
   };
 
@@ -1213,6 +1240,7 @@ export default function App() {
     action: "accepted" | "declined" | "blocked"
   ) => {
     if (!supabase || !session?.user.id || relationship.relationship_type !== "incoming") return;
+    const userId = session.user.id;
     setSocialBusy(true);
     setSocialError("");
     try {
@@ -1220,13 +1248,14 @@ export default function App() {
         p_request_id: relationship.request_id,
         p_action: action
       });
+      if (activeUserIdRef.current !== userId) return;
       if (error) throw error;
       setSocialRefresh(value => value + 1);
       setToast(action === "accepted" ? t("requestAccepted") : action === "declined" ? t("requestDeclined") : t("requestBlocked"));
     } catch {
-      setSocialError(t("socialError"));
+      if (activeUserIdRef.current === userId) setSocialError(t("socialError"));
     } finally {
-      setSocialBusy(false);
+      if (activeUserIdRef.current === userId) setSocialBusy(false);
     }
   };
 
