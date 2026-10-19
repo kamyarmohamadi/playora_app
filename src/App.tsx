@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import type { LucideIcon } from "lucide-react";
+import { applyTicTacToeMove, chooseTicTacToeBotMove, createTicTacToeState } from "./games/tictactoe";
+import type { TicTacToeState } from "./games/tictactoe";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown,
   Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
@@ -65,7 +67,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "Sign in", signUp: "Create account", signOut: "Sign out", resetPassword: "Reset password", forgotPassword: "Forgot password?", backToSignIn: "Back to sign in",
     email: "Email address", password: "Password", displayName: "Display name", continueWithGoogle: "Continue with Google", authUnavailable: "Account services are not connected yet. Configure the Supabase project URL and publishable key, then enable Google OAuth and email redirects.",
     authFailure: "We couldn’t complete that request. Check your details or try again.", checkInbox: "Check your inbox for a confirmation link to finish creating your account.", resetSent: "If an account exists for this email, password reset instructions have been sent.",
-    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security."
+    passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
     navHome: "خانه", navGames: "بازی‌ها", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
@@ -90,7 +92,7 @@ const copy: Record<Locale, Record<string, string>> = {
     signIn: "ورود", signUp: "ساخت حساب", signOut: "خروج از حساب", resetPassword: "بازنشانی رمز عبور", forgotPassword: "رمزت را فراموش کرده‌ای؟", backToSignIn: "بازگشت به ورود",
     email: "نشانی ایمیل", password: "رمز عبور", displayName: "نام نمایشی", continueWithGoogle: "ادامه با گوگل", authUnavailable: "سرویس حساب هنوز متصل نیست. آدرس پروژه و کلید عمومی Supabase را تنظیم کن و ورود گوگل و مسیرهای تأیید ایمیل را فعال کن.",
     authFailure: "درخواست انجام نشد. اطلاعات را بررسی کن یا دوباره تلاش کن.", checkInbox: "برای تکمیل ساخت حساب، ایمیل خود را برای پیوند تأیید بررسی کن.", resetSent: "اگر حسابی با این ایمیل وجود داشته باشد، دستور بازنشانی رمز ارسال شده است.",
-    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند."
+    passwordHint: "حداقل ۱۲ نویسه استفاده کن.", accountRequired: "برای همگام‌سازی دلخواه‌ها و دسترسی به حساب شخصی وارد شو.", signInSuccess: "با موفقیت وارد شدی.", signOutSuccess: "از حساب خارج شدی.", favoriteFailed: "ذخیره دلخواه‌ها انجام نشد. دوباره تلاش کن.", loading: "در حال بارگذاری…", balanceUnavailable: "موجودی در دسترس نیست", member: "عضو", authTitle: "به پلیورا خوش آمدی", authSubtitle: "وارد شو تا پروفایل و پیشرفتت همراهت بماند.", createAccountPrompt: "تازه به پلیورا آمده‌ای؟", existingAccountPrompt: "از قبل حساب داری؟", securityLiveNote: "نشست ورود با Supabase Auth مدیریت می‌شود. اطلاعات خصوصی با امنیت سطح ردیف پایگاه داده جدا می‌شوند.", practiceTitle: "تمرین با ربات", practiceNoRewards: "فقط تمرین — این بازی XP، رتبه، سکه یا جایزه نمی‌دهد.", yourTurn: "نوبت تو · X", botThinking: "نوبت ربات · O", youWin: "تو برنده شدی!", botWins: "ربات این دور را برد.", draw: "بازی مساوی شد.", restartGame: "بازی دوباره", closeGame: "بستن بازی", gameBoard: "صفحه دوز", cell: "خانه"
   }
 };
 
@@ -192,6 +194,8 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [memberProfile, setMemberProfile] = useState<MemberProfile | null>(null);
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
+  const [activeGame, setActiveGame] = useState<Game | null>(null);
+  const [ticTacToeState, setTicTacToeState] = useState<TicTacToeState | null>(null);
 
   const t = (key: string) => copy[locale][key] ?? key;
   const direction = locale === "fa" ? "rtl" : "ltr";
@@ -258,6 +262,18 @@ export default function App() {
     });
     return () => { active = false; };
   }, [session?.user.id]);
+
+  useEffect(() => {
+    if (activeGame?.id !== "tictactoe" || !ticTacToeState || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "O") return;
+    const timer = window.setTimeout(() => {
+      setTicTacToeState(current => {
+        if (!current || current.status !== "playing" || current.currentPlayer !== "O") return current;
+        const move = chooseTicTacToeBotMove(current.board, "O");
+        return move === null ? current : applyTicTacToeMove(current, move);
+      });
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [activeGame?.id, ticTacToeState]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -393,7 +409,28 @@ export default function App() {
     ? t("balanceUnavailable")
     : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(coinBalance);
 
-  const notifyGameNotReady = () => setToast(t("gameNotReady"));
+  const openGame = (game: Game) => {
+    if (game.id === "tictactoe") {
+      setToast("");
+      setTicTacToeState(createTicTacToeState());
+      setActiveGame(game);
+      setMobileNavOpen(false);
+      return;
+    }
+    setToast(t("gameNotReady"));
+  };
+  const makeTicTacToeMove = (index: number) => {
+    setTicTacToeState(current => current ? applyTicTacToeMove(current, index) : current);
+  };
+  const restartTicTacToe = () => setTicTacToeState(createTicTacToeState());
+  const closeTicTacToe = () => {
+    setActiveGame(null);
+    setTicTacToeState(null);
+  };
+  const ticTacToeStatus = !ticTacToeState ? "" :
+    ticTacToeState.status === "won" ? (ticTacToeState.winner === "X" ? t("youWin") : t("botWins")) :
+    ticTacToeState.status === "draw" ? t("draw") :
+    ticTacToeState.currentPlayer === "X" ? t("yourTurn") : t("botThinking");
 
   const pageMeta: Record<Page, { title: string; subtitle: string }> = {
     home: { title: t("navHome"), subtitle: t("notLive") },
@@ -486,7 +523,7 @@ export default function App() {
             <section className="games-section">
               <SectionHeading eyebrow={t("popularSub")} title={t("popular")} action={t("seeAll")} onAction={() => go("games")} />
               <div className="games-grid home-games">
-                {gameList.filter(g => g.featured).map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={notifyGameNotReady} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}
+                {gameList.filter(g => g.featured).map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={openGame} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}
               </div>
             </section>
 
