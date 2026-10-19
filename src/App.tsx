@@ -323,13 +323,14 @@ export default function App() {
   }, [activeGame?.id, ticTacToeState]);
 
   useEffect(() => {
-    if (!supabase || !session?.user.id || page !== "online" || onlineStatus !== "waiting") return;
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "online" || onlineStatus !== "waiting") return;
     let stopped = false;
     let timer: number | undefined;
     const userId = session.user.id;
     const pollQueue = async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from("matchmaking_queue")
           .select("status, match_id")
           .eq("user_id", userId)
@@ -365,17 +366,18 @@ export default function App() {
   }, [page, onlineStatus, session?.user.id]);
 
   useEffect(() => {
-    if (!supabase || !session?.user.id || page !== "online" || !onlineMatchId) return;
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "online" || !onlineMatchId) return;
     let stopped = false;
     let timer: number | undefined;
     const userId = session.user.id;
     const pollMatch = async () => {
       try {
         const [matchResult, seatResult] = await Promise.all([
-          supabase.from("matches")
+          db.from("matches")
             .select("id, status, server_state, winner_user_id, state_version")
             .eq("id", onlineMatchId).maybeSingle(),
-          supabase.from("match_participants")
+          db.from("match_participants")
             .select("seat")
             .eq("match_id", onlineMatchId)
             .eq("user_id", userId)
