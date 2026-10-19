@@ -1740,6 +1740,58 @@ export default function App() {
           <div className="game-modal-actions"><button type="button" className="btn-ghost" onClick={closePracticeGame}>{t("closeGame")}</button><button type="button" className="btn-gradient" onClick={restartTicTacToe}><Activity size={15} />{t("restartGame")}</button></div>
         </section>
       </div>}
+      {activeGame?.id === "checkers" && checkersState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closePracticeGame(); }}>
+        <section className="game-modal checkers-modal" role="dialog" aria-modal="true" aria-labelledby="checkers-title">
+          <div className="game-modal-top">
+            <span className="practice-badge"><Crown size={14} />{t("checkersPracticeTitle")}</span>
+            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closePracticeGame}><X size={18} /></button>
+          </div>
+          <h2 id="checkers-title">{activeGame.title[locale]}</h2>
+          <p className="game-practice-note"><ShieldCheck size={15} />{t("practiceNoRewards")}</p>
+          <p className="checkers-rules-note">{t("checkersRulesNote")}</p>
+          <div className="ttt-player-strip">
+            <span className="ttt-player human"><b>R</b><span>{locale === "en" ? "You · Red" : "تو · قرمز"}</span></span>
+            <span className="ttt-vs">VS</span>
+            <span className="ttt-player bot"><b>B</b><span>{locale === "en" ? "Playora Bot · Black" : "ربات پلیورا · سیاه"}</span></span>
+          </div>
+          <div className="checkers-board" role="group" aria-label={t("checkersBoardLabel")}>
+            {checkersState.board.map((piece, index) => {
+              const playable = (Math.floor(index / 8) + (index % 8)) % 2 === 1;
+              const selected = selectedCheckersFrom === index;
+              const destination = selectedCheckersDestinations.has(index);
+              const pieceLabel = piece
+                ? ", " + (piece.player === "red" ? t("checkersRedPiece") : t("checkersBlackPiece")) + (piece.king ? ", " + t("checkersKing") : "")
+                : "";
+              const squareLabel = t("checkersSquare") + " " + (index + 1) + pieceLabel;
+              return <button
+                key={index}
+                type="button"
+                className={"checkers-square " + (playable ? "is-playable" : "is-light") +
+                  (piece ? " has-" + piece.player : "") +
+                  (piece?.king ? " is-king" : "") +
+                  (selected ? " is-selected" : "") +
+                  (destination ? " is-destination" : "")}
+                aria-label={squareLabel}
+                aria-pressed={selected}
+                disabled={!playable || checkersState.status !== "playing" || checkersState.currentPlayer !== "red"}
+                onClick={() => makeCheckersMove(index)}
+              >
+                {piece && <span className={"checkers-piece " + (piece.king ? "is-king" : "")}>
+                  {piece.king ? <Crown size={18} /> : <span className="checkers-piece-dot" />}
+                </span>}
+                {destination && !piece && <span className="checkers-destination-dot" aria-hidden="true" />}
+              </button>;
+            })}
+          </div>
+          <div className={"ttt-status " + (checkersState.status !== "playing" ? "is-complete" : "")} role="status">
+            <span className="ttt-status-pulse" />{checkersStatus}
+          </div>
+          <div className="game-modal-actions">
+            <button type="button" className="btn-ghost" onClick={closePracticeGame}>{t("closeGame")}</button>
+            <button type="button" className="btn-gradient" onClick={restartCheckers}><Activity size={15} />{t("restartGame")}</button>
+          </div>
+        </section>
+      </div>}
       {deleteDialogOpen && session && <div className="auth-backdrop deletion-backdrop" role="presentation" onMouseDown={event => { if (!deleteBusy && event.target === event.currentTarget) setDeleteDialogOpen(false); }}>
         <section className="auth-modal deletion-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
           <div className="auth-modal-top"><span className="auth-modal-mark deletion-mark"><ShieldCheck size={22} /></span><button className="auth-close" type="button" aria-label={t("cancel")} onClick={() => { if (!deleteBusy) setDeleteDialogOpen(false); }} disabled={deleteBusy}><X size={18} /></button></div>
