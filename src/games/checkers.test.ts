@@ -102,6 +102,20 @@ describe("Checkers engine", () => {
     expect(next.status).toBe("draw");
   });
 
+  it("wins when the next player has pieces but no legal moves", () => {
+    const board = Array(64).fill(null) as ReturnType<typeof createCheckersState>["board"];
+    board[8] = { player: "red", king: false };
+    board[26] = { player: "red", king: false };
+    board[33] = { player: "red", king: false };
+    board[35] = { player: "red", king: false };
+    board[17] = { player: "black", king: false };
+    const state = blankState({ board });
+    const next = applyCheckersMove(state, 33, 24);
+    expect(next.status).toBe("won");
+    expect(next.winner).toBe("red");
+    expect(next.board.filter(piece => piece?.player === "black")).toHaveLength(1);
+  });
+
   it("draws after the documented 80 consecutive non-capture plies", () => {
     const state = createCheckersState();
     const atLimit = { ...state, quietPlies: 79 };
