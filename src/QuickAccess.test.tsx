@@ -19,7 +19,7 @@ describe("Playora game catalogue", () => {
 
   it("filters the catalogue by category", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Games" }));
+    openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "Card games" }));
     expect(screen.getByRole("heading", { name: "Hokm" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Rummy" })).toBeInTheDocument();
