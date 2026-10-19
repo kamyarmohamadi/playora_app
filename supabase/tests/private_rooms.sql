@@ -47,7 +47,7 @@ BEGIN
   -- Host creates a free room and receives the invite code exactly once.
   SELECT created_room_id,invite_code,room_expires_at
   INTO v_room_id,v_invite_code,v_expiry
-  FROM public.create_private_room('tictactoe',2);
+  FROM public.create_private_room('tictactoe',2::smallint);
   IF v_room_id IS NULL OR v_invite_code !~ '^[0-9a-f]{32}$' OR v_expiry <= now() THEN
     RAISE EXCEPTION 'Private room did not return a valid room, invite code, and expiry';
   END IF;
@@ -159,7 +159,7 @@ BEGIN
   -- Host can close an unused room; its invite code must stop working immediately.
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   SELECT created_room_id,invite_code INTO v_second_room,v_second_code
-  FROM public.create_private_room('tictactoe',2);
+  FROM public.create_private_room('tictactoe',2::smallint);
   SELECT public.leave_private_room(v_second_room) INTO v_leave_ok;
   IF NOT v_leave_ok OR (SELECT status FROM public.private_rooms WHERE id=v_second_room) <> 'closed' THEN
     RAISE EXCEPTION 'Host could not close an unused room';
