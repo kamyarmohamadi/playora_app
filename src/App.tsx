@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
 import { gameList } from "./catalog/gameRegistry";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
