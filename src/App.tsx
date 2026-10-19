@@ -424,6 +424,7 @@ export default function App() {
           ownResults = new Map(ownHistoryResult.data.map(row => [row.match_id, row.final_result as RankedHistoryRow["my_result"]]));
         }
       }
+      if (!active || activeUserIdRef.current !== userId) return;
       setRecentMatches(!historyResult.error && !historyAccessFailed && historyResult.data
         ? (historyResult.data as Omit<RankedHistoryRow, "my_result">[]).map(row => ({ ...row, my_result: ownResults.get(row.id) ?? null })).filter(row => row.my_result !== null) as RankedHistoryRow[]
         : []);
@@ -437,7 +438,7 @@ export default function App() {
       if (savedLocale === "en" || savedLocale === "fa") setLocale(savedLocale);
       else if (profileLocale === "en" || profileLocale === "fa") setLocale(profileLocale);
     }).catch(() => {
-      if (active) {
+      if (active && activeUserIdRef.current === userId) {
         setMemberProfile(null);
         setMemberWallet(null);
         setMemberStats(null);
@@ -475,7 +476,7 @@ export default function App() {
           .order("updated_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== userId) return;
         if (error) throw error;
         if (data?.status === "matched" && data.match_id) {
           setOnlineMatchId(data.match_id);
@@ -489,7 +490,7 @@ export default function App() {
         }
         timer = window.setTimeout(() => void pollQueue(), 1400);
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === userId) {
           setOnlineStatus("error");
           setOnlineError(t("onlineError"));
         }
@@ -520,7 +521,7 @@ export default function App() {
             .eq("user_id", userId)
             .maybeSingle()
         ]);
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== userId) return;
         if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) throw new Error("match_unavailable");
         const rawMatch = matchResult.data as unknown as OnlineMatchSnapshot;
         if (!Array.isArray(rawMatch.server_state?.board) || rawMatch.server_state.board.length !== 9 ||
@@ -534,7 +535,7 @@ export default function App() {
           timer = window.setTimeout(() => void pollMatch(), 1200);
         }
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === userId) {
           setOnlineError(t("onlineError"));
           setOnlineStatus("error");
         }
@@ -555,6 +556,7 @@ export default function App() {
     }
     let stopped = false;
     let timer: number | undefined;
+    const userId = session.user.id;
     const refreshRooms = async () => {
       try {
         const { data, error } = await db
@@ -562,7 +564,7 @@ export default function App() {
           .select("id,game_id,status,max_players,expires_at,created_at,match_id")
           .order("created_at", { ascending: false })
           .limit(30);
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== userId) return;
         if (error) throw error;
         const visibleRooms = data ?? [];
         const roomIds = visibleRooms.map(room => room.id);
@@ -571,8 +573,9 @@ export default function App() {
           const { data: membershipRows, error: membershipError } = await db
             .from("room_members")
             .select("room_id,role")
-            .eq("user_id", session.user.id)
+            .eq("user_id", userId)
             .in("room_id", roomIds);
+          if (stopped || activeUserIdRef.current !== userId) return;
           if (membershipError) throw membershipError;
           ownRoles = new Map((membershipRows ?? []).map(row => [row.room_id, row.role as "host" | "player"]));
         }
@@ -584,7 +587,7 @@ export default function App() {
         setPrivateRoomError("");
         timer = window.setTimeout(() => void refreshRooms(), 3500);
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === userId) {
           setPrivateRooms([]);
           setPrivateRoomError(t("privateRoomError"));
           timer = window.setTimeout(() => void refreshRooms(), 5000);
@@ -622,7 +625,7 @@ export default function App() {
             .eq("user_id", userId)
             .maybeSingle()
         ]);
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== userId) return;
         if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) {
           throw new Error("private_match_unavailable");
         }
@@ -641,7 +644,7 @@ export default function App() {
           setPrivateRoomRefresh(value => value + 1);
         }
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === userId) {
           setPrivateRoomError(t("privateMatchError"));
           timer = window.setTimeout(() => void pollPrivateMatch(), 2500);
         }
@@ -667,14 +670,14 @@ export default function App() {
     const refreshRelationships = async () => {
       try {
         const { data, error } = await db.rpc("list_social_relationships");
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== session.user.id) return;
         if (error) throw error;
         setSocialRows((data ?? []) as unknown as SocialRelationship[]);
         setSocialError("");
         setSocialBusy(false);
         timer = window.setTimeout(() => void refreshRelationships(), 12000);
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === session.user.id) {
           setSocialRows([]);
           setSocialError(copy[locale].socialError);
           setSocialBusy(false);
@@ -706,14 +709,14 @@ export default function App() {
           p_game_id: "tictactoe",
           p_limit: 25
         });
-        if (stopped) return;
+        if (stopped || activeUserIdRef.current !== session.user.id) return;
         if (error) throw error;
         setLeaderboardRows((data ?? []) as unknown as LeaderboardEntry[]);
         setLeaderboardError("");
         setLeaderboardBusy(false);
         timer = window.setTimeout(() => void refreshLeaderboard(), 15000);
       } catch {
-        if (!stopped) {
+        if (!stopped && activeUserIdRef.current === session.user.id) {
           setLeaderboardRows([]);
           setLeaderboardError(copy[locale].leaderboardError);
           setLeaderboardBusy(false);
