@@ -18,6 +18,11 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Summarize dependency security advisories
+        if: always()
+        run: |
+          npm audit --json > "$RUNNER_TEMP/npm-audit.json" || true
+          node -e 'const fs=require("node:fs");const p=process.env.RUNNER_TEMP+"/npm-audit.json";const a=JSON.parse(fs.readFileSync(p,"utf8"));console.log("Dependency advisory totals:",JSON.stringify(a.metadata?.vulnerabilities??{}));for(const [name,v] of Object.entries(a.vulnerabilities??{})){console.log(name+" | severity="+v.severity+" | direct="+v.isDirect+" | range="+v.range+" | fix="+JSON.stringify(v.fixAvailable));}'
       - name: Run unit tests
         run: npm test
       - name: Type-check
