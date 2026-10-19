@@ -9,7 +9,7 @@ BEGIN
     'member_profiles','member_preferences','coin_wallets','coin_ledger','catalog_games',
     'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
-    'tournament_entries','deposit_requests','security_audit_events'
+    'tournament_entries','deposit_requests','security_audit_events','social_action_events'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
@@ -122,6 +122,33 @@ BEGIN
      OR NOT has_function_privilege('authenticated','public.leave_private_room(uuid)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
     RAISE EXCEPTION 'Authenticated members must be able to invoke approved private-room RPCs';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.friend_requests','INSERT')
+     OR has_table_privilege('authenticated','public.friend_requests','UPDATE')
+     OR has_table_privilege('authenticated','public.friend_requests','DELETE') THEN
+    RAISE EXCEPTION 'Friend relationships must be changed through authorized RPCs';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.social_action_events','SELECT')
+     OR has_table_privilege('authenticated','public.social_action_events','INSERT')
+     OR has_table_privilege('authenticated','public.social_action_events','UPDATE')
+     OR has_table_privilege('authenticated','public.social_action_events','DELETE') THEN
+    RAISE EXCEPTION 'Social anti-spam event records must not be client-accessible';
+  END IF;
+
+  IF has_function_privilege('anon','public.list_social_relationships()','EXECUTE')
+     OR has_function_privilege('anon','public.send_friend_request(text)','EXECUTE')
+     OR has_function_privilege('anon','public.respond_friend_request(uuid,text)','EXECUTE')
+     OR has_function_privilege('anon','public.get_game_leaderboard(text,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Anonymous clients must not invoke social/leaderboard RPCs';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated','public.list_social_relationships()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.send_friend_request(text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.respond_friend_request(uuid,text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.get_game_leaderboard(text,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Authenticated members must be able to use approved social/leaderboard RPCs';
   END IF;
 
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
