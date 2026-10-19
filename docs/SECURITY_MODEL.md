@@ -39,3 +39,9 @@ Apply the migration to a new/test Supabase project first, run supabase/tests/sec
 ## Release gate
 
 Do not describe the service as secure or production-ready until: database RLS is tested; Auth and email/phone verification are configured; server functions are deployed; game rules/matchmaking have authoritative tests; dependency, secret and security scans run in CI; hosting headers are active; backups/recovery/monitoring are configured; and a qualified reviewer has checked the threat model.
+
+## Account deletion
+
+`supabase/functions/delete-account/index.ts` is a trusted Edge Function, not a browser function. It validates the caller using Supabase Auth, requires an authentication event within the prior ten minutes, checks the explicit `DELETE` confirmation, invokes the service-role-only cleanup RPC to cancel queues, unfinished matches, and rooms without rewards, and then calls Supabase Auth Admin to delete the member. The service-role key must exist only in Edge Function secrets.
+
+The frontend flag `VITE_ACCOUNT_DELETION_ENABLED` is false by default. It may be set to true only after the migration `20261020040000_account_deletion.sql` and Edge Function are deployed to a test project, tested end-to-end, and the allowed frontend origins and secrets are configured. The PostgreSQL CI test verifies cleanup side effects but does not replace a live Auth Admin integration test.
