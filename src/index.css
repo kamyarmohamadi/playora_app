@@ -49,3 +49,29 @@
 .security-live-note{margin:12px 0 0;color:#7f95b6;font-size:9px;line-height:1.9}
 .favorites-filter.selected{border-color:#8d54cc;background:#27163c;color:#e9a0ff}
 @media(max-width:520px){.auth-backdrop{padding:10px}.auth-modal{max-height:calc(100vh - 20px);padding:21px 18px 17px;border-radius:18px}.auth-modal h2{font-size:21px}.auth-modal>p:not(.auth-legal-note){font-size:9px}.auth-form input{min-height:44px}.profile-auth-footer{align-items:flex-start;flex-direction:column;margin-inline:12px}.profile-auth-footer button{width:100%}}
+
+.game-modal-backdrop{position:fixed;z-index:115;inset:0;display:grid;place-items:center;overflow:auto;padding:17px;background:rgba(1,4,14,.82);backdrop-filter:blur(13px)}
+.game-modal{width:min(100%,448px);padding:22px;border:1px solid #2b5b8e;border-radius:21px;background:radial-gradient(ellipse at 50% 0%,#263f8733,transparent 46%),linear-gradient(145deg,#0c1932,#070d1b 76%);box-shadow:0 28px 100px #000b,0 0 60px #207bff14}
+.game-modal-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.practice-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #305981;border-radius:8px;background:#10243f;color:#8fe8ff;font-size:8px;font-weight:800;letter-spacing:.5px}
+.game-modal h2{margin:16px 0 7px;color:#f5f7ff;font-size:24px;letter-spacing:-.6px}
+.game-practice-note{display:flex;align-items:flex-start;gap:8px;margin:0;padding:10px;border:1px solid #263e60;border-radius:9px;background:#091529;color:#93a8c8;font-size:9px;line-height:1.8}
+.game-practice-note svg{flex:none;margin-top:1px;color:#61dfcb}
+.ttt-player-strip{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:19px 0 15px}
+.ttt-player{display:flex;align-items:center;gap:9px;color:#b1c5e4;font-size:9px;font-weight:700}
+.ttt-player b{display:grid;place-items:center;width:35px;height:35px;border:1px solid #2b7d9b;border-radius:11px;background:#103047;color:#56e8ff;font-size:17px}
+.ttt-player.bot b{border-color:#7951a6;background:#25183c;color:#d19bff}
+.ttt-vs{color:#506b91;font-size:8px;font-weight:800;letter-spacing:1px}
+.ttt-board{display:grid;width:min(100%,320px);aspect-ratio:1;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 auto;padding:9px;border:1px solid #21466a;border-radius:16px;background:linear-gradient(135deg,#0b1931,#111737);box-shadow:inset 0 0 36px #1453a012}
+.tic-cell{display:grid;place-items:center;min-width:0;min-height:0;border:1px solid #274b71;border-radius:12px;background:linear-gradient(145deg,#102341,#0a1529);color:#60e6ff;font-size:clamp(31px,8vw,52px);font-weight:800;transition:background .16s,border-color .16s,transform .16s,box-shadow .16s}
+.tic-cell:disabled{cursor:default;opacity:1}
+.tic-cell:not(:disabled):hover{border-color:#36d8ff;background:#12334b;box-shadow:0 0 21px #19cfff16;transform:translateY(-1px)}
+.tic-cell:focus-visible{outline:2px solid #6ceeff;outline-offset:2px}
+.tic-cell.mark-x{border-color:#2b94b3;background:radial-gradient(circle,#123e56,#0b1d33 75%);color:#50e8ff;text-shadow:0 0 20px #2ae4ff66}
+.tic-cell.mark-o{border-color:#7651b1;background:radial-gradient(circle,#2a1c4d,#10152d 75%);color:#c99bff;text-shadow:0 0 20px #b16dff66}
+.ttt-status{display:flex;align-items:center;justify-content:center;gap:8px;min-height:41px;margin:13px 0;padding:9px;border:1px solid #243d5e;border-radius:10px;background:#091529;color:#9cb0d0;font-size:10px;font-weight:700}
+.ttt-status.is-complete{border-color:#395c91;background:#10203b;color:#c9eaff}
+.ttt-status-pulse{width:6px;height:6px;flex:none;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.ttt-status.is-complete .ttt-status-pulse{background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.game-modal-actions{display:flex;gap:9px}.game-modal-actions>button{flex:1;min-height:40px}.game-modal-actions .btn-ghost,.game-modal-actions .btn-gradient{font-size:9px}
+@media(max-width:520px){.game-modal-backdrop{padding:10px}.game-modal{padding:17px;border-radius:18px}.game-modal h2{font-size:21px}.ttt-board{width:min(100%,290px);gap:6px;padding:7px}.tic-cell{border-radius:10px}.ttt-player-strip{margin-top:15px}.game-modal-actions>button{min-height:38px}}
