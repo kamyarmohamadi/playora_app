@@ -224,3 +224,25 @@
 .deletion-actions{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:9px;margin-top:2px}
 .deletion-actions button{width:100%;min-height:40px}
 @media(max-width:520px){.danger-card .danger-action{width:100%}.deletion-actions{grid-template-columns:1fr}.deletion-modal h2{font-size:21px}}
+
+
+/* Checkers practice board — local-only play, no ranked or wallet effects. */
+.checkers-modal{width:min(100%,540px)}
+.checkers-rules-note{margin:9px 0 13px;color:#7890b4;font-size:8px;line-height:1.8}
+.checkers-board{display:grid;width:min(100%,440px);aspect-ratio:1;grid-template-columns:repeat(8,minmax(0,1fr));overflow:hidden;margin:0 auto;padding:4px;border:1px solid #2a4d75;border-radius:11px;background:#091226;box-shadow:0 12px 34px #0004}
+.checkers-square{position:relative;display:grid;place-items:center;min-width:0;min-height:0;padding:0;border:0;border-radius:0;aspect-ratio:1;transition:filter .12s,box-shadow .12s,background .12s}
+.checkers-square.is-light{background:#c7d5ed;cursor:default}
+.checkers-square.is-playable{background:#142746}
+.checkers-square.is-playable:enabled:hover{background:#1b385b}
+.checkers-square.is-playable:disabled{cursor:default;opacity:1}
+.checkers-square.is-selected{z-index:2;box-shadow:inset 0 0 0 3px #38e0ff,inset 0 0 18px #32cfff4a}
+.checkers-square.is-destination{z-index:1;box-shadow:inset 0 0 0 2px #5ef1d19c}
+.checkers-square:focus-visible{z-index:3;outline:3px solid #9ef6ff;outline-offset:-3px}
+.checkers-piece{position:relative;display:grid;width:77%;height:77%;place-items:center;border-radius:50%;box-shadow:0 3px 0 #02061299,0 5px 9px #0006;pointer-events:none}
+.checkers-piece:before{position:absolute;inset:10%;border:1px solid #ffffff44;border-radius:50%;content:""}
+.checkers-square.has-red .checkers-piece{border:2px solid #ff9db7;background:radial-gradient(circle at 34% 25%,#ff91b2,#e23f73 55%,#7a173f)}
+.checkers-square.has-black .checkers-piece{border:2px solid #7c94bd;background:radial-gradient(circle at 34% 25%,#5e7298,#223452 59%,#0a1427)}
+.checkers-piece-dot{width:24%;height:24%;border-radius:50%;background:#fff8;box-shadow:0 0 8px #fff4}
+.checkers-piece.is-king{outline:2px solid #ffd87b;outline-offset:-5px;color:#ffe8a2;filter:drop-shadow(0 0 6px #ffc65a55)}
+.checkers-destination-dot{position:absolute;width:25%;height:25%;border:2px solid #9af9e6;border-radius:50%;background:#4de6c344;box-shadow:0 0 10px #50ffdf40;pointer-events:none}
+@media(max-width:520px){.checkers-modal{padding:15px}.checkers-rules-note{font-size:7px}.checkers-board{width:min(100%,360px);padding:3px;border-radius:8px}.checkers-piece{width:78%;height:78%;border-width:1px!important}.checkers-square.is-selected{box-shadow:inset 0 0 0 2px #38e0ff,inset 0 0 10px #32cfff4a}}
