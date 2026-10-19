@@ -23,6 +23,7 @@ Copy .env.example to .env.local and configure VITE_SUPABASE_URL and VITE_SUPABAS
 - Private Tic Tac Toe rooms with one-time invite codes, invite hashes at rest, room creation/join/leave APIs and no rewards or rating changes.
 - PostgreSQL row-level security policies, member-scoped wallet/ledger reads, and a transactional idempotent server-only coin operation.
 - A member-self Edge Function that returns only the authenticated member's records while preserving RLS.
+- A trusted account-deletion Edge Function with recent-authentication checks and cleanup that cancels unfinished matches without reward side effects; its UI feature flag is disabled by default.
 
 ## Not yet a live production service
 
