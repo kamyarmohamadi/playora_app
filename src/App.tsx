@@ -47,7 +47,7 @@ const gameList: Game[] = [
 
 const copy: Record<Locale, Record<string, string>> = {
   en: {
-    navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRooms: "Private Rooms", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
+    navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRooms: "Private Rooms", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings", roomsTitle: "Private rooms", roomsSub: "Create a room and invite a friend with a one-time code. Private matches never affect XP, rating, coins or prizes.",
     search: "Search games, modes, and more", coins: "Playora Coins", demo: "Preview mode",
     eyebrow: "THE NEXT MOVE IS YOURS", heroTitle: "Your skills.", heroTitle2: "Your victory.", heroBody: "Meet your next rival. Master your favorite games. Make every move count.", findGame: "Explore games", viewTournaments: "View tournaments", liveLabel: "GLOBAL GAME NETWORK", notLive: "UI preview · online play is not connected",
     quickAccess: "Jump back in", allGames: "All games", seeAll: "View all", popular: "Popular games", popularSub: "Choose your next challenge",
@@ -82,7 +82,7 @@ const copy: Record<Locale, Record<string, string>> = {
     passwordHint: "Use at least 12 characters.", accountRequired: "Sign in to sync favorites and access your personal account.", signInSuccess: "You’re signed in.", signOutSuccess: "You’ve signed out.", favoriteFailed: "Favorites could not be saved. Try again.", loading: "Loading…", balanceUnavailable: "Balance unavailable", member: "Member", authTitle: "Welcome to Playora", authSubtitle: "Sign in to keep your profile and progress with you.", setNewPassword: "Set new password", passwordUpdated: "Your password has been updated.", createAccountPrompt: "New to Playora?", existingAccountPrompt: "Already have an account?", securityLiveNote: "Your session is managed by Supabase Auth. Private records are scoped through database row-level security.", practiceTitle: "Practice vs Bot", practiceNoRewards: "Practice only — this match awards no XP, rank, coins, or prizes.", yourTurn: "Your turn · X", botThinking: "Bot turn · O", youWin: "You win!", botWins: "The bot wins this round.", draw: "It’s a draw.", restartGame: "Play again", closeGame: "Close game", gameBoard: "Tic Tac Toe board", cell: "Cell"
   },
   fa: {
-    navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات",
+    navHome: "خانه", navGames: "بازی‌ها", navOnline: "میدان یک‌به‌یک", navTournaments: "تورنومنت‌ها", navFriends: "دوستان", navRooms: "اتاق‌های خصوصی", navRank: "جدول برترین‌ها", navWallet: "کیف پول", navProfile: "پروفایل", navSettings: "تنظیمات", roomsTitle: "اتاق‌های خصوصی", roomsSub: "اتاق بساز و با یک کد یک‌بارمصرف دوستت را دعوت کن. مسابقه خصوصی روی XP، رتبه، سکه یا جایزه اثری ندارد.
     search: "جست‌وجوی بازی و حالت‌ها", coins: "سکه‌های پلیورا", demo: "حالت پیش‌نمایش",
     eyebrow: "حرکت بعدی با توست", heroTitle: "مهارت تو.", heroTitle2: "پیروزی تو.", heroBody: "حریف بعدی‌ات را پیدا کن، بازی محبوبت را یاد بگیر و هر حرکت را مهم کن.", findGame: "کشف بازی‌ها", viewTournaments: "دیدن تورنومنت‌ها", liveLabel: "شبکه جهانی بازی", notLive: "پیش‌نمایش رابط · بازی آنلاین متصل نیست",
     quickAccess: "دسترسی سریع", allGames: "همه بازی‌ها", seeAll: "مشاهده همه", popular: "بازی‌های محبوب", popularSub: "چالش بعدی‌ات را انتخاب کن",
@@ -146,6 +146,10 @@ function BrandMark() {
 
 function GoogleGlyph() {
   return <span className="google-glyph" aria-hidden="true">G</span>;
+}
+
+function CopyIcon() {
+  return <span className="copy-icon" aria-hidden="true">▢</span>;
 }
 
 function GameArtwork({ game }: { game: Game }) {
@@ -1079,6 +1083,88 @@ export default function App() {
                 <div className="online-security-foot"><LockKeyhole size={14} />{t("secureNote")}</div>
               </aside>
             </div>
+          </section>}
+
+          {page === "rooms" && <section className="private-rooms-page">
+            <div className="private-room-hero">
+              <div className="private-room-hero-copy">
+                <span className="hero-eyebrow"><ShieldCheck size={14} />{t("privateRooms")}</span>
+                <h2>{t("roomsTitle")}</h2>
+                <p>{t("roomsSub")}</p>
+                <div className="private-room-benefits"><span><LockKeyhole size={14} />{t("secureNote")}</span><span><Coins size={14} />{t("privateNoRewards")}</span></div>
+              </div>
+              <div className="private-room-emblem" aria-hidden="true"><div className="room-emblem-ring"><Users size={34} /></div><span className="room-emblem-dot dot-a" /><span className="room-emblem-dot dot-b" /><span className="room-emblem-dot dot-c" /></div>
+            </div>
+
+            {!session && <div className="private-room-login"><div className="private-room-login-icon"><LockKeyhole size={25} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
+
+            {session && <>
+              <div className="private-room-actions-grid">
+                <section className="private-room-action-card">
+                  <span className="private-room-action-icon"><Plus size={20} /></span>
+                  <div><h3>{t("createPrivateRoom")}</h3><p>{t("inviteCreated")}</p></div>
+                  <button className="btn-gradient" disabled={privateRoomBusy} onClick={() => void createPrivateRoom()}>{privateRoomBusy ? t("loading") : t("createPrivateRoom")}<ArrowRight size={15} /></button>
+                </section>
+                <section className="private-room-action-card">
+                  <span className="private-room-action-icon room-join-icon"><Ticket size={20} /></span>
+                  <div><h3>{t("joinPrivateRoom")}</h3><p>{t("enterInviteCode")}</p></div>
+                  <form className="private-room-join-form" onSubmit={event => void joinPrivateRoom(event)}>
+                    <input aria-label={t("inviteCode")} name="inviteCode" type="text" inputMode="text" autoComplete="off" spellCheck={false} maxLength={32} minLength={32} pattern="[0-9a-fA-F]{32}" placeholder="0123456789abcdef…" value={privateRoomCode} onChange={event => setPrivateRoomCode(event.target.value)} required />
+                    <button className="btn-ghost" type="submit" disabled={privateRoomBusy || privateRoomCode.trim().length !== 32}>{privateRoomBusy ? t("loading") : t("joinPrivateRoom")}<ArrowRight size={14} /></button>
+                  </form>
+                </section>
+              </div>
+
+              {latestInviteCode && <section className="private-invite-card">
+                <div className="private-invite-icon"><Ticket size={19} /></div>
+                <div className="private-invite-copy"><b>{t("roomCreated")}</b><p>{t("inviteCreated")}</p><code dir="ltr">{latestInviteCode}</code><small>{t("roomExpiredHint")}</small></div>
+                <button className="btn-gradient" onClick={() => void copyInviteCode()}><CopyIcon />{t("copyInvite")}</button>
+              </section>}
+
+              {privateRoomError && <p className="private-room-error" role="alert"><ShieldCheck size={15} />{privateRoomError}</p>}
+
+              {privateMatchId && <section className="private-match-panel">
+                <div className="private-match-heading"><div><span className="section-eyebrow">{t("privateMatchTitle")}</span><h2>{t("privateNoRewards")}</h2></div><button className="btn-ghost" onClick={closePrivateMatchView}>{t("closeGame")}<X size={14} /></button></div>
+                {!privateMatch && <div className="online-loading-state"><span className="online-loading-spinner" /><p>{t("onlineLoading")}</p></div>}
+                {privateMatch && privateSeat && <div className="private-match-body">
+                  <div className="online-player-row">
+                    <div className={"online-player " + (privateSeat === 1 ? "current-player" : "")}><span className="online-player-mark mark-x">X</span><div><b>{t("yourMark")}</b><small>{t("hostLabel")}</small></div></div>
+                    <span className="online-vs-label">VS</span>
+                    <div className={"online-player " + (privateSeat === 2 ? "current-player" : "")}><span className="online-player-mark mark-o">O</span><div><b>{t("opponentMark")}</b><small>{t("playerLabel")}</small></div></div>
+                  </div>
+                  <div className="ttt-board online-ttt-board" role="group" aria-label={t("gameBoard")}>
+                    {privateMatch.server_state.board?.map((mark,index) => {
+                      const isMyTurn = privateMatch.status === "active" && privateMatch.server_state.current_seat === privateSeat;
+                      const disabled = mark !== null || !isMyTurn || privateMoveBusy;
+                      return <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={disabled} onClick={() => void submitPrivateMove(index)}>{mark && <span>{mark}</span>}</button>;
+                    })}
+                  </div>
+                  <div className={"ttt-status " + (privateMatch.status === "completed" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{privateMatch.status === "completed" ? (privateMatch.winner_user_id === session.user.id ? t("privateWin") : privateMatch.winner_user_id ? t("privateLoss") : t("onlineDraw")) : privateMatch.server_state.current_seat === privateSeat ? t("privateYourTurn") : t("privateOpponentTurn")}</div>
+                  {privateRoomError && <p className="private-room-error" role="alert">{privateRoomError}</p>}
+                  <div className="online-match-footer"><span>{t("matchIdLabel")}: {privateMatch.id.slice(0,8).toUpperCase()}</span>{privateMatch.status === "completed" && <button className="btn-gradient" onClick={closePrivateMatchView}>{t("roomList")}<ArrowRight size={14} /></button>}</div>
+                </div>}
+              </section>}
+
+              <section className="private-room-list-section">
+                <div className="private-room-list-heading"><div><span className="section-eyebrow">{t("privateRooms")}</span><h2>{t("roomList")}</h2></div><span className="private-room-count">{privateRooms.length}</span></div>
+                {privateRooms.length === 0 ? <div className="private-room-empty"><div><Users size={25} /></div><h3>{t("noPrivateRooms")}</h3><p>{t("roomExpiredHint")}</p></div> : <div className="private-room-list">
+                  {privateRooms.map(room => {
+                    const expired = room.status === "expired" || (room.status === "open" && new Date(room.expires_at).getTime() <= Date.now());
+                    const stateKey = expired ? "roomExpired" : room.status === "open" ? "roomOpen" : room.status === "active" ? "roomActive" : "roomClosed";
+                    const isHost = room.host_user_id === session.user.id;
+                    return <article className="private-room-row" key={room.id}>
+                      <span className="private-room-row-icon"><Grid2X2 size={20} /></span>
+                      <div className="private-room-row-copy"><h3>{t("privateMatchTitle")} <code>{room.id.slice(0,8).toUpperCase()}</code></h3><p><span>{isHost ? t("hostLabel") : t("playerLabel")}</span><i />{t("expiresLabel")}: {new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(room.expires_at))}</p></div>
+                      <span className={"private-room-status " + (room.status === "active" ? "is-active" : expired ? "is-expired" : "")}><i />{t(stateKey)}</span>
+                      <div className="private-room-row-actions">
+                        {room.match_id && <button className="btn-outline" onClick={() => openPrivateMatch(room.match_id!)}>{t("openPrivateMatch")}<ArrowRight size={14} /></button>}
+                        {room.status === "open" && <button className="btn-ghost" disabled={privateRoomBusy} onClick={() => void leavePrivateRoom(room)}>{isHost ? t("closePrivateRoom") : t("leavePrivateRoom")}<X size={14} /></button>}
+                      </div>
+                    </article>;
+                  })}
+                </div>}
+              </section>
+            </>}
           </section>}
 
           {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:Activity, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
