@@ -7,9 +7,9 @@ DECLARE
 BEGIN
   FOREACH table_name IN ARRAY ARRAY[
     'member_profiles','member_preferences','coin_wallets','coin_ledger','catalog_games',
-    'member_favorites','matches','match_participants','private_rooms','private_room_secrets',
-    'room_members','friend_requests','tournaments','tournament_entries','deposit_requests',
-    'security_audit_events'
+    'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
+    'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
+    'tournament_entries','deposit_requests','security_audit_events'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
@@ -20,6 +20,29 @@ BEGIN
       RAISE EXCEPTION 'RLS is missing or disabled for public.%', table_name;
     END IF;
   END LOOP;
+
+  IF has_table_privilege('authenticated','public.member_game_stats','INSERT')
+     OR has_table_privilege('authenticated','public.member_game_stats','UPDATE')
+     OR has_table_privilege('authenticated','public.member_game_stats','DELETE') THEN
+    RAISE EXCEPTION 'Authenticated role must not mutate server-owned ratings or XP';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.matchmaking_queue','INSERT')
+     OR has_table_privilege('authenticated','public.matchmaking_queue','UPDATE')
+     OR has_table_privilege('authenticated','public.matchmaking_queue','DELETE') THEN
+    RAISE EXCEPTION 'Authenticated role must not mutate matchmaking queue rows directly';
+  END IF;
+
+  IF has_function_privilege('anon','public.queue_for_random_match(text)','EXECUTE')
+     OR has_function_privilege('anon','public.submit_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Anonymous role must not invoke online matchmaking or move RPCs';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated','public.queue_for_random_match(text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.cancel_random_match_queue(text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.submit_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Authenticated member must have execute permission for approved own-session RPCs';
+  END IF;
 
   IF has_table_privilege('authenticated','public.coin_wallets','INSERT')
      OR has_table_privilege('authenticated','public.coin_wallets','UPDATE')
