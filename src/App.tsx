@@ -301,7 +301,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!supabase || !session?.user.id) {
+    const db = supabase;
+    if (!db || !session?.user.id) {
       setMemberProfile(null);
       setProfileNameDraft("");
       setProfileMessage("");
@@ -320,16 +321,16 @@ export default function App() {
     const userId = session.user.id;
     // The authenticated client and RLS jointly enforce ownership. userId comes from the verified session.
     void Promise.all([
-      supabase.from("member_profiles")
+      db.from("member_profiles")
         .select("user_id, username, display_name, avatar_key, locale, created_at")
         .eq("user_id", userId).maybeSingle(),
-      supabase.from("coin_wallets")
+      db.from("coin_wallets")
         .select("user_id, free_coins, purchased_coins, reward_coins, updated_at")
         .eq("user_id", userId).maybeSingle(),
-      supabase.from("member_favorites").select("game_id").eq("user_id", userId),
-      supabase.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
-      supabase.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
-      supabase.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
+      db.from("member_favorites").select("game_id").eq("user_id", userId),
+      db.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
+      db.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
+      db.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
     ]).then(async ([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
       if (!active) return;
       const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
@@ -341,7 +342,7 @@ export default function App() {
       let ownResults = new Map<string, RankedHistoryRow["my_result"]>();
       let historyAccessFailed = false;
       if (historyIds.length > 0) {
-        const ownHistoryResult = await supabase.from("match_participants")
+        const ownHistoryResult = await db.from("match_participants")
           .select("match_id,final_result")
           .eq("user_id", userId)
           .in("match_id", historyIds);
