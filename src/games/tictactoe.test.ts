@@ -45,7 +45,7 @@ describe("Tic Tac Toe engine", () => {
   });
 
   it("bot chooses a move and never misses an immediate win", () => {
-    const board = ["O", "O", null, "X", "X", null, null, null, null] as const;
+    const board = ["O", "O", null, "X", "X", null, "X", null, null] as const;
     expect(chooseTicTacToeBotMove(board)).toBe(2);
   });
 
