@@ -237,6 +237,7 @@ export default function App() {
   const [privateMatch, setPrivateMatch] = useState<OnlineMatchSnapshot | null>(null);
   const [privateSeat, setPrivateSeat] = useState<number | null>(null);
   const [privateMoveBusy, setPrivateMoveBusy] = useState(false);
+  const [privateRoomRefresh, setPrivateRoomRefresh] = useState(0);
 
   const t = (key: string) => copy[locale][key] ?? key;
   const direction = locale === "fa" ? "rtl" : "ltr";
@@ -420,6 +421,97 @@ export default function App() {
       if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [page, session?.user.id, onlineMatchId]);
+
+  useEffect(() => {
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "rooms") {
+      if (page !== "rooms" || !session) setPrivateRooms([]);
+      return;
+    }
+    let stopped = false;
+    let timer: number | undefined;
+    const refreshRooms = async () => {
+      try {
+        const { data, error } = await db
+          .from("private_rooms")
+          .select("id,host_user_id,game_id,status,max_players,expires_at,created_at,match_id")
+          .order("created_at", { ascending: false })
+          .limit(30);
+        if (stopped) return;
+        if (error) throw error;
+        setPrivateRooms((data ?? []) as unknown as PrivateRoomRow[]);
+        setPrivateRoomError("");
+        timer = window.setTimeout(() => void refreshRooms(), 3500);
+      } catch {
+        if (!stopped) {
+          setPrivateRooms([]);
+          setPrivateRoomError(t("privateRoomError"));
+          timer = window.setTimeout(() => void refreshRooms(), 5000);
+        }
+      }
+    };
+    void refreshRooms();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, session?.user.id, privateRoomRefresh]);
+
+  useEffect(() => {
+    const db = supabase;
+    if (!db || !session?.user.id || page !== "rooms" || !privateMatchId) {
+      if (!privateMatchId || !session) {
+        setPrivateMatch(null);
+        setPrivateSeat(null);
+      }
+      return;
+    }
+    let stopped = false;
+    let timer: number | undefined;
+    const userId = session.user.id;
+    const pollPrivateMatch = async () => {
+      try {
+        const [matchResult, seatResult] = await Promise.all([
+          db.from("matches")
+            .select("id,status,server_state,winner_user_id,state_version")
+            .eq("id", privateMatchId).maybeSingle(),
+          db.from("match_participants")
+            .select("seat")
+            .eq("match_id", privateMatchId)
+            .eq("user_id", userId)
+            .maybeSingle()
+        ]);
+        if (stopped) return;
+        if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) {
+          throw new Error("private_match_unavailable");
+        }
+        const rawMatch = matchResult.data as unknown as OnlineMatchSnapshot;
+        if (!Array.isArray(rawMatch.server_state?.board) || rawMatch.server_state.board.length !== 9 ||
+            !Number.isInteger(rawMatch.server_state.current_seat) ||
+            (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
+          throw new Error("invalid_private_match_state");
+        }
+        setPrivateMatch(rawMatch);
+        setPrivateSeat(Number(seatResult.data.seat));
+        setPrivateRoomError("");
+        if (rawMatch.status === "active") {
+          timer = window.setTimeout(() => void pollPrivateMatch(), 1100);
+        } else {
+          setPrivateRoomRefresh(value => value + 1);
+        }
+      } catch {
+        if (!stopped) {
+          setPrivateRoomError(t("privateMatchError"));
+          timer = window.setTimeout(() => void pollPrivateMatch(), 2500);
+        }
+      }
+    };
+    void pollPrivateMatch();
+    return () => {
+      stopped = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [page, session?.user.id, privateMatchId]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -663,6 +755,134 @@ export default function App() {
       setOnlineError(t("moveRejected"));
     } finally {
       setOnlineMoveBusy(false);
+    }
+  };
+
+  const createPrivateRoom = async () => {
+    if (!supabase || !session?.user.id) {
+      openAuth("signin");
+      return;
+    }
+    setPrivateRoomBusy(true);
+    setPrivateRoomError("");
+    try {
+      const { data, error } = await supabase.rpc("create_private_room", {
+        p_game_id: "tictactoe",
+        p_max_players: 2
+      });
+      if (error) throw error;
+      const result = (Array.isArray(data) ? data[0] : data) as {
+        created_room_id?: string; invite_code?: string; room_expires_at?: string
+      } | null;
+      if (!result?.created_room_id || !result.invite_code) throw new Error("invalid_room_response");
+      setLatestInviteCode(result.invite_code);
+      setPrivateRoomCode("");
+      setPrivateRoomRefresh(value => value + 1);
+      setToast(t("inviteCreated"));
+    } catch {
+      setPrivateRoomError(t("privateRoomError"));
+    } finally {
+      setPrivateRoomBusy(false);
+    }
+  };
+
+  const joinPrivateRoom = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !session?.user.id) {
+      openAuth("signin");
+      return;
+    }
+    const code = privateRoomCode.trim().toLowerCase();
+    if (!/^[0-9a-f]{32}$/.test(code)) {
+      setPrivateRoomError(t("privateRoomError"));
+      return;
+    }
+    setPrivateRoomBusy(true);
+    setPrivateRoomError("");
+    try {
+      const { data, error } = await supabase.rpc("join_private_room", { p_invite_code: code });
+      if (error) throw error;
+      const result = (Array.isArray(data) ? data[0] : data) as {
+        joined_room_id?: string; joined_game_id?: string; room_status?: string; active_match_id?: string | null
+      } | null;
+      if (!result?.joined_room_id) throw new Error("invalid_join_response");
+      setPrivateRoomCode("");
+      setPrivateRoomRefresh(value => value + 1);
+      if (result.active_match_id) {
+        setPrivateMatchId(result.active_match_id);
+        setPrivateMatch(null);
+        setPrivateSeat(null);
+      }
+    } catch {
+      setPrivateRoomError(t("privateRoomError"));
+    } finally {
+      setPrivateRoomBusy(false);
+    }
+  };
+
+  const leavePrivateRoom = async (room: PrivateRoomRow) => {
+    if (!supabase || !session?.user.id) return;
+    setPrivateRoomBusy(true);
+    setPrivateRoomError("");
+    try {
+      const { data, error } = await supabase.rpc("leave_private_room", { p_room_id: room.id });
+      if (error) throw error;
+      if (data !== true) throw new Error("room_not_left");
+      if (room.match_id && room.match_id === privateMatchId) {
+        setPrivateMatchId(null);
+        setPrivateMatch(null);
+        setPrivateSeat(null);
+      }
+      setPrivateRoomRefresh(value => value + 1);
+      setToast(room.host_user_id === session.user.id ? t("closePrivateRoom") : t("leavePrivateRoom"));
+    } catch {
+      setPrivateRoomError(t("privateRoomError"));
+    } finally {
+      setPrivateRoomBusy(false);
+    }
+  };
+
+  const openPrivateMatch = (matchId: string) => {
+    setPrivateRoomError("");
+    setPrivateMatchId(matchId);
+    setPrivateMatch(null);
+    setPrivateSeat(null);
+  };
+
+  const closePrivateMatchView = () => {
+    setPrivateMatchId(null);
+    setPrivateMatch(null);
+    setPrivateSeat(null);
+    setPrivateMoveBusy(false);
+    setPrivateRoomError("");
+  };
+
+  const submitPrivateMove = async (index: number) => {
+    if (!supabase || !session?.user.id || !privateMatchId || !privateMatch || !privateSeat) return;
+    if (privateMatch.status !== "active" || privateMatch.server_state.current_seat !== privateSeat ||
+        privateMatch.server_state.board?.[index] !== null) return;
+    setPrivateMoveBusy(true);
+    setPrivateRoomError("");
+    try {
+      const { error } = await supabase.rpc("submit_private_tictactoe_move", {
+        p_match_id: privateMatchId,
+        p_cell_index: index
+      });
+      if (error) throw error;
+    } catch {
+      setPrivateRoomError(t("privateMatchError"));
+    } finally {
+      setPrivateMoveBusy(false);
+    }
+  };
+
+  const copyInviteCode = async () => {
+    if (!latestInviteCode) return;
+    try {
+      await navigator.clipboard.writeText(latestInviteCode);
+      setToast(t("codeCopied"));
+    } catch {
+      setToast(t("codeCopyFailed"));
     }
   };
 
