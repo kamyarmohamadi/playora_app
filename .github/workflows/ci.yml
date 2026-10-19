@@ -67,6 +67,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020020000_social_and_leaderboard.sql
       - name: Apply match identifier privacy migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
+      - name: Apply account deletion cleanup migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020040000_account_deletion.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test wallet ledger idempotency and overdraft protections
@@ -79,3 +81,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/private_rooms.sql
       - name: Test friend requests, anti-spam and leaderboard ordering
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
+      - name: Test account deletion cleanup without reward side effects
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
