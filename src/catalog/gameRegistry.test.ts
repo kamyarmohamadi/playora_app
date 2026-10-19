@@ -41,9 +41,9 @@ describe("versioned game registry", () => {
   });
 
   it("rejects empty, oversized or incomplete localized text", () => {
-    expect(() => parseGameRegistry(manifest({ ...validEntry(), title: { en: "", fa: "بازی" } })).toThrow();
-    expect(() => parseGameRegistry(manifest({ ...validEntry(), subtitle: { en: "x".repeat(121), fa: "متن" } })).toThrow();
-    expect(() => parseGameRegistry(manifest({ ...validEntry(), players: { en: "2 players" } })).toThrow();
+    expect(() => parseGameRegistry(manifest({ ...validEntry(), title: { en: "", fa: "بازی" } }))).toThrow();
+    expect(() => parseGameRegistry(manifest({ ...validEntry(), subtitle: { en: "x".repeat(121), fa: "متن" } }))).toThrow();
+    expect(() => parseGameRegistry(manifest({ ...validEntry(), players: { en: "2 players" } }))).toThrow();
   });
 
   it("does not accept external URLs as executable metadata", () => {
