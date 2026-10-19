@@ -288,7 +288,7 @@ returns public.coin_wallets
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_wallet public.coin_wallets;
   v_existing public.coin_ledger;
@@ -384,7 +384,7 @@ returns text
 language plpgsql
 immutable
 set search_path = ''
-as $
+as $$
 begin
   if p_board is null or pg_catalog.jsonb_typeof(p_board) <> 'array'
      or pg_catalog.jsonb_array_length(p_board) <> 9 then
@@ -420,7 +420,7 @@ returns table(queue_status text, matched_match_id uuid)
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_rating integer;
@@ -545,7 +545,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_count integer;
@@ -570,7 +570,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_user_seat integer;
