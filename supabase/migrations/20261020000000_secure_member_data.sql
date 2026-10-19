@@ -379,6 +379,362 @@ $;
 revoke all on function public.apply_coin_delta(uuid, text, bigint, text, text, text) from public, anon, authenticated;
 grant execute on function public.apply_coin_delta(uuid, text, bigint, text, text, text) to service_role;
 
+-- Private helper for server-authoritative Tic Tac Toe result validation.
+create or replace function public.find_tictactoe_winner(p_board jsonb)
+returns text
+language plpgsql
+immutable
+set search_path = ''
+as $
+begin
+  if p_board is null or pg_catalog.jsonb_typeof(p_board) <> 'array'
+     or pg_catalog.jsonb_array_length(p_board) <> 9 then
+    return null;
+  end if;
+
+  if p_board->>0 = 'X' and p_board->>1 = 'X' and p_board->>2 = 'X' then return 'X'; end if;
+  if p_board->>3 = 'X' and p_board->>4 = 'X' and p_board->>5 = 'X' then return 'X'; end if;
+  if p_board->>6 = 'X' and p_board->>7 = 'X' and p_board->>8 = 'X' then return 'X'; end if;
+  if p_board->>0 = 'X' and p_board->>3 = 'X' and p_board->>6 = 'X' then return 'X'; end if;
+  if p_board->>1 = 'X' and p_board->>4 = 'X' and p_board->>7 = 'X' then return 'X'; end if;
+  if p_board->>2 = 'X' and p_board->>5 = 'X' and p_board->>8 = 'X' then return 'X'; end if;
+  if p_board->>0 = 'X' and p_board->>4 = 'X' and p_board->>8 = 'X' then return 'X'; end if;
+  if p_board->>2 = 'X' and p_board->>4 = 'X' and p_board->>6 = 'X' then return 'X'; end if;
+
+  if p_board->>0 = 'O' and p_board->>1 = 'O' and p_board->>2 = 'O' then return 'O'; end if;
+  if p_board->>3 = 'O' and p_board->>4 = 'O' and p_board->>5 = 'O' then return 'O'; end if;
+  if p_board->>6 = 'O' and p_board->>7 = 'O' and p_board->>8 = 'O' then return 'O'; end if;
+  if p_board->>0 = 'O' and p_board->>3 = 'O' and p_board->>6 = 'O' then return 'O'; end if;
+  if p_board->>1 = 'O' and p_board->>4 = 'O' and p_board->>7 = 'O' then return 'O'; end if;
+  if p_board->>2 = 'O' and p_board->>5 = 'O' and p_board->>8 = 'O' then return 'O'; end if;
+  if p_board->>0 = 'O' and p_board->>4 = 'O' and p_board->>8 = 'O' then return 'O'; end if;
+  if p_board->>2 = 'O' and p_board->>4 = 'O' and p_board->>6 = 'O' then return 'O'; end if;
+  return null;
+end;
+$;
+revoke all on function public.find_tictactoe_winner(jsonb) from public, anon, authenticated;
+
+-- A member may only enqueue themselves; opponents are selected by the server,
+-- rating band, and 24-hour rematch exclusion. No target user ID is accepted.
+create or replace function public.queue_for_random_match(p_game_id text)
+returns table(queue_status text, matched_match_id uuid)
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user_id uuid := auth.uid();
+  v_rating integer;
+  v_queue public.matchmaking_queue;
+  v_opponent public.matchmaking_queue;
+  v_match_id uuid;
+begin
+  if coalesce(auth.role(), '') <> 'authenticated' or v_user_id is null then
+    raise exception 'not_authorized' using errcode = '42501';
+  end if;
+  if p_game_id is distinct from 'tictactoe' then
+    raise exception 'game_not_supported_for_online_matchmaking' using errcode = '22023';
+  end if;
+  if not exists (select 1 from public.catalog_games g where g.id = p_game_id and g.is_enabled = true) then
+    raise exception 'game_not_available' using errcode = '22023';
+  end if;
+
+  -- Serialize queue operations per game; the queue is small at launch and this
+  -- makes duplicate concurrent joins unable to match a player twice.
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('playora-queue:' || p_game_id, 0));
+
+  insert into public.member_game_stats(user_id,game_id)
+  values(v_user_id,p_game_id)
+  on conflict (user_id,game_id) do nothing;
+
+  select s.competitive_rating into v_rating
+  from public.member_game_stats s
+  where s.user_id = v_user_id and s.game_id = p_game_id;
+
+  -- If the member already has an active match, return it instead of opening a second one.
+  select q.match_id into v_match_id
+  from public.matchmaking_queue q
+  join public.matches m on m.id = q.match_id and m.status = 'active'
+  where q.user_id = v_user_id and q.game_id = p_game_id and q.status = 'matched'
+  order by q.updated_at desc
+  limit 1;
+  if found then
+    return query select 'matched'::text, v_match_id;
+    return;
+  end if;
+
+  select q.* into v_queue
+  from public.matchmaking_queue q
+  where q.user_id = v_user_id and q.game_id = p_game_id and q.status = 'waiting'
+  order by q.created_at desc
+  limit 1
+  for update;
+
+  if not found then
+    insert into public.matchmaking_queue(user_id,game_id,status,rating_snapshot)
+    values(v_user_id,p_game_id,'waiting',v_rating)
+    on conflict (user_id,game_id) where status = 'waiting' do nothing
+    returning * into v_queue;
+
+    if not found then
+      select q.* into v_queue
+      from public.matchmaking_queue q
+      where q.user_id = v_user_id and q.game_id = p_game_id and q.status = 'waiting'
+      order by q.created_at desc limit 1 for update;
+    end if;
+  end if;
+
+  select q.* into v_opponent
+  from public.matchmaking_queue q
+  where q.game_id = p_game_id
+    and q.status = 'waiting'
+    and q.user_id <> v_user_id
+    and pg_catalog.abs(q.rating_snapshot - v_queue.rating_snapshot) <= 200
+    and not exists (
+      select 1
+      from public.matches old_match
+      join public.match_participants self_participant on self_participant.match_id = old_match.id and self_participant.user_id = v_user_id
+      join public.match_participants opponent_participant on opponent_participant.match_id = old_match.id and opponent_participant.user_id = q.user_id
+      where old_match.game_id = p_game_id
+        and old_match.status = 'completed'
+        and old_match.created_at >= now() - interval '24 hours'
+    )
+  order by random()
+  limit 1
+  for update skip locked;
+
+  if not found then
+    return query select 'waiting'::text, null::uuid;
+    return;
+  end if;
+
+  insert into public.member_game_stats(user_id,game_id)
+  values(v_opponent.user_id,p_game_id)
+  on conflict (user_id,game_id) do nothing;
+
+  insert into public.matches(game_id,mode,status,state_version,server_state,started_at)
+  values (
+    p_game_id,
+    'ranked',
+    'active',
+    0,
+    pg_catalog.jsonb_build_object(
+      'board', pg_catalog.jsonb_build_array(null,null,null,null,null,null,null,null,null),
+      'current_mark', 'X',
+      'current_seat', 1
+    ),
+    now()
+  )
+  returning id into v_match_id;
+
+  -- The previously queued member is seat 1 / X. The current member is seat 2 / O.
+  insert into public.match_participants(match_id,user_id,seat)
+  values (v_match_id,v_opponent.user_id,1),(v_match_id,v_user_id,2);
+
+  update public.matchmaking_queue
+  set status = 'matched', match_id = v_match_id, updated_at = now()
+  where id in (v_queue.id,v_opponent.id);
+
+  return query select 'matched'::text, v_match_id;
+end;
+$;
+revoke all on function public.queue_for_random_match(text) from public, anon;
+grant execute on function public.queue_for_random_match(text) to authenticated;
+
+create or replace function public.cancel_random_match_queue(p_game_id text)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user_id uuid := auth.uid();
+  v_count integer;
+begin
+  if coalesce(auth.role(), '') <> 'authenticated' or v_user_id is null then
+    raise exception 'not_authorized' using errcode = '42501';
+  end if;
+  update public.matchmaking_queue
+  set status = 'cancelled', updated_at = now()
+  where user_id = v_user_id and game_id = p_game_id and status = 'waiting';
+  get diagnostics v_count = row_count;
+  return v_count > 0;
+end;
+$;
+revoke all on function public.cancel_random_match_queue(text) from public, anon;
+grant execute on function public.cancel_random_match_queue(text) to authenticated;
+
+-- Every move is checked against server state while holding the match row lock.
+-- The client submits only a cell index; it cannot set marks, turns, winners, XP, or rating.
+create or replace function public.submit_tictactoe_move(p_match_id uuid, p_cell_index integer)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user_id uuid := auth.uid();
+  v_user_seat integer;
+  v_match public.matches;
+  v_board jsonb;
+  v_new_state jsonb;
+  v_mark text;
+  v_winner_mark text;
+  v_draw boolean;
+  v_winner_user uuid;
+  v_loser_user uuid;
+  v_seat_one_user uuid;
+  v_seat_two_user uuid;
+  v_winner_rating integer;
+  v_loser_rating integer;
+  v_seat_one_rating integer;
+  v_seat_two_rating integer;
+  v_rating_delta integer;
+  v_expected numeric;
+  v_expected_seat_one numeric;
+  v_next_seat integer;
+  v_next_mark text;
+begin
+  if coalesce(auth.role(), '') <> 'authenticated' or v_user_id is null then
+    raise exception 'not_authorized' using errcode = '42501';
+  end if;
+  if p_cell_index is null or p_cell_index < 0 or p_cell_index > 8 then
+    raise exception 'invalid_cell' using errcode = '22023';
+  end if;
+
+  select m.* into v_match
+  from public.matches m
+  where m.id = p_match_id and m.game_id = 'tictactoe'
+  for update;
+  if not found
+     or v_match.status <> 'active'
+     or v_match.mode <> 'ranked'
+     or not exists (
+       select 1 from public.match_participants p
+       where p.match_id = p_match_id and p.user_id = v_user_id
+     )
+  then
+    raise exception 'match_not_available' using errcode = '42501';
+  end if;
+
+  select p.seat into v_user_seat
+  from public.match_participants p
+  where p.match_id = p_match_id and p.user_id = v_user_id;
+  if v_user_seat is null then
+    raise exception 'not_a_match_participant' using errcode = '42501';
+  end if;
+  if (v_match.server_state->>'current_seat')::integer <> v_user_seat then
+    raise exception 'not_your_turn' using errcode = '42501';
+  end if;
+
+  v_board := v_match.server_state->'board';
+  if pg_catalog.jsonb_typeof(v_board) <> 'array' or pg_catalog.jsonb_array_length(v_board) <> 9 then
+    raise exception 'invalid_match_state' using errcode = '22023';
+  end if;
+  if (v_board -> p_cell_index) is distinct from 'null'::jsonb then
+    raise exception 'cell_occupied' using errcode = '22023';
+  end if;
+
+  v_mark := v_match.server_state->>'current_mark';
+  if v_mark not in ('X','O') then
+    raise exception 'invalid_match_state' using errcode = '22023';
+  end if;
+
+  v_board := pg_catalog.jsonb_set(v_board, array[p_cell_index::text], pg_catalog.to_jsonb(v_mark), false);
+  v_new_state := pg_catalog.jsonb_set(v_match.server_state, '{board}', v_board, false);
+  v_winner_mark := public.find_tictactoe_winner(v_board);
+  v_draw := v_winner_mark is null and not exists (
+    select 1 from pg_catalog.jsonb_array_elements(v_board) as cells(value)
+    where cells.value = 'null'::jsonb
+  );
+
+  if v_winner_mark is not null then
+    select p.user_id into v_seat_one_user from public.match_participants p where p.match_id=p_match_id and p.seat=1;
+    select p.user_id into v_seat_two_user from public.match_participants p where p.match_id=p_match_id and p.seat=2;
+    v_winner_user := case when v_winner_mark = 'X' then v_seat_one_user else v_seat_two_user end;
+    v_loser_user := case when v_winner_mark = 'X' then v_seat_two_user else v_seat_one_user end;
+
+    insert into public.member_game_stats(user_id,game_id) values(v_winner_user,'tictactoe'),(v_loser_user,'tictactoe')
+    on conflict (user_id,game_id) do nothing;
+    select s.competitive_rating into v_winner_rating from public.member_game_stats s where s.user_id=v_winner_user and s.game_id='tictactoe' for update;
+    select s.competitive_rating into v_loser_rating from public.member_game_stats s where s.user_id=v_loser_user and s.game_id='tictactoe' for update;
+
+    v_expected := 1.0 / (1.0 + pg_catalog.power(10.0, (v_loser_rating::numeric - v_winner_rating::numeric) / 400.0));
+    v_rating_delta := pg_catalog.round(32.0 * (1.0 - v_expected))::integer;
+
+    update public.matches
+    set status='completed', winner_user_id=v_winner_user, server_state=v_new_state,
+        state_version=state_version+1, finished_at=now()
+    where id=p_match_id returning * into v_match;
+    update public.match_participants
+    set final_result=case when user_id=v_winner_user then 'win' else 'loss' end
+    where match_id=p_match_id;
+
+    update public.member_game_stats
+    set xp=xp + case when v_loser_rating > v_winner_rating then 25 when v_loser_rating = v_winner_rating then 20 else 15 end,
+        competitive_rating=greatest(100,least(10000,competitive_rating+v_rating_delta)),
+        matches_played=matches_played+1,wins=wins+1,updated_at=now()
+    where user_id=v_winner_user and game_id='tictactoe';
+
+    update public.member_game_stats
+    set xp=xp + case when v_loser_rating > v_winner_rating then 5 when v_loser_rating = v_winner_rating then 6 else 8 end,
+        competitive_rating=greatest(100,least(10000,competitive_rating-v_rating_delta)),
+        matches_played=matches_played+1,losses=losses+1,updated_at=now()
+    where user_id=v_loser_user and game_id='tictactoe';
+
+    return pg_catalog.jsonb_build_object(
+      'match_id',v_match.id,'status',v_match.status,'state',v_match.server_state,
+      'state_version',v_match.state_version,'winner_mark',v_winner_mark
+    );
+  elsif v_draw then
+    select p.user_id into v_seat_one_user from public.match_participants p where p.match_id=p_match_id and p.seat=1;
+    select p.user_id into v_seat_two_user from public.match_participants p where p.match_id=p_match_id and p.seat=2;
+    insert into public.member_game_stats(user_id,game_id) values(v_seat_one_user,'tictactoe'),(v_seat_two_user,'tictactoe')
+    on conflict (user_id,game_id) do nothing;
+    select s.competitive_rating into v_seat_one_rating from public.member_game_stats s where s.user_id=v_seat_one_user and s.game_id='tictactoe' for update;
+    select s.competitive_rating into v_seat_two_rating from public.member_game_stats s where s.user_id=v_seat_two_user and s.game_id='tictactoe' for update;
+    v_expected_seat_one := 1.0 / (1.0 + pg_catalog.power(10.0, (v_seat_two_rating::numeric - v_seat_one_rating::numeric) / 400.0));
+    v_rating_delta := pg_catalog.round(32.0 * (0.5 - v_expected_seat_one))::integer;
+
+    update public.matches
+    set status='completed', winner_user_id=null, server_state=v_new_state,
+        state_version=state_version+1, finished_at=now()
+    where id=p_match_id returning * into v_match;
+    update public.match_participants set final_result='draw' where match_id=p_match_id;
+    update public.member_game_stats
+    set xp=xp+10,competitive_rating=greatest(100,least(10000,competitive_rating+v_rating_delta)),
+        matches_played=matches_played+1,draws=draws+1,updated_at=now()
+    where user_id=v_seat_one_user and game_id='tictactoe';
+    update public.member_game_stats
+    set xp=xp+10,competitive_rating=greatest(100,least(10000,competitive_rating-v_rating_delta)),
+        matches_played=matches_played+1,draws=draws+1,updated_at=now()
+    where user_id=v_seat_two_user and game_id='tictactoe';
+
+    return pg_catalog.jsonb_build_object(
+      'match_id',v_match.id,'status',v_match.status,'state',v_match.server_state,
+      'state_version',v_match.state_version,'winner_mark',null
+    );
+  end if;
+
+  v_next_seat := case when v_user_seat = 1 then 2 else 1 end;
+  v_next_mark := case when v_mark = 'X' then 'O' else 'X' end;
+  v_new_state := pg_catalog.jsonb_set(v_new_state, '{current_mark}', pg_catalog.to_jsonb(v_next_mark), false);
+  v_new_state := pg_catalog.jsonb_set(v_new_state, '{current_seat}', pg_catalog.to_jsonb(v_next_seat), false);
+
+  update public.matches
+  set server_state=v_new_state,state_version=state_version+1
+  where id=p_match_id and status='active'
+  returning * into v_match;
+
+  return pg_catalog.jsonb_build_object(
+    'match_id',v_match.id,'status',v_match.status,'state',v_match.server_state,
+    'state_version',v_match.state_version,'winner_mark',null
+  );
+end;
+$;
+revoke all on function public.submit_tictactoe_move(uuid,integer) from public, anon;
+grant execute on function public.submit_tictactoe_move(uuid,integer) to authenticated;
+
 alter table public.member_profiles enable row level security;
 alter table public.member_preferences enable row level security;
 alter table public.coin_wallets enable row level security;
