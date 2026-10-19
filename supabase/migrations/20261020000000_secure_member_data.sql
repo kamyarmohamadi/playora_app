@@ -785,7 +785,10 @@ grant select on public.coin_wallets to authenticated;
 grant select on public.coin_ledger to authenticated;
 grant select on public.catalog_games to authenticated;
 grant select,insert,delete on public.member_favorites to authenticated;
-grant select on public.matches to authenticated;
+-- Match participants may read only gameplay-safe columns; the opponent's auth UUID
+-- is never directly selectable by a browser client.
+grant select (id, game_id, mode, status, state_version, server_state, started_at, finished_at, created_at)
+  on public.matches to authenticated;
 grant select on public.match_participants to authenticated;
 grant select on public.member_game_stats to authenticated;
 grant select on public.matchmaking_queue to authenticated;
