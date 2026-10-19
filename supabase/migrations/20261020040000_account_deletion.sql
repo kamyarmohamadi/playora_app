@@ -18,7 +18,7 @@ begin
   -- Cancel pending matchmaking before the auth row is deleted.
   update public.matchmaking_queue
   set status='cancelled', updated_at=now()
-  where user_id=p_user_id and status='waiting';
+  where user_id=p_user_id and status in ('waiting','matched');
 
   -- Cancel unfinished matches involving the member. No XP, rating, wins,
   -- losses, or coin changes are issued for an abandoned/deleted account.
@@ -34,6 +34,13 @@ begin
         where p.match_id=m.id and p.user_id=p_user_id
       )
     returning m.id
+  ),
+  cancelled_counterpart_queues as (
+    update public.matchmaking_queue q
+    set status='cancelled', updated_at=now()
+    where q.status='matched'
+      and q.match_id in (select id from cancelled_matches)
+    returning q.id
   )
   update public.match_participants p
   set final_result=null
