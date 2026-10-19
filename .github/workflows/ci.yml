@@ -61,9 +61,13 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
       - name: Apply member isolation migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020000000_secure_member_data.sql
+      - name: Apply private rooms migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020010000_private_rooms.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test isolation between two authenticated members
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
       - name: Test ranked Tic Tac Toe matchmaking and server-authoritative outcomes
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/ranked_tictactoe.sql
+      - name: Test private rooms, invite secrecy and no-reward outcomes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/private_rooms.sql
