@@ -498,7 +498,7 @@ export default function App() {
           const { data: membershipRows, error: membershipError } = await db
             .from("room_members")
             .select("room_id,role")
-            .eq("user_id", userId)
+            .eq("user_id", session.user.id)
             .in("room_id", roomIds);
           if (membershipError) throw membershipError;
           ownRoles = new Map((membershipRows ?? []).map(row => [row.room_id, row.role as "host" | "player"]));
