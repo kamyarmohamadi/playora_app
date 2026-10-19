@@ -76,15 +76,6 @@ describe("Playora global app shell", () => {
     expect(screen.queryByRole("button", { name: "Find random opponent" })).not.toBeInTheDocument();
   });
 
-  it("keeps private-room creation and joining behind account sign-in", () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Private Rooms" }));
-    expect(screen.getByRole("heading", { name: "Private rooms" })).toBeInTheDocument();
-    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Create a free room" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Join with invite code" })).not.toBeInTheDocument();
-  });
-
   it("keeps private rooms behind sign-in and does not expose room creation to guests", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Private Rooms" }));
@@ -92,7 +83,7 @@ describe("Playora global app shell", () => {
     expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Create a free room" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join with invite code" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Private matches never affect XP, rating, coins or prizes/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Private play is free\. No coins, XP, rating or prizes are awarded/).length).toBeGreaterThan(0);
   });
 
   it("shows notices without claiming online play is active", () => {
