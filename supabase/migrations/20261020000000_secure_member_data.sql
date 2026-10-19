@@ -94,6 +94,41 @@ create table if not exists public.match_participants (
 );
 create index if not exists match_participants_user_idx on public.match_participants(user_id,joined_at desc);
 
+
+create table if not exists public.member_game_stats (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  game_id text not null references public.catalog_games(id) on delete cascade,
+  xp bigint not null default 0 check (xp >= 0),
+  competitive_rating integer not null default 1000 check (competitive_rating between 100 and 10000),
+  matches_played integer not null default 0 check (matches_played >= 0),
+  wins integer not null default 0 check (wins >= 0),
+  losses integer not null default 0 check (losses >= 0),
+  draws integer not null default 0 check (draws >= 0),
+  updated_at timestamptz not null default now(),
+  primary key(user_id,game_id),
+  check (matches_played >= wins + losses + draws)
+);
+create index if not exists member_game_stats_leaderboard_idx
+  on public.member_game_stats(game_id,competitive_rating desc,xp desc);
+
+create table if not exists public.matchmaking_queue (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  game_id text not null references public.catalog_games(id),
+  status text not null default 'waiting' check (status in ('waiting','matched','cancelled','expired')),
+  rating_snapshot integer not null default 1000 check (rating_snapshot between 100 and 10000),
+  match_id uuid references public.matches(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check ((status = 'matched' and match_id is not null) or status <> 'matched')
+);
+create unique index if not exists matchmaking_one_waiting_per_member_game
+  on public.matchmaking_queue(user_id,game_id) where status='waiting';
+create index if not exists matchmaking_candidates_idx
+  on public.matchmaking_queue(game_id,status,created_at) where status='waiting';
+create index if not exists matchmaking_member_history_idx
+  on public.matchmaking_queue(user_id,game_id,updated_at desc);
+
 create table if not exists public.private_rooms (
   id uuid primary key default gen_random_uuid(),
   host_user_id uuid not null references auth.users(id) on delete cascade,
@@ -352,6 +387,8 @@ alter table public.catalog_games enable row level security;
 alter table public.member_favorites enable row level security;
 alter table public.matches enable row level security;
 alter table public.match_participants enable row level security;
+alter table public.member_game_stats enable row level security;
+alter table public.matchmaking_queue enable row level security;
 alter table public.private_rooms enable row level security;
 alter table public.private_room_secrets enable row level security;
 alter table public.room_members enable row level security;
@@ -364,7 +401,7 @@ alter table public.security_audit_events enable row level security;
 -- Make the default posture explicit even if project-level default privileges change.
 revoke all on table
   public.member_profiles, public.member_preferences, public.coin_wallets, public.coin_ledger,
-  public.catalog_games, public.member_favorites, public.matches, public.match_participants,
+  public.catalog_games, public.member_favorites, public.matches, public.match_participants, public.member_game_stats, public.matchmaking_queue,
   public.private_rooms, public.private_room_secrets, public.room_members, public.friend_requests,
   public.tournaments, public.tournament_entries, public.deposit_requests, public.security_audit_events
 from anon, authenticated;
@@ -382,6 +419,8 @@ grant select on public.catalog_games to authenticated;
 grant select,insert,delete on public.member_favorites to authenticated;
 grant select on public.matches to authenticated;
 grant select on public.match_participants to authenticated;
+grant select on public.member_game_stats to authenticated;
+grant select on public.matchmaking_queue to authenticated;
 grant select on public.private_rooms to authenticated;
 grant select on public.room_members to authenticated;
 grant select on public.friend_requests to authenticated;
@@ -409,6 +448,9 @@ create policy "members see matches they joined" on public.matches for select to 
   exists (select 1 from public.match_participants p where p.match_id = id and p.user_id = (select auth.uid()))
 );
 create policy "members see their own participant rows" on public.match_participants for select to authenticated using (user_id = (select auth.uid()));
+create policy "members see own game stats" on public.member_game_stats for select to authenticated using (user_id = (select auth.uid()));
+create policy "members see own matchmaking rows" on public.matchmaking_queue for select to authenticated using (user_id = (select auth.uid()));
+
 create policy "members see rooms they host or joined" on public.private_rooms for select to authenticated using (
   host_user_id = (select auth.uid()) or exists (
     select 1 from public.room_members rm where rm.room_id = id and rm.user_id = (select auth.uid())
