@@ -63,6 +63,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020000000_secure_member_data.sql
       - name: Apply private rooms migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020010000_private_rooms.sql
+      - name: Apply social and leaderboard migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020020000_social_and_leaderboard.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test isolation between two authenticated members
@@ -71,3 +73,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/ranked_tictactoe.sql
       - name: Test private rooms, invite secrecy and no-reward outcomes
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/private_rooms.sql
+      - name: Test friend requests, anti-spam and leaderboard ordering
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
