@@ -98,13 +98,19 @@ create table if not exists public.private_rooms (
   id uuid primary key default gen_random_uuid(),
   host_user_id uuid not null references auth.users(id) on delete cascade,
   game_id text not null references public.catalog_games(id),
-  invite_code_hash text not null unique,
   status text not null default 'open' check (status in ('open','active','closed','expired')),
   max_players smallint not null default 2 check (max_players between 2 and 8),
   expires_at timestamptz not null default (now() + interval '24 hours'),
   created_at timestamptz not null default now()
 );
 create index if not exists private_rooms_host_idx on public.private_rooms(host_user_id,created_at desc);
+
+-- Room invite hashes are never readable by client roles.
+create table if not exists public.private_room_secrets (
+  room_id uuid primary key references public.private_rooms(id) on delete cascade,
+  invite_code_hash text not null unique,
+  created_at timestamptz not null default now()
+);
 
 create table if not exists public.room_members (
   room_id uuid not null references public.private_rooms(id) on delete cascade,
@@ -217,6 +223,7 @@ begin
 end;
 $$;
 revoke all on function public.handle_new_member() from public, anon, authenticated;
+revoke all on function public.set_updated_at() from public, anon, authenticated;
 
 drop trigger if exists on_auth_user_created_playora on auth.users;
 create trigger on_auth_user_created_playora
@@ -241,6 +248,7 @@ alter table public.member_favorites enable row level security;
 alter table public.matches enable row level security;
 alter table public.match_participants enable row level security;
 alter table public.private_rooms enable row level security;
+alter table public.private_room_secrets enable row level security;
 alter table public.room_members enable row level security;
 alter table public.friend_requests enable row level security;
 alter table public.tournaments enable row level security;
@@ -252,7 +260,9 @@ alter table public.security_audit_events enable row level security;
 grant usage on schema public to authenticated;
 grant select on public.member_profiles to authenticated;
 grant update(display_name,avatar_key,locale) on public.member_profiles to authenticated;
-grant select,insert,update on public.member_preferences to authenticated;
+grant select on public.member_preferences to authenticated;
+grant insert(user_id,locale,sound_enabled,reduced_motion) on public.member_preferences to authenticated;
+grant update(locale,sound_enabled,reduced_motion) on public.member_preferences to authenticated;
 grant select on public.coin_wallets to authenticated;
 grant select on public.coin_ledger to authenticated;
 grant select on public.catalog_games to authenticated;
