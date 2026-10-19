@@ -4,9 +4,9 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase, supabaseConfigured } from "./lib/supabase";
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity, ArrowRight, ArrowUpRight, Bell, BarChart3, Check, ChevronDown,
+  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown,
   Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
-  Languages, LockKeyhole, Medal, Menu, Puzzle, Search, Settings,
+  Languages, LockKeyhole, LogIn, Medal, Menu, Puzzle, Search, Settings,
   ShieldCheck, Sparkles, Spade, Ticket, Trophy, UserRound, Users,
   Wallet, X, Zap
 } from "lucide-react";
@@ -116,6 +116,10 @@ const extraNavigation: { id: Page; key: string; icon: LucideIcon }[] = [
 
 function BrandMark() {
   return <span className="brand-mark" aria-hidden="true"><span /><i /><b /></span>;
+}
+
+function GoogleGlyph() {
+  return <span className="google-glyph" aria-hidden="true">G</span>;
 }
 
 function GameArtwork({ game }: { game: Game }) {
@@ -418,7 +422,7 @@ export default function App() {
             <button className="top-icon-btn" aria-label={t("notifications")} onClick={() => setNoticeOpen(!noticeOpen)}><Bell size={18} /><i /></button>
             {noticeOpen && <div className="notice-popover"><div className="popover-heading"><b>{t("notifications")}</b><span>0</span></div><p>{t("noAlerts")}</p></div>}
           </div>
-          <button className="user-chip" onClick={() => go("profile")} aria-label={t("profileMenu")}><span className="user-avatar">O</span><span className="user-chip-label">{t("account")}</span><ChevronDown size={13} /></button>
+          <button className="user-chip" aria-busy={authLoading} onClick={() => session ? go("profile") : openAuth("signin")} aria-label={session ? t("profileMenu") : t("signIn")}><span className="user-avatar">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><span className="user-chip-label">{currentName}</span><ChevronDown size={13} /></button>
         </div>
       </header>
 
@@ -476,7 +480,7 @@ export default function App() {
               <div><span className="stat-icon stat-cyan"><Gamepad2 size={17} /></span><div><b>08</b><small>{t("allGames")}</small></div></div>
               <div><span className="stat-icon stat-purple"><Users size={17} /></span><div><b>1v1</b><small>{t("online")}</small></div></div>
               <div><span className="stat-icon stat-pink"><Trophy size={17} /></span><div><b>24/7</b><small>{t("privateRooms")}</small></div></div>
-              <div className="coins-stat"><span className="coin-symbol"><Coins size={18} /></span><div><b>{t("demoCoins")}</b><small>{t("coins")}</small></div><span className="preview-caption">{t("demo")}</span></div>
+              <div className="coins-stat"><span className="coin-symbol"><Coins size={18} /></span><div><b>{formattedCoins}</b><small>{t("coins")}</small></div>{!session && <span className="preview-caption">{t("demo")}</span>}</div>
             </div>
 
             <section className="games-section">
@@ -502,11 +506,11 @@ export default function App() {
           {page === "friends" && <EmptyState icon={Users} title={t("friendsTitle")} text={t("friendsSub")} />}
           {page === "leaderboard" && <EmptyState icon={Trophy} title={t("rankTitle")} text={t("rankSub")} />}
 
-          {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{t("demoCoins")} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
+          {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
 
-          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">O</span><div><h2>{t("sampleProfile")}</h2><p>{t("account")}</p></div><span className="profile-level"><Medal size={14} />{t("level")} 1</span></div><div className="profile-stats"><div><b>0</b><span>{t("statMatches")}</span></div><div><b>0</b><span>{t("statWins")}</span></div><div><b>—</b><span>{t("statRating")}</span></div></div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("profileSub")}</span></div></div></section>}
+          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{t("member")}</span>}</div><div className="profile-stats"><div><b>—</b><span>{t("statMatches")}</span></div><div><b>—</b><span>{t("statWins")}</span></div><div><b>—</b><span>{t("statRating")}</span></div></div>{session ? <div className="profile-auth-footer"><p>{t("securityLiveNote")}</p><button className="btn-outline" onClick={() => void handleSignOut()}><LogIn size={14} />{t("signOut")}</button></div> : <div className="profile-auth-footer"><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}</div></section>}
 
-          {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => { setLocale("en"); setToast(copy.en.settingsSaved); }}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => { setLocale("fa"); setToast(copy.fa.settingsSaved); }}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div></section>}
+          {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => { setLocale("en"); setToast(copy.en.settingsSaved); }}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => { setLocale("fa"); setToast(copy.fa.settingsSaved); }}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><p className="security-live-note">{supabaseConfigured ? t("securityLiveNote") : t("authUnavailable")}</p><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div></section>}
 
           <footer className="main-footer"><div><BrandMark /><span>{t("footer")}</span></div><span>{t("rights")}</span><button onClick={() => go("settings")}><ShieldCheck size={13} />{t("security")}</button></footer>
         </main>
