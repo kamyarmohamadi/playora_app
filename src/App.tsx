@@ -8,7 +8,7 @@ import type { TicTacToeMark, TicTacToeState } from "./games/tictactoe";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords,
   Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
-  Languages, LockKeyhole, LogIn, Medal, Menu, Puzzle, Search, Settings,
+  Languages, LockKeyhole, LogIn, Medal, Menu, Plus, Puzzle, Search, Settings,
   ShieldCheck, Sparkles, Spade, Ticket, Trophy, UserRound, Users,
   Wallet, X, Zap
 } from "lucide-react";
