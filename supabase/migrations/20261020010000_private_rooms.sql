@@ -69,6 +69,12 @@ begin
     raise exception 'game_not_available' using errcode = '22023';
   end if;
 
+  -- Serialize per-host room creation so concurrent requests cannot bypass
+  -- the maximum of three open rooms.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('playora-private-room:' || v_user_id::text, 0)
+  );
+
   select count(*) into v_open_rooms
   from public.private_rooms r
   where r.host_user_id=v_user_id and r.status='open' and r.expires_at > now();
