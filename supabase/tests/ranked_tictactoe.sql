@@ -82,10 +82,10 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   PERFORM public.submit_tictactoe_move(v_match_id,2); -- X wins
 
-  SELECT status='completed', winner_user_id INTO v_completed,v_winner_id
+  SELECT status='completed' INTO v_completed
   FROM public.matches WHERE id=v_match_id;
-  IF NOT v_completed OR v_winner_id <> '00000000-0000-4000-8000-000000000001'::uuid THEN
-    RAISE EXCEPTION 'Authoritative winner/result was not recorded correctly';
+  IF NOT v_completed OR (SELECT final_result FROM public.match_participants WHERE match_id=v_match_id AND user_id=auth.uid()) <> 'loss' THEN
+    RAISE EXCEPTION 'Authoritative member-visible match result was not recorded correctly';
   END IF;
 
   SELECT xp,competitive_rating,wins INTO v_xp,v_rating,v_wins
