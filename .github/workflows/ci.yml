@@ -59,6 +59,11 @@ jobs:
           sudo apt-get install --yes postgresql-client
       - name: Bootstrap minimal Supabase auth test schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
+      - name: Simulate Supabase pgcrypto extension schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS extensions;'
+          psql -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          psql -v ON_ERROR_STOP=1 -c 'ALTER EXTENSION pgcrypto SET SCHEMA extensions;'
       - name: Apply member isolation migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020000000_secure_member_data.sql
       - name: Apply private rooms migration
