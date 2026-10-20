@@ -18,9 +18,91 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Audit dependency vulnerabilities
+        run: npm audit --audit-level=moderate
       - name: Run unit tests
         run: npm test
       - name: Type-check
         run: npm run typecheck
       - name: Build production bundle
         run: npm run build
+
+
+  database-security:
+    name: PostgreSQL RLS and wallet privilege tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: playora_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d playora_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: playora_test
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Bootstrap minimal Supabase auth test schema
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
+      - name: Simulate Supabase pgcrypto extension schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'CREATE SCHEMA IF NOT EXISTS extensions;'
+          psql -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto;'
+          psql -v ON_ERROR_STOP=1 -c 'ALTER EXTENSION pgcrypto SET SCHEMA extensions;'
+      - name: Apply member isolation migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020000000_secure_member_data.sql
+      - name: Apply private rooms migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020010000_private_rooms.sql
+      - name: Apply social and leaderboard migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020020000_social_and_leaderboard.sql
+      - name: Apply match identifier privacy migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
+      - name: Apply account deletion cleanup migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020040000_account_deletion.sql
+      - name: Assert RLS and privileged table permissions
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+      - name: Test wallet ledger idempotency and overdraft protections
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
+      - name: Test isolation between two authenticated members
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
+      - name: Test ranked Tic Tac Toe matchmaking and server-authoritative outcomes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/ranked_tictactoe.sql
+      - name: Test private rooms, invite secrecy and no-reward outcomes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/private_rooms.sql
+      - name: Test friend requests, anti-spam and leaderboard ordering
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
+      - name: Test account deletion cleanup without reward side effects
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
+
+
+  edge-functions:
+    name: Edge function type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check member self endpoint
+        run: deno check --config supabase/functions/member-self/deno.json supabase/functions/member-self/index.ts
+      - name: Type-check account deletion endpoint
+        run: deno check --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index.ts
+      - name: Test account deletion request validation
+        run: deno test --allow-env --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index_test.ts

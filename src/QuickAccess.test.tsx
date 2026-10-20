@@ -2,22 +2,34 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "./App";
 
-describe("Playora dashboard quick access", () => {
-  it("shows the ten quick-access shortcuts", () => {
+function openNavigation(label: string) {
+  const menu = screen.getByRole("button", { name: "Open menu" });
+  if (menu.getAttribute("aria-expanded") !== "true") fireEvent.click(menu);
+  fireEvent.click(screen.getByRole("button", { name: label }));
+}
+
+describe("Playora game catalogue", () => {
+  it("renders the game category filters", () => {
     render(<App />);
-    expect(screen.getByRole("heading", { name: "دسترسی سریع" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "خانه" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "بازی‌ها" }).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "دلخواه‌ها" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "اعلان‌ها" }).length).toBeGreaterThan(0);
-    expect(screen.getByText("۱۰ میانبر")).toBeInTheDocument();
+    openNavigation("Games");
+    expect(screen.getByRole("group", { name: "Game mode" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All games" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Strategy" })).toBeInTheDocument();
   });
 
-  it("opens a favorites-only catalogue", () => {
+  it("filters the catalogue by category", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "دلخواه‌ها" }));
-    expect(screen.getByRole("heading", { name: "بازی‌های دلخواه تو" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "تخته‌نرد" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "شطرنج" })).not.toBeInTheDocument();
+    openNavigation("Games");
+    fireEvent.click(screen.getByRole("button", { name: "Card games" }));
+    expect(screen.getByRole("heading", { name: "Hokm" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rummy" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Chess" })).not.toBeInTheDocument();
+  });
+
+  it("opens the tournament view with reward claims clearly disabled", () => {
+    render(<App />);
+    openNavigation("Tournaments");
+    expect(screen.getByRole("heading", { name: "Enter the arena" })).toBeInTheDocument();
+    expect(screen.getAllByText(/Entry fees and rewards are disabled/).length).toBeGreaterThan(0);
   });
 });
