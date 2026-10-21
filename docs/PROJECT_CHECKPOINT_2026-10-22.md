@@ -26,8 +26,31 @@ Separate the Playora platform from all individual game implementations. The plat
 - Defined milestones and acceptance gates from contract tests through platform-only release readiness.
 - No application runtime/source code has been changed yet. This is intentional: Superpowers architectural workflow requires the owner to review the written spec before the implementation plan is written.
 
-## Immediate next step
-Owner reviews and approves or requests changes to the architecture spec. Only after approval, write a step-by-step implementation plan in GitHub, self-review it, then implement one milestone at a time using test-first development. Each meaningful milestone must be committed and checkpointed; main is not to be modified directly.
+## Owner approval and current phase
+- The owner approved the modular platform/game architecture on 2026-10-22.
+- The project is now in **implementation-plan review**. No application source code has changed in this phase; this is intentional because the architecture work is broad and the plan must be reviewed before implementation.
+- PR #7 is the review surface for the architecture spec, plans and audit. It remains unmerged. Main is untouched.
+
+## Saved implementation plans
+- Program roadmap: [2026-10-22-playora-platform-completion-roadmap.md](./superpowers/plans/2026-10-22-playora-platform-completion-roadmap.md)
+- Plan A — core/SDK separation: [2026-10-22-playora-platform-core-game-sdk.md](./superpowers/plans/2026-10-22-playora-platform-core-game-sdk.md)
+- Plan B — secure plugin runtime: [2026-10-22-playora-secure-plugin-runtime.md](./superpowers/plans/2026-10-22-playora-secure-plugin-runtime.md)
+- Plan C — Supabase and platform readiness: [2026-10-22-playora-platform-supabase-readiness.md](./superpowers/plans/2026-10-22-playora-platform-supabase-readiness.md)
+- Supabase account/source audit: [SUPABASE_READINESS_AUDIT_2026-10-22.md](./supabase/SUPABASE_READINESS_AUDIT_2026-10-22.md)
+
+## Supabase live status checked 2026-10-22
+- One visible organization: `kamyarmohamade@gmail.com's Org`, plan Free.
+- Supabase project list returned zero projects.
+- Current base quote for a project in the visible Free organization: $0/month.
+- No project has been created and no live migrations/functions were applied/deployed. Owner must explicitly confirm organization and region before project provisioning.
+- A relevant Supabase Data API change is scheduled for enforcement across projects on 2026-10-30. Plan C requires explicit minimum grants plus RLS and live verification after provisioning.
+
+## Current implementation order
+1. Owner reviews the roadmap and Plans A–C.
+2. Implement Plan A first: SDK/manifest and remove direct game-engine imports from the host.
+3. Implement Plan B after SDK contracts are stable.
+4. Implement Plan C's offline prep while awaiting explicit approval for development project creation; run live integration steps only after approved project provisioning.
+5. Do not implement or port any games until the platform-only release gate is satisfied.
 
 ## Non-negotiable rules
 - Do not build or expand games until platform-only acceptance gates are met.
