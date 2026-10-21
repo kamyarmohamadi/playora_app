@@ -111,6 +111,38 @@ describe("GamePluginHost", () => {
     expect(onCapabilityRequest).not.toHaveBeenCalled();
   });
 
+  it("fails closed when the startup handshake times out", async () => {
+    vi.useFakeTimers();
+    const onError = vi.fn();
+    try {
+      render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} onError={onError} handshakeTimeoutMs={500} />);
+      const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+      await act(async () => { fireEvent.load(frame); });
+      await act(async () => { vi.advanceTimersByTime(500); });
+      expect(screen.getByText(/did not complete its secure startup handshake/i)).toBeTruthy();
+      expect(onError).toHaveBeenCalledWith("handshake_timeout");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not restart an already-ready session when a duplicate ready message arrives", () => {
+    const onError = vi.fn();
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} onError={onError} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    const ready = () => window.dispatchEvent(new MessageEvent("message", {
+      origin: "null",
+      source: frame.contentWindow,
+      data: { protocolVersion: 1, sessionId: "a".repeat(64), type: "plugin:ready", payload: { sdkVersion: "1.0.0" } },
+    }));
+    act(() => { ready(); });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+    act(() => { ready(); });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("shows the handshake state after the isolated frame loads", async () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="fa" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
