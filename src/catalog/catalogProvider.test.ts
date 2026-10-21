@@ -60,6 +60,16 @@ describe("local catalog provider", () => {
     expect(second[0].players.fa).toBe("۲ بازیکن");
   });
 
+  it("does not let consumers mutate the stored capability grants returned from reads", async () => {
+    const provider = createLocalCatalogProvider([chess], [enabledChess]);
+    const first = await provider.getRecord("chess");
+    expect(first?.grantedCapabilities).toEqual(["locale:read"]);
+    first?.grantedCapabilities.push("match:request");
+
+    const second = await provider.getRecord("chess");
+    expect(second?.grantedCapabilities).toEqual(["locale:read"]);
+  });
+
   it("does not let consumers mutate the stored plugin manifest returned from reads", async () => {
     const provider = createLocalCatalogProvider([chess], [enabledChess]);
     const approved = await provider.listApprovedPlugins();
