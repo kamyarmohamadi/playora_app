@@ -9,12 +9,12 @@ Priority: complete and test the Playora platform independently of every game. Do
 ## Baseline and working branch
 
 - Private repository: https://github.com/kamyarmohamadi/playora_app
-- Baseline app branch: \`feature/playora-neon-ui-member-isolation\`
-- Baseline commit: \`e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3\`
-- Architecture branch: \`feature/playora-platform-game-plugin-architecture-2026-10-22\`
+- Baseline app branch: `feature/playora-neon-ui-member-isolation`
+- Baseline commit: `e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3`
+- Architecture branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
 - Architecture/plan PR: https://github.com/kamyarmohamadi/playora_app/pull/7
-- Architecture spec: \`docs/superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md\`
-- Current checkpoint: \`docs/PROJECT_CHECKPOINT_2026-10-22.md\`
+- Architecture spec: `docs/superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md`
+- Current checkpoint: `docs/PROJECT_CHECKPOINT_2026-10-22.md`
 
 ## Workstreams and dependencies
 
@@ -42,7 +42,7 @@ This workstream can progress through code/CI prep while the project-creation app
 
 ## Sequencing
 
-1. Review/approve all three implementation plans; keep \`main\` unchanged.
+1. Review/approve all three implementation plans; keep `main` unchanged.
 2. Implement Plan A in small commits, running focused tests and full quality gates.
 3. Reconcile the SDK interfaces, then implement Plan B with a test-only plugin fixture; no game package is produced.
 4. In parallel only where dependencies allow, complete the no-project setup prep for Plan C. Provision the Supabase development project only after explicit owner approval.
@@ -54,13 +54,13 @@ This workstream can progress through code/CI prep while the project-creation app
 ## Persistent delivery protocol
 
 For every meaningful change:
-- Work on the architecture/feature branch, never directly on \`main\`.
+- Work on the architecture/feature branch, never directly on `main`.
 - Run test-first: add a failing test, verify failure, implement, verify pass.
 - Run the repo's actual tests/typecheck/build/dependency audit and relevant SQL/Deno/browser tests.
-- Commit the change and update \`docs/PROJECT_CHECKPOINT_2026-10-22.md\` with head SHA, tests, links, current blockers and next exact task.
+- Commit the change and update `docs/PROJECT_CHECKPOINT_2026-10-22.md` with head SHA, tests, links, current blockers and next exact task.
 - Keep PR #7 reviewable and unmerged until explicit review/acceptance.
 - When the owner asks for status, include the checkpoint, current PR and a verified browser preview/link if the UI has changed. Never invent a preview URL or claim an unrun test passed.
 
 ## Current external blocker
 
-Supabase account inspection shows one visible Free organization and no projects. The current base project quote in that organization is $0/month, but project creation has not been performed. The owner must explicitly confirm the organization and EU region before provisioning \`playora-dev\`. See the Supabase audit for current pricing limitations, required setup and the 2026-10-30 Data API exposure change.
+Supabase account inspection shows one visible Free organization and no projects. The current base project quote in that organization is $0/month, but project creation has not been performed. The owner must explicitly confirm the organization and EU region before provisioning `playora-dev`. See the Supabase audit for current pricing limitations, required setup and the 2026-10-30 Data API exposure change.
