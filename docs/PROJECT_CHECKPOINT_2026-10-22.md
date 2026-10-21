@@ -8,8 +8,9 @@ Separate the Playora platform from all individual game implementations. The plat
 - Application baseline branch: `feature/playora-neon-ui-member-isolation`
 - Baseline commit: `e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3`
 - Architecture branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
+- Draft review PR #7: https://github.com/kamyarmohamadi/playora_app/pull/7 (documentation only; not merged)
 - Architecture spec (awaiting owner review): [2026-10-22-playora-platform-game-plugin-architecture.md](./superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md)
-- Latest commit on architecture branch at checkpoint creation: `54941f069e811a409c1f54e38a9a06cb32cf54ca`
+- Latest architecture spec commit before PR/checkpoint update: `54941f069e811a409c1f54e38a9a06cb32cf54ca`
 - Application PR #5 remains open/draft and is not merged. Admin preview PR #6 remains separate/open/draft and is not in scope.
 - No Supabase project was returned by the connected Supabase account on 2026-10-22. No real database/Auth/Edge Functions may be described as deployed.
 
