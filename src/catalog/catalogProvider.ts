@@ -32,7 +32,7 @@ function cloneRegistryRecord(record: PluginRegistryRecord): PluginRegistryRecord
   return {
     state: record.state,
     manifest: cloneManifest(record.manifest),
-    grantedCapabilities: [...record.grantedCapabilities],
+    grantedCapabilities: [...(record.grantedCapabilities ?? [])],
   };
 }
 
@@ -40,7 +40,7 @@ function cloneApprovedRecord(record: ApprovedPluginRecord): ApprovedPluginRecord
   return {
     state: "enabled",
     manifest: cloneManifest(record.manifest),
-    grantedCapabilities: [...record.grantedCapabilities],
+    grantedCapabilities: [...(record.grantedCapabilities ?? [])],
   };
 }
 
