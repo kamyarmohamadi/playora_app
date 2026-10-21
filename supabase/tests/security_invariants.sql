@@ -9,7 +9,8 @@ BEGIN
     'member_profiles','member_preferences','coin_wallets','coin_ledger','catalog_games',
     'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
-    'tournament_entries','deposit_requests','security_audit_events','social_action_events'
+    'tournament_entries','deposit_requests','security_audit_events','social_action_events',
+    'game_plugin_artifact_origins','game_plugin_versions'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
