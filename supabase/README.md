@@ -1,6 +1,6 @@
 # Supabase setup — Playora
 
-This folder documents the backend foundation. It is not evidence that a live Supabase service has been provisioned or deployed.
+The development Supabase project has been provisioned and the listed development migrations have been applied and tested in CI. This document is not evidence of a production deployment; production remains a separate gated task.
 
 ## 1. Create a development project first
 

@@ -12,7 +12,7 @@
 
 **Prerequisite plan:** `docs/superpowers/plans/2026-10-22-playora-platform-core-game-sdk.md`
 
-**Current implementation checkpoint (2026-10-22):** Manifest/message validation and launch-policy checks are implemented with tests. The generic GamePluginHost and its initial lifecycle tests are committed on the architecture branch; latest observed full CI run passed. Continue with adversarial lifecycle tests, cleanup/revocation handling and trusted artifact integrity verification. No playable game artifact is enabled or launched.
+**Current implementation checkpoint (2026-10-22):** Manifest/message validation and launch-policy checks are implemented with tests. The generic GamePluginHost and its initial lifecycle tests are committed on the architecture branch; latest observed full CI run passed. The generic catalog launch path is now wired through prepareGameLaunch and GamePluginHost; explicit grants are stored separately from manifest requests. A local artifact digest verifier and additional hostile-origin/capability-denial tests are committed. Next, harden lifecycle cleanup/revocation and connect the verifier to a trusted release pipeline. No playable game artifact is enabled or launched.
 
 ## Global Constraints
 

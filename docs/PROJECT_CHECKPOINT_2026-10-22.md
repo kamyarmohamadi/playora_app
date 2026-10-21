@@ -19,21 +19,23 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - Added runtime manifest validation and plugin launch-policy checks for HTTPS, dedicated artifact origins, version-scoped paths, SHA-256 shape, SDK compatibility and capability allowlists.
 - Added strict plugin-to-host message validation for exact iframe source, opaque-origin handling, per-session nonce, protocol version, message type, payload shape and message size.
 - Added a generic GamePluginHost component. It uses an iframe with sandbox="allow-scripts" only, referrerPolicy="no-referrer", a per-session Web Crypto ID, a bounded startup handshake timeout, an accessible recovery state and no credentials passed into the game frame.
+- The app's generic catalog click path now calls prepareGameLaunch and mounts GamePluginHost only when a visible catalog entry has an enabled, schema-valid registry record and explicit capabilities approved by the trusted registry. With the current empty registry, it shows the existing unavailable message and never creates a game iframe.
+- Added a local artifact SHA-256 verifier that rejects digest mismatch, malformed expected digests, empty/oversized files, missing files and symlinks. This verifies bytes against a trusted expected digest; the release pipeline still needs to supply that digest from a trusted review/publish process.
 - The host component is a platform runtime primitive, not a playable game. It is not a reason to enable any catalog entry or launch arbitrary URLs.
 - Added tests for the launch policy, message validation, host sandboxing, denied origins and recoverable exit paths.
 - Automated platform/game import-boundary check passes on the latest verified CI run.
 
 ### Supabase / registry
 - Development project: playora-dev; project reference nnowvfewtrfurnluhflt; EU Central (eu-central-1).
-- Applied and verified migrations include member isolation, private rooms, social/leaderboard, match identifier privacy, account deletion cleanup, platform-only game RPC lockdown, catalog/plugin registry, SDK-range hardening, trusted artifact-origin/state guards and catalog art metadata.
+- Applied and verified migrations include member isolation, private rooms, social/leaderboard, match identifier privacy, account deletion cleanup, platform-only game RPC lockdown, catalog/plugin registry, SDK-range hardening, trusted artifact-origin/state guards, catalog art metadata and separate explicit capability grants.
 - Catalog display art is stored in catalog_games.art_key; the React provider reads this data instead of hardcoding a generic art key.
 - Live verification: RLS enabled on catalog_games, game_plugin_versions and game_plugin_artifact_origins; browser roles cannot read or modify the approved-origin table.
 - Current release gate is intentionally closed: 8 visible metadata rows, 0 enabled catalog games, 0 plugin registry rows, 0 approved artifact origins.
 - Generated TypeScript database types were refreshed from the live development schema and committed.
 
 ### Verification
-- Latest fully completed quality-gate run after the stale-session test correction: https://github.com/kamyarmohamadi/playora_app/actions/runs/39689678077
-- Result: all three jobs passed — unit tests/typecheck/production build, PostgreSQL RLS and wallet privilege tests, and Deno Edge Function type checks. The host suite passed 87 tests total across the unit-test run.
+- Latest fully completed quality-gate run after launch-gate, capability-grant and artifact-verifier changes: https://github.com/kamyarmohamadi/playora_app/actions/runs/39691412875
+- Result: all three jobs passed — 101 unit tests, TypeScript checks and production build; PostgreSQL RLS, wallet and plugin-registry tests; and Deno Edge Function type checks.
 - This is CI evidence for the checked commit, not a claim that a production deployment or full browser end-to-end test has passed.
 - Supabase Security Advisor reports three warnings for authenticated execution of list_social_relationships, send_friend_request and respond_friend_request. Review of the live function definitions found explicit auth.role()/auth.uid() checks and scoped relationship operations; the warnings remain documented for independent review before production.
 
