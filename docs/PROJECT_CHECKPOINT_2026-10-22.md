@@ -10,7 +10,7 @@ Separate the Playora platform from all individual game implementations. The plat
 - Architecture branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
 - Draft review PR #7: https://github.com/kamyarmohamadi/playora_app/pull/7 (documentation only; not merged)
 - Architecture spec (owner approved 2026-10-22): [2026-10-22-playora-platform-game-plugin-architecture.md](./superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md)
-- Architecture branch head at this checkpoint: `7ad4c17fe9ad07d36c45e53c9fb0f1288769e835`
+- Last plan-content commit before this checkpoint refresh: `7ad4c17fe9ad07d36c45e53c9fb0f1288769e835`
 - Application PR #5 remains open/draft and is not merged. Admin preview PR #6 remains separate/open/draft and is not in scope.
 - No Supabase project was returned by the connected Supabase account on 2026-10-22. No real database/Auth/Edge Functions may be described as deployed.
 
