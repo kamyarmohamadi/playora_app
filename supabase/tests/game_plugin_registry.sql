@@ -4,6 +4,7 @@ DO $plugin_registry_invariants$
 DECLARE
   v_id uuid;
   v_immutable_blocked boolean := false;
+  v_invalid_range_blocked boolean := false;
 BEGIN
   IF NOT has_table_privilege('anon','public.catalog_games','SELECT')
      OR NOT has_table_privilege('authenticated','public.catalog_games','SELECT') THEN
@@ -46,6 +47,24 @@ BEGIN
     WHERE schemaname = 'public' AND indexname = 'game_plugin_versions_one_enabled_per_game_idx'
   ) THEN
     RAISE EXCEPTION 'Registry must prevent multiple enabled versions for a game';
+  END IF;
+
+  BEGIN
+    INSERT INTO public.game_plugin_versions(
+      game_id, version, manifest, sdk_min_version, sdk_max_exclusive,
+      entrypoint_url, artifact_sha256, state
+    ) VALUES (
+      'chess', '98.0.0',
+      '{"manifestVersion":1,"id":"chess","version":"98.0.0"}'::jsonb,
+      '2.0.0', '1.0.0',
+      'https://games.playora.example/chess/98.0.0/index.html',
+      repeat('c',64), 'draft'
+    );
+  EXCEPTION WHEN check_violation THEN
+    v_invalid_range_blocked := true;
+  END;
+  IF NOT v_invalid_range_blocked THEN
+    RAISE EXCEPTION 'Plugin registry must reject descending SDK compatibility ranges';
   END IF;
 
   INSERT INTO public.game_plugin_versions(

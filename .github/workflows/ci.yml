@@ -80,6 +80,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
       - name: Apply public catalog and trusted plugin registry migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261022000000_platform_game_plugin_registry.sql
+      - name: Apply plugin registry hardening migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test visible catalog and trusted plugin registry boundaries
