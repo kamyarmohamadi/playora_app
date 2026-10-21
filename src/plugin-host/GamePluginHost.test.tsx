@@ -74,6 +74,43 @@ describe("GamePluginHost", () => {
     expect(onCapabilityRequest).not.toHaveBeenCalled();
   });
 
+  it("ignores ready messages from a non-opaque origin", () => {
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "https://games.playora.example",
+        source: frame.contentWindow,
+        data: { protocolVersion: 1, sessionId: "a".repeat(64), type: "plugin:ready", payload: { sdkVersion: "1.0.0" } },
+      }));
+    });
+    expect(screen.getByRole("status")).not.toHaveTextContent(/game connected/i);
+  });
+
+  it("does not forward an ungranted capability request to the platform", () => {
+    const onCapabilityRequest = vi.fn();
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} onCapabilityRequest={onCapabilityRequest} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: { protocolVersion: 1, sessionId: "a".repeat(64), type: "plugin:ready", payload: { sdkVersion: "1.0.0" } },
+      }));
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: { protocolVersion: 1, sessionId: "a".repeat(64), type: "plugin:capability-request", payload: { capability: "wallet:write", action: "credit" } },
+      }));
+    });
+    expect(onCapabilityRequest).not.toHaveBeenCalled();
+  });
+
   it("shows the handshake state after the isolated frame loads", async () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="fa" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
