@@ -1,0 +1,59 @@
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
+import { GamePluginHost } from "./GamePluginHost";
+import type { PluginRuntimePolicy } from "./pluginPolicy";
+
+const descriptor: ApprovedPluginDescriptor = {
+  gameId: "chess",
+  version: "1.0.0",
+  entrypointUrl: "https://games.playora.example/chess/1.0.0/index.html",
+  artifactSha256: "a".repeat(64),
+  sdkVersion: "1.0.0",
+  capabilities: ["locale:read", "session:lifecycle"],
+};
+const policy: PluginRuntimePolicy = {
+  hostOrigin: "https://playora.example",
+  allowedArtifactOrigins: ["https://games.playora.example"],
+  supportedSdkVersion: "1.0.0",
+  allowedCapabilities: ["locale:read", "session:lifecycle", "telemetry:submit"],
+};
+
+describe("GamePluginHost", () => {
+  it("mounts only a validated artifact in a strict opaque-origin sandbox", () => {
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    expect(frame.getAttribute("sandbox")).toBe("allow-scripts");
+    expect(frame.getAttribute("referrerpolicy")).toBe("no-referrer");
+    expect(frame.getAttribute("src")).toBe(descriptor.entrypointUrl);
+    expect(frame.getAttribute("allow")).toBe("");
+  });
+
+  it("fails closed without creating an iframe for an unapproved origin", () => {
+    render(<GamePluginHost descriptor={{ ...descriptor, entrypointUrl: "https://evil.example/chess/1.0.0/index.html" }} policy={policy} locale="en" onExit={vi.fn()} />);
+    expect(screen.queryByTitle("chess isolated game")).toBeNull();
+    expect(screen.getByText(/not approved for launch/i)).toBeTruthy();
+  });
+
+  it("keeps the host recoverable when the user exits", () => {
+    const onExit = vi.fn();
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={onExit} />);
+    fireEvent.click(screen.getByRole("button", { name: "Exit game" }));
+    expect(onExit).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/session has ended/i)).toBeTruthy();
+  });
+
+  it("does not grant requested capabilities by default", () => {
+    const onCapabilityRequest = vi.fn();
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} onCapabilityRequest={onCapabilityRequest} />);
+    expect(screen.getByTitle("chess isolated game").getAttribute("sandbox")).toBe("allow-scripts");
+    expect(onCapabilityRequest).not.toHaveBeenCalled();
+  });
+
+  it("shows the handshake state after the isolated frame loads", async () => {
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="fa" onExit={vi.fn()} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    await act(async () => { fireEvent.load(frame); });
+    expect(screen.getByText(/وضعیت نشست بازی/)).toBeTruthy();
+  });
+});
