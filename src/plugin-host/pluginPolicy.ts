@@ -46,7 +46,7 @@ function isValidDescriptor(value: unknown): value is ApprovedPluginDescriptor {
   if (typeof value.gameId !== "string" || !GAME_ID.test(value.gameId)) return false;
   if (typeof value.version !== "string" || !SEMVER.test(value.version)) return false;
   if (typeof value.entrypointUrl !== "string" || value.entrypointUrl.length > 2048) return false;
-  if (typeof value.artifactSha256 !== "string" || !SHA256.test(value.artifactSha256)) return false;
+  if (typeof value.artifactSha256 !== "string") return false;
   if (typeof value.sdkVersion !== "string" || !SEMVER.test(value.sdkVersion)) return false;
   if (!Array.isArray(value.capabilities)) return false;
   if (!value.capabilities.every((capability): capability is PluginCapability =>
