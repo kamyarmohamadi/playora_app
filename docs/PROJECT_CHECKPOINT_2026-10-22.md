@@ -32,8 +32,8 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - Generated TypeScript database types were refreshed from the live development schema and committed.
 
 ### Verification
-- Latest fully completed quality-gate run: https://github.com/kamyarmohamadi/playora_app/actions/runs/39689304562
-- Result: all three jobs passed — unit tests/typecheck/production build, PostgreSQL RLS and wallet privilege tests, and Deno Edge Function type checks.
+- Latest fully completed quality-gate run after the stale-session test correction: https://github.com/kamyarmohamadi/playora_app/actions/runs/39689678077
+- Result: all three jobs passed — unit tests/typecheck/production build, PostgreSQL RLS and wallet privilege tests, and Deno Edge Function type checks. The host suite passed 87 tests total across the unit-test run.
 - This is CI evidence for the checked commit, not a claim that a production deployment or full browser end-to-end test has passed.
 - Supabase Security Advisor reports three warnings for authenticated execution of list_social_relationships, send_friend_request and respond_friend_request. Review of the live function definitions found explicit auth.role()/auth.uid() checks and scoped relationship operations; the warnings remain documented for independent review before production.
 
