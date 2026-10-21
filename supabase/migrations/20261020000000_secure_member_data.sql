@@ -62,8 +62,8 @@ insert into public.catalog_games(id,title_en,title_fa,category,is_enabled) value
   ('rummy','Rummy','رامی','cards',false)
 on conflict (id) do nothing;
 
--- Tic Tac Toe is the first implemented online mode; keep every other title disabled.
-update public.catalog_games set is_enabled = true where id = 'tictactoe';
+-- Catalog visibility is not launch authorization. No game is enabled by default.
+-- A trusted registry/release step may enable a reviewed plugin only after platform gates pass.
 
 create table if not exists public.member_favorites (
   user_id uuid not null references auth.users(id) on delete cascade,
