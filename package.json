@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
-    "check:platform-boundary": "node scripts/check-platform-boundary.mjs"
+    "check:platform-boundary": "node scripts/check-platform-boundary.mjs",
+    "verify:plugin-artifact": "node scripts/verify-plugin-artifact.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
