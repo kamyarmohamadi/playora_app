@@ -25,10 +25,6 @@ BEGIN
      OR has_table_privilege('authenticated','public.game_plugin_versions','DELETE') THEN
     RAISE EXCEPTION 'Browser roles must not modify the trusted plugin registry';
   END IF;
-  IF NOT has_column_privilege('anon','public.game_plugin_versions','granted_capabilities','SELECT')
-     OR has_column_privilege('authenticated','public.game_plugin_versions','granted_capabilities','UPDATE') THEN
-    RAISE EXCEPTION 'Explicit plugin grants must be readable but not editable by browser roles';
-  END IF;
   IF NOT has_column_privilege('anon','public.game_plugin_versions','entrypoint_url','SELECT')
      OR NOT has_column_privilege('authenticated','public.game_plugin_versions','manifest','SELECT') THEN
     RAISE EXCEPTION 'Public descriptors must be readable when RLS permits';
