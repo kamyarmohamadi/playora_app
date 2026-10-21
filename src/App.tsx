@@ -7,7 +7,7 @@ import { gameList } from "./catalog/gameRegistry";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, Zap
-}
+} from "lucide-react";
 import "./index.css";
 
 type Locale = "en" | "fa";
@@ -15,10 +15,7 @@ type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | 
 type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
-type MemberGameStats = { user_id: string; game_id: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
-type RankedHistoryRow = { id: string; status: string; my_result: "win" | "loss" | "draw" | "forfeit" | null; finished_at: string | null; created_at: string; mode: string };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
-type LeaderboardEntry = { rank_position: number | string; username: string; display_name: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
 const copy: Record<Locale, Record<string, string>> = {
   en: {
     navHome: "Home", navGames: "Games", navOnline: "1v1 Arena", navTournaments: "Tournaments", navFriends: "Friends", navRooms: "Private Rooms", navRank: "Leaderboard", navWallet: "Wallet", navProfile: "Profile", navSettings: "Settings",
@@ -204,17 +201,11 @@ export default function App() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState("");
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
-  const [memberStats, setMemberStats] = useState<MemberGameStats | null>(null);
-  const [recentMatches, setRecentMatches] = useState<RankedHistoryRow[]>([]);
   const [socialRows, setSocialRows] = useState<SocialRelationship[]>([]);
   const [socialQuery, setSocialQuery] = useState("");
   const [socialBusy, setSocialBusy] = useState(false);
   const [socialError, setSocialError] = useState("");
   const [socialRefresh, setSocialRefresh] = useState(0);
-  const [leaderboardRows, setLeaderboardRows] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardBusy, setLeaderboardBusy] = useState(false);
-  const [leaderboardError, setLeaderboardError] = useState("");
-  const [leaderboardRefresh, setLeaderboardRefresh] = useState(0);
   const activeUserIdRef = useRef<string | null>(null);
 
   const t = (key: string) => copy[locale][key] ?? key;
@@ -240,8 +231,6 @@ export default function App() {
       setProfileSaveBusy(false);
       setProfileMessage("");
       setMemberWallet(null);
-      setMemberStats(null);
-      setRecentMatches([]);
       setFavorites(nextUserId ? [] : ["chess", "pool"]);
       setFavoritesOnly(false);
 
@@ -249,9 +238,6 @@ export default function App() {
       setSocialQuery("");
       setSocialBusy(false);
       setSocialError("");
-      setLeaderboardRows([]);
-      setLeaderboardBusy(false);
-      setLeaderboardError("");
 
       setDeleteDialogOpen(false);
       setDeleteConfirmation("");
@@ -315,24 +301,20 @@ export default function App() {
 
   useEffect(() => {
     const db = supabase;
-    if (!db || !session?.user.id) {
+    const userId = session?.user.id;
+    if (!db || !userId) {
       setMemberProfile(null);
       setProfileNameDraft("");
       setProfileMessage("");
       setMemberWallet(null);
-      setMemberStats(null);
-      setRecentMatches([]);
-      setFavorites(["chess", "pool"]);
+      setFavorites(session ? [] : ["chess", "pool"]);
       return;
     }
+
+    let active = true;
     setMemberProfile(null);
     setMemberWallet(null);
-    setMemberStats(null);
-    setRecentMatches([]);
     setFavorites([]);
-    let active = true;
-    const userId = session.user.id;
-    // The authenticated client and RLS jointly enforce ownership. userId comes from the verified session.
     void Promise.all([
       db.from("member_profiles")
         .select("user_id, username, display_name, avatar_key, locale, created_at")
@@ -341,38 +323,16 @@ export default function App() {
         .select("user_id, free_coins, purchased_coins, reward_coins, updated_at")
         .eq("user_id", userId).maybeSingle(),
       db.from("member_favorites").select("game_id").eq("user_id", userId),
-      db.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
-      db.from("member_game_stats").select("user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws,updated_at").eq("user_id", userId).eq("game_id", "tictactoe").maybeSingle(),
-      db.from("matches").select("id,status,finished_at,created_at,mode").eq("game_id", "tictactoe").eq("mode", "ranked").eq("status", "completed").order("finished_at", { ascending: false }).limit(5)
-    ]).then(async ([profileResult, walletResult, favoriteResult, preferencesResult, statsResult, historyResult]) => {
-      if (!active) return;
+      db.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle()
+    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult]) => {
+      if (!active || activeUserIdRef.current !== userId) return;
       const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
       setMemberProfile(loadedProfile);
       setProfileNameDraft(loadedProfile?.display_name ?? "");
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
-      setMemberStats(!statsResult.error ? statsResult.data as MemberGameStats | null : null);
-      const historyIds = !historyResult.error && historyResult.data ? historyResult.data.map(row => row.id) : [];
-      let ownResults = new Map<string, RankedHistoryRow["my_result"]>();
-      let historyAccessFailed = false;
-      if (historyIds.length > 0) {
-        const ownHistoryResult = await db.from("match_participants")
-          .select("match_id,final_result")
-          .eq("user_id", userId)
-          .in("match_id", historyIds);
-        historyAccessFailed = Boolean(ownHistoryResult.error);
-        if (!ownHistoryResult.error && ownHistoryResult.data) {
-          ownResults = new Map(ownHistoryResult.data.map(row => [row.match_id, row.final_result as RankedHistoryRow["my_result"]]));
-        }
-      }
-      if (!active || activeUserIdRef.current !== userId) return;
-      setRecentMatches(!historyResult.error && !historyAccessFailed && historyResult.data
-        ? (historyResult.data as Omit<RankedHistoryRow, "my_result">[]).map(row => ({ ...row, my_result: ownResults.get(row.id) ?? null })).filter(row => row.my_result !== null) as RankedHistoryRow[]
+      setFavorites(!favoriteResult.error && favoriteResult.data
+        ? favoriteResult.data.map(row => row.game_id)
         : []);
-      if (!favoriteResult.error && favoriteResult.data) {
-        setFavorites(favoriteResult.data.map(row => row.game_id));
-      } else {
-        setFavorites([]);
-      }
       const savedLocale = !preferencesResult.error ? preferencesResult.data?.locale : null;
       const profileLocale = !profileResult.error ? profileResult.data?.locale : null;
       if (savedLocale === "en" || savedLocale === "fa") setLocale(savedLocale);
@@ -381,8 +341,7 @@ export default function App() {
       if (active && activeUserIdRef.current === userId) {
         setMemberProfile(null);
         setMemberWallet(null);
-        setMemberStats(null);
-        setRecentMatches([]);
+        setFavorites([]);
       }
     });
     return () => { active = false; };
@@ -423,45 +382,6 @@ export default function App() {
       if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [page, session?.user.id, socialRefresh, locale]);
-
-  useEffect(() => {
-    const db = supabase;
-    if (!db || !session?.user.id || page !== "leaderboard") {
-      setLeaderboardRows([]);
-      setLeaderboardError("");
-      setLeaderboardBusy(false);
-      return;
-    }
-    let stopped = false;
-    let timer: number | undefined;
-    const refreshLeaderboard = async () => {
-      try {
-        const { data, error } = await db.rpc("get_game_leaderboard", {
-          p_game_id: "tictactoe",
-          p_limit: 25
-        });
-        if (stopped || activeUserIdRef.current !== session.user.id) return;
-        if (error) throw error;
-        setLeaderboardRows((data ?? []) as unknown as LeaderboardEntry[]);
-        setLeaderboardError("");
-        setLeaderboardBusy(false);
-        timer = window.setTimeout(() => void refreshLeaderboard(), 15000);
-      } catch {
-        if (!stopped && activeUserIdRef.current === session.user.id) {
-          setLeaderboardRows([]);
-          setLeaderboardError(copy[locale].leaderboardError);
-          setLeaderboardBusy(false);
-          timer = window.setTimeout(() => void refreshLeaderboard(), 15000);
-        }
-      }
-    };
-    setLeaderboardBusy(true);
-    void refreshLeaderboard();
-    return () => {
-      stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [page, session?.user.id, leaderboardRefresh, locale]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -649,8 +569,6 @@ export default function App() {
       setSession(null);
       setMemberProfile(null);
       setMemberWallet(null);
-      setMemberStats(null);
-      setRecentMatches([]);
       setFavorites(["chess", "pool"]);
       setPrivateRooms([]);
       setPrivateMatchId(null);
@@ -660,7 +578,6 @@ export default function App() {
       setOnlineMatch(null);
       setOnlineSeat(null);
       setSocialRows([]);
-      setLeaderboardRows([]);
       setPage("home");
       setDeleteDialogOpen(false);
       setDeleteConfirmation("");
@@ -681,8 +598,6 @@ export default function App() {
     else {
       setMemberProfile(null);
       setMemberWallet(null);
-      setMemberStats(null);
-      setRecentMatches([]);
       setFavorites(["chess", "pool"]);
       setToast(t("signOutSuccess"));
       setPage("home");
@@ -874,6 +789,7 @@ export default function App() {
           </>}
 
           {page === "games" && <>
+            <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("allGamesUnavailable")}</span></div>
             <div className="catalog-toolbar"><div className="category-tabs" role="group" aria-label={t("mode")}>{categories.map(item => <button key={item.id} className={category === item.id ? "selected" : ""} onClick={() => setCategory(item.id)}>{t(item.key)}</button>)}</div><button className={`favorites-filter ${favoritesOnly ? "selected" : ""}`} aria-pressed={favoritesOnly} onClick={() => setFavoritesOnly(value => !value)}><Heart size={15} fill={favoritesOnly ? "currentColor" : "none"} />{t("favorites")}</button></div>
             {filteredGames.length > 0 ? <div className="games-grid catalog-grid">{filteredGames.map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={openGame} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}</div> : <EmptyState icon={Search} title={t("emptySearch")} text={t("clearSearch")} />}
             <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("previewNote")}</span></div>
@@ -987,24 +903,12 @@ export default function App() {
                 <div className="profile-edit-controls"><input id="profile-display-name" name="profileDisplayName" value={profileNameDraft} onChange={event => setProfileNameDraft(event.target.value)} minLength={1} maxLength={32} required autoComplete="nickname" /><button className="btn-gradient" type="submit" disabled={profileSaveBusy || profileNameDraft.trim() === memberProfile.display_name}>{profileSaveBusy ? t("loading") : t("saveProfile")}<Check size={14} /></button></div>
                 {profileMessage && <p className={"profile-edit-message " + (profileMessage === t("profileUpdated") ? "is-success" : "is-error")} role="status">{profileMessage}</p>}
               </form>}<div className="profile-stats">
-                <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.matches_played) : "—"}</b><span>{t("statMatches")}</span></div>
-                <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.wins) : "—"}</b><span>{t("statWins")}</span></div>
-                <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(memberStats.competitive_rating) : "—"}</b><span>{t("statRating")}</span></div>
-                <div><b>{session && memberStats ? new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(memberStats.xp)) : "—"}</b><span>{t("profileXp")}</span></div>
+                <div><b>—</b><span>{t("statMatches")}</span></div>
+                <div><b>—</b><span>{t("statWins")}</span></div>
+                <div><b>—</b><span>{t("statRating")}</span></div>
+                <div><b>—</b><span>{t("profileXp")}</span></div>
               </div>
-              {session && <section className="profile-history">
-                <div className="profile-history-heading"><div><span className="section-eyebrow">{t("online")}</span><h3>{t("recentMatches")}</h3></div><span>{recentMatches.length}</span></div>
-                {recentMatches.length === 0 ? <p className="profile-history-empty">{t("noRecentMatches")}</p> : <div className="profile-history-list">
-                  {recentMatches.map(match => {
-                    const resultKey = match.my_result === "draw" ? "resultDraw" : match.my_result === "win" ? "resultWin" : "resultLoss";
-                    return <article className="profile-history-row" key={match.id}>
-                      <span className={"profile-result-dot result-" + resultKey.slice(6).toLowerCase()} />
-                      <div className="profile-history-copy"><b>{t(resultKey)}</b><small dir="ltr">{match.id.slice(0, 8).toUpperCase()} · {new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { dateStyle: "medium" }).format(new Date(match.finished_at ?? match.created_at))}</small></div>
-                      <span className={"profile-result-label result-" + resultKey.slice(6).toLowerCase()}>{t("resultCompleted")}</span>
-                    </article>;
-                  })}
-                </div>}
-              </section>}
+              {session && <section className="profile-history"><p className="profile-history-empty">{t("rankedUnavailable")}</p></section>}
               {session ? <div className="profile-auth-footer"><p>{t("securityLiveNote")}</p><button className="btn-outline" onClick={() => void handleSignOut()}><LogIn size={14} />{t("signOut")}</button></div> : <div className="profile-auth-footer"><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}</div></section>}
 
           {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => changeLocale("en")}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => changeLocale("fa")}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><p className="security-live-note">{session ? t("securityLiveNote") : t("securityText")}</p><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div>{session && <div className="settings-card danger-card"><div className="settings-card-heading"><div className="settings-icon danger"><ShieldCheck size={20} /></div><div><h2>{t("accountDangerTitle")}</h2><p>{t("accountDangerBody")}</p></div></div><button className="danger-action" type="button" onClick={() => { setDeleteConfirmation(""); setDeleteMessage(""); setDeleteDialogOpen(true); }} disabled={!supabaseConfigured || !accountDeletionEnabled || deleteBusy}><X size={15} />{t("deleteAccount")}</button>{!accountDeletionEnabled && <p className="danger-unavailable-note">{t("deleteAccountNotEnabled")}</p>}</div>}</section>}
