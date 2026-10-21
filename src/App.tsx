@@ -5,17 +5,9 @@ import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
 import { gameList } from "./catalog/gameRegistry";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
-import { applyTicTacToeMove, chooseTicTacToeBotMove, createTicTacToeState } from "./games/tictactoe";
-import type { TicTacToeMark, TicTacToeState } from "./games/tictactoe";
-import { applyCheckersMove, chooseCheckersBotMove, createCheckersState, getCheckersLegalMoves } from "./games/checkers";
-import type { CheckersState } from "./games/checkers";
 import {
-  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords,
-  Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home,
-  Languages, LockKeyhole, LogIn, Medal, Menu, Plus, Search, Settings,
-  ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users,
-  Wallet, X, Zap
-} from "lucide-react";
+  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, Zap
+}
 import "./index.css";
 
 type Locale = "en" | "fa";
@@ -25,8 +17,6 @@ type MemberProfile = { user_id: string; username: string; display_name: string; 
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
 type MemberGameStats = { user_id: string; game_id: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
 type RankedHistoryRow = { id: string; status: string; my_result: "win" | "loss" | "draw" | "forfeit" | null; finished_at: string | null; created_at: string; mode: string };
-type OnlineMatchSnapshot = { id: string; status: "active" | "completed" | "cancelled" | "disputed" | "created" | "waiting"; server_state: { board?: TicTacToeMark[]; current_mark?: "X" | "O"; current_seat?: number }; my_result?: "win" | "loss" | "draw" | "forfeit" | null; state_version: number };
-type PrivateRoomRow = { id: string; game_id: string; status: "open" | "active" | "closed" | "expired"; max_players: number; expires_at: string; created_at: string; match_id: string | null; my_role: "host" | "player" };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
 type LeaderboardEntry = { rank_position: number | string; username: string; display_name: string; xp: number | string; competitive_rating: number; matches_played: number; wins: number; losses: number; draws: number; updated_at: string };
 const copy: Record<Locale, Record<string, string>> = {
@@ -38,8 +28,8 @@ const copy: Record<Locale, Record<string, string>> = {
     weekly: "Weekly Championship", weeklyText: "A new arena. A fresh leaderboard.", upTo: "Preview prize pool", joinNow: "Explore event", featured: "FEATURED EVENT", eventStatus: "Coming soon",
     categoryAll: "All games", categoryStrategy: "Strategy", categoryBoard: "Board", categoryCards: "Card games", categoryPuzzle: "Puzzles",
     gamesTitle: "Find your game", gamesSub: "A growing collection for sharp minds and friendly rivals.", favorites: "Favorites", emptySearch: "No games found", clearSearch: "Clear search",
-    soon: "Coming soon", details: "View details", practiceReady: "Practice ready", previewNote: "Tic Tac Toe and Checkers practice are playable offline. Other game engines and live matchmaking modes are still in development.",
-    rankTitle: "The leaderboard", rankSub: "Ranked Tic Tac Toe results only. Practice and private games never affect these standings.", friendsTitle: "Find your people", friendsSub: "Find players by username, accept requests and manage your friends. Email addresses are never searchable.", roomsTitle: "Private rooms", roomsSub: "Create a room and invite a friend with a one-time code. Private matches never affect XP, rating, coins or prizes.", friendSearchTitle: "Find a player", friendSearchBody: "Enter the exact username shown on their profile.", friendUsername: "Player username", sendRequest: "Send request", incomingRequests: "Requests for you", outgoingRequests: "Requests sent", yourFriends: "Your friends", blockedPeople: "Blocked", noIncomingRequests: "No pending requests.", noOutgoingRequests: "No outgoing requests.", noFriendsYet: "No friends yet. Search a username above to send a request.", noBlockedPeople: "No blocked players.", requestIncoming: "Incoming", requestOutgoing: "Pending", friendStatus: "Friend", blockedStatus: "Blocked", acceptRequest: "Accept", declineRequest: "Decline", blockRequest: "Block", requestSent: "Friend request sent.", incomingRequestExists: "This player has already requested to connect. Check your incoming requests.", requestAccepted: "Friend request accepted.", requestDeclined: "Request declined.", requestBlocked: "Request blocked.", alreadyFriends: "You are already friends.", memberNotFound: "That username was not found.", usernameInvalid: "Enter a valid username (3–24 letters, numbers or underscores).", socialRateLimit: "Too many requests. Wait a little and try again.", socialError: "The social request could not be completed. Please retry.", leaderboardEmpty: "No verified ranked matches yet. Complete a ranked online match to appear here.", leaderboardLoading: "Loading verified standings…", leaderboardError: "The leaderboard is temporarily unavailable.", leaderboardRefresh: "Refresh", leaderboardRank: "Rank", leaderboardRating: "Rating", leaderboardXp: "XP", leaderboardMatches: "Matches", leaderboardWins: "Wins", leaderboardHint: "Only server-verified ranked Tic Tac Toe matches count. Practice and private rooms never affect XP, rating or leaderboard position.",
+    soon: "Coming soon", details: "View details", practiceReady: "Practice ready", previewNote: "All games remain unavailable until an approved plugin is installed.", allGamesUnavailable: "All games remain unavailable until an approved plugin is installed.", rankedUnavailable: "Ranked matchmaking is unavailable until an approved game plugin is installed.",
+    rankTitle: "The leaderboard", rankSub: "Rankings will appear when a reviewed game plugin is enabled.", friendsTitle: "Find your people", friendsSub: "Find players by username, accept requests and manage your friends. Email addresses are never searchable.", roomsTitle: "Private rooms", roomsSub: "Create a room and invite a friend with a one-time code. Private matches never affect XP, rating, coins or prizes.", friendSearchTitle: "Find a player", friendSearchBody: "Enter the exact username shown on their profile.", friendUsername: "Player username", sendRequest: "Send request", incomingRequests: "Requests for you", outgoingRequests: "Requests sent", yourFriends: "Your friends", blockedPeople: "Blocked", noIncomingRequests: "No pending requests.", noOutgoingRequests: "No outgoing requests.", noFriendsYet: "No friends yet. Search a username above to send a request.", noBlockedPeople: "No blocked players.", requestIncoming: "Incoming", requestOutgoing: "Pending", friendStatus: "Friend", blockedStatus: "Blocked", acceptRequest: "Accept", declineRequest: "Decline", blockRequest: "Block", requestSent: "Friend request sent.", incomingRequestExists: "This player has already requested to connect. Check your incoming requests.", requestAccepted: "Friend request accepted.", requestDeclined: "Request declined.", requestBlocked: "Request blocked.", alreadyFriends: "You are already friends.", memberNotFound: "That username was not found.", usernameInvalid: "Enter a valid username (3–24 letters, numbers or underscores).", socialRateLimit: "Too many requests. Wait a little and try again.", socialError: "The social request could not be completed. Please retry.", leaderboardEmpty: "No verified ranked matches yet. Complete a ranked online match to appear here.", leaderboardLoading: "Loading verified standings…", leaderboardError: "The leaderboard is temporarily unavailable.", leaderboardRefresh: "Refresh", leaderboardRank: "Rank", leaderboardRating: "Rating", leaderboardXp: "XP", leaderboardMatches: "Matches", leaderboardWins: "Wins", leaderboardHint: "Only server-verified ranked Tic Tac Toe matches count. Practice and private rooms never affect XP, rating or leaderboard position.",
     tournamentsTitle: "Enter the arena", tournamentsSub: "Explore the tournament interface. Entry fees and rewards are disabled in this preview.",
     walletTitle: "Your wallet", walletSub: "Preview-only balance. No funds or cryptocurrency can be sent from this screen.", balance: "Demo balance", deposit: "Deposit", history: "Transaction history", cryptoTitle: "Crypto deposits", cryptoText: "Wallet addresses and on-chain verification are not configured. Never send assets to this preview.", notConnected: "Not connected",
     profileTitle: "Player profile", profileSub: "This is sample UI data, not a signed-in account.", settingsTitle: "Preferences", settingsSub: "Choose your language and review the security model.", language: "Language", english: "English", persian: "فارسی",
@@ -51,7 +41,7 @@ const copy: Record<Locale, Record<string, string>> = {
     eventOne: "Chess Champions", eventTwo: "Pool Masters", eventThree: "Ludo League", eventPlayers: "Players", eventTime: "Starts soon", explore: "Explore", mode: "Game mode",
     demoCoins: "2,450", sampleProfile: "OrbitRider", level: "Level", points: "XP", noMoney: "No real-money functionality",
     practiceAvailable: "Practice", onlineTitle: "Find a rival", onlineSub: "Start a ranked match against a randomly selected player. No choosing opponents, no paid entry in this build.",
-    rankedTtt: "Tic Tac Toe · Ranked 1v1", rankedTttDetails: "Server-validated turns, skill-aware random matchmaking, and ratings updated only after a verified result.",
+    rankedTtt: "Ranked 1v1", rankedTttDetails: "Ranked play requires an approved game plugin and a verified server-side game service.",
     queueButton: "Find random opponent", cancelQueue: "Cancel search", queueIdle: "Ready when you are", queueing: "Joining matchmaking…", queueWaiting: "Searching for a fair match…", queueMatched: "Opponent found",
     onlineError: "The online match service could not complete that request. Check the backend setup and try again.", onlineNeedsLogin: "Sign in to join ranked matchmaking. Your match and rating are tied to your authenticated account.",
     onlineNoRewards: "XP and rating update only after a verified ranked result. This preview has no real-money entry or prizes.", yourMark: "You", opponentMark: "Random opponent",
@@ -59,7 +49,7 @@ const copy: Record<Locale, Record<string, string>> = {
     onlineLoading: "Loading authoritative match state…", moveRejected: "The server rejected that move. The authoritative match state has not changed.", playAnother: "Find another match",
     onlineRules: "How ranked play works", onlineRuleOne: "The server randomly selects an opponent within a suitable rating range.", onlineRuleTwo: "Moves, turn order, wins, XP and rating are verified server-side.",
     onlineRuleThree: "Practice against the bot never changes ranked XP or rating.", onlineRuleFour: "No entry fees or prize payouts are enabled here.",
-    onlineGameEnabled: "Tic Tac Toe is the only online ranked mode implemented in this iteration.", matchIdLabel: "Match",
+    onlineGameEnabled: "Ranked modes remain unavailable until a reviewed game plugin is enabled.", matchIdLabel: "Match",
     signIn: "Sign in", signUp: "Create account", signOut: "Sign out", resetPassword: "Reset password", forgotPassword: "Forgot password?", backToSignIn: "Back to sign in",
     email: "Email address", password: "Password", displayName: "Display name", continueWithGoogle: "Continue with Google", authUnavailable: "Account services are not connected yet. Configure the Supabase project URL and publishable key, then enable Google OAuth and email redirects.",
     authFailure: "We couldn’t complete that request. Check your details or try again.", checkInbox: "Check your inbox for a confirmation link to finish creating your account.", resetSent: "If an account exists for this email, password reset instructions have been sent.",
@@ -73,8 +63,8 @@ const copy: Record<Locale, Record<string, string>> = {
     weekly: "قهرمانی هفتگی", weeklyText: "میدانی تازه و جدول امتیاز جدید.", upTo: "جایزه آزمایشی", joinNow: "دیدن رویداد", featured: "رویداد ویژه", eventStatus: "به‌زودی",
     categoryAll: "همه بازی‌ها", categoryStrategy: "استراتژی", categoryBoard: "رومیزی", categoryCards: "بازی‌های کارتی", categoryPuzzle: "فکری",
     gamesTitle: "بازی خودت را پیدا کن", gamesSub: "مجموعه‌ای رو به رشد برای ذهن‌های تیز و رقیب‌های دوستانه.", favorites: "دلخواه‌ها", emptySearch: "بازی‌ای پیدا نشد", clearSearch: "پاک‌کردن جست‌وجو",
-    soon: "به‌زودی", details: "جزئیات", practiceReady: "تمرین آماده", previewNote: "تمرین دوز و چکرز آفلاین قابل بازی است؛ موتور بازی‌های دیگر و حالت‌های آنلاین هنوز در حال توسعه‌اند.",
-    rankTitle: "جدول برترین‌ها", rankSub: "فقط نتایج تأییدشده دوز رتبه‌دار. تمرین و بازی خصوصی در رتبه‌بندی اثر ندارند.", friendsTitle: "دوستانت را پیدا کن", friendsSub: "بازیکن‌ها را با نام کاربری پیدا کن، درخواست‌ها را بپذیر و دوستانت را مدیریت کن. جست‌وجوی ایمیل وجود ندارد.", roomsTitle: "اتاق‌های خصوصی", roomsSub: "اتاق بساز و با یک کد یک‌بارمصرف دوستت را دعوت کن. مسابقه خصوصی روی XP، رتبه، سکه یا جایزه اثری ندارد.", friendSearchTitle: "پیداکردن بازیکن", friendSearchBody: "نام کاربری دقیق نمایش‌داده‌شده در پروفایل را وارد کن.", friendUsername: "نام کاربری بازیکن", sendRequest: "ارسال درخواست", incomingRequests: "درخواست‌های دریافتی", outgoingRequests: "درخواست‌های ارسالی", yourFriends: "دوستان تو", blockedPeople: "مسدودشده‌ها", noIncomingRequests: "درخواست در انتظار نداری.", noOutgoingRequests: "درخواست ارسالی نداری.", noFriendsYet: "هنوز دوستی نداری. برای ارسال درخواست نام کاربری را بالا وارد کن.", noBlockedPeople: "بازیکنی را مسدود نکرده‌ای.", requestIncoming: "دریافتی", requestOutgoing: "در انتظار", friendStatus: "دوست", blockedStatus: "مسدود", acceptRequest: "پذیرفتن", declineRequest: "ردکردن", blockRequest: "مسدودکردن", requestSent: "درخواست دوستی ارسال شد.", incomingRequestExists: "این بازیکن قبلاً برایت درخواست فرستاده است؛ درخواست‌های دریافتی را بررسی کن.", requestAccepted: "درخواست پذیرفته شد.", requestDeclined: "درخواست رد شد.", requestBlocked: "درخواست مسدود شد.", alreadyFriends: "شما از قبل دوست هستید.", memberNotFound: "این نام کاربری پیدا نشد.", usernameInvalid: "نام کاربری معتبر وارد کن (۳ تا ۲۴ حرف، عدد یا زیرخط).", socialRateLimit: "تعداد درخواست‌ها زیاد است. کمی صبر کن و دوباره تلاش کن.", socialError: "درخواست اجتماعی انجام نشد. دوباره تلاش کن.", leaderboardEmpty: "هنوز مسابقه رتبه‌دار تأییدشده‌ای ثبت نشده. یک مسابقه آنلاین رتبه‌دار کامل کن تا اینجا نمایش داده شوی.", leaderboardLoading: "در حال بارگذاری رتبه‌بندی تأییدشده…", leaderboardError: "جدول رتبه‌بندی موقتاً در دسترس نیست.", leaderboardRefresh: "به‌روزرسانی", leaderboardRank: "رتبه", leaderboardRating: "امتیاز", leaderboardXp: "XP", leaderboardMatches: "مسابقه", leaderboardWins: "برد", leaderboardHint: "فقط مسابقه‌های آنلاین دوز که سرور تأیید کرده محاسبه می‌شوند. تمرین و اتاق خصوصی بر XP، رتبه یا جایگاه اثر ندارند.",
+    soon: "به‌زودی", details: "جزئیات", practiceReady: "تمرین آماده", previewNote: "تا زمانی که افزونهٔ بازی تأییدشده نصب نشود، هیچ بازی‌ای قابل اجرا نیست.", allGamesUnavailable: "تا زمانی که افزونهٔ بازی تأییدشده نصب نشود، هیچ بازی‌ای قابل اجرا نیست.", rankedUnavailable: "مسابقهٔ رتبه‌دار تا نصب افزونهٔ بازی تأییدشده در دسترس نیست.",
+    rankTitle: "جدول برترین‌ها", rankSub: "جدول رتبه‌بندی پس از فعال‌شدن افزونهٔ بازی تأییدشده نمایش داده می‌شود.", friendsTitle: "دوستانت را پیدا کن", friendsSub: "بازیکن‌ها را با نام کاربری پیدا کن، درخواست‌ها را بپذیر و دوستانت را مدیریت کن. جست‌وجوی ایمیل وجود ندارد.", roomsTitle: "اتاق‌های خصوصی", roomsSub: "اتاق بساز و با یک کد یک‌بارمصرف دوستت را دعوت کن. مسابقه خصوصی روی XP، رتبه، سکه یا جایزه اثری ندارد.", friendSearchTitle: "پیداکردن بازیکن", friendSearchBody: "نام کاربری دقیق نمایش‌داده‌شده در پروفایل را وارد کن.", friendUsername: "نام کاربری بازیکن", sendRequest: "ارسال درخواست", incomingRequests: "درخواست‌های دریافتی", outgoingRequests: "درخواست‌های ارسالی", yourFriends: "دوستان تو", blockedPeople: "مسدودشده‌ها", noIncomingRequests: "درخواست در انتظار نداری.", noOutgoingRequests: "درخواست ارسالی نداری.", noFriendsYet: "هنوز دوستی نداری. برای ارسال درخواست نام کاربری را بالا وارد کن.", noBlockedPeople: "بازیکنی را مسدود نکرده‌ای.", requestIncoming: "دریافتی", requestOutgoing: "در انتظار", friendStatus: "دوست", blockedStatus: "مسدود", acceptRequest: "پذیرفتن", declineRequest: "ردکردن", blockRequest: "مسدودکردن", requestSent: "درخواست دوستی ارسال شد.", incomingRequestExists: "این بازیکن قبلاً برایت درخواست فرستاده است؛ درخواست‌های دریافتی را بررسی کن.", requestAccepted: "درخواست پذیرفته شد.", requestDeclined: "درخواست رد شد.", requestBlocked: "درخواست مسدود شد.", alreadyFriends: "شما از قبل دوست هستید.", memberNotFound: "این نام کاربری پیدا نشد.", usernameInvalid: "نام کاربری معتبر وارد کن (۳ تا ۲۴ حرف، عدد یا زیرخط).", socialRateLimit: "تعداد درخواست‌ها زیاد است. کمی صبر کن و دوباره تلاش کن.", socialError: "درخواست اجتماعی انجام نشد. دوباره تلاش کن.", leaderboardEmpty: "هنوز مسابقه رتبه‌دار تأییدشده‌ای ثبت نشده. یک مسابقه آنلاین رتبه‌دار کامل کن تا اینجا نمایش داده شوی.", leaderboardLoading: "در حال بارگذاری رتبه‌بندی تأییدشده…", leaderboardError: "جدول رتبه‌بندی موقتاً در دسترس نیست.", leaderboardRefresh: "به‌روزرسانی", leaderboardRank: "رتبه", leaderboardRating: "امتیاز", leaderboardXp: "XP", leaderboardMatches: "مسابقه", leaderboardWins: "برد", leaderboardHint: "فقط مسابقه‌های آنلاین دوز که سرور تأیید کرده محاسبه می‌شوند. تمرین و اتاق خصوصی بر XP، رتبه یا جایگاه اثر ندارند.",
     tournamentsTitle: "وارد میدان شو", tournamentsSub: "رابط تورنومنت‌ها را بررسی کن. ورودیه و جایزه در این پیش‌نمایش غیرفعال‌اند.",
     walletTitle: "کیف پول تو", walletSub: "موجودی فقط نمایشی است. از این صفحه پول یا رمزارز ارسال نمی‌شود.", balance: "موجودی نمایشی", deposit: "شارژ", history: "تاریخچه تراکنش", cryptoTitle: "شارژ رمزارزی", cryptoText: "آدرس کیف پول و بررسی زنجیره‌ای تنظیم نشده‌اند. به این پیش‌نمایش دارایی ارسال نکن.", notConnected: "متصل نیست",
     profileTitle: "پروفایل بازیکن", profileSub: "این اطلاعات نمونهٔ رابط است، نه یک حساب واردشده.", settingsTitle: "ترجیحات", settingsSub: "زبان را انتخاب و معماری امنیت را بررسی کن.", language: "زبان", english: "English", persian: "فارسی",
@@ -86,7 +76,7 @@ const copy: Record<Locale, Record<string, string>> = {
     eventOne: "قهرمانان شطرنج", eventTwo: "استادان بیلیارد", eventThree: "لیگ منچ", eventPlayers: "بازیکن", eventTime: "شروع به‌زودی", explore: "بررسی", mode: "حالت بازی",
     demoCoins: "۲٬۴۵۰", sampleProfile: "OrbitRider", level: "سطح", points: "XP", noMoney: "بدون قابلیت پول واقعی",
     practiceAvailable: "تمرینی", onlineTitle: "پیداکردن حریف", onlineSub: "مسابقه رتبه‌دار با بازیکنی تصادفی را شروع کن. در این نسخه ورودیه یا جایزه مالی فعال نیست.",
-    rankedTtt: "دوز · رقابت رتبه‌دار یک‌به‌یک", rankedTttDetails: "نوبت‌ها در سرور بررسی می‌شوند، حریف تصادفی با توجه به مهارت انتخاب می‌شود و رتبه پس از نتیجه معتبر تغییر می‌کند.",
+    rankedTtt: "رقابت رتبه‌دار یک‌به‌یک", rankedTttDetails: "مسابقهٔ رتبه‌دار به افزونهٔ بازی تأییدشده و سرویس معتبر سمت سرور نیاز دارد.",
     queueButton: "پیداکردن حریف تصادفی", cancelQueue: "لغو جست‌وجو", queueIdle: "هر وقت آماده بودی شروع کن", queueing: "در حال ورود به صف…", queueWaiting: "در حال جست‌وجوی مسابقه متعادل…", queueMatched: "حریف پیدا شد",
     onlineError: "سرویس بازی آنلاین نتوانست درخواست را کامل کند. تنظیمات backend را بررسی و دوباره تلاش کن.", onlineNeedsLogin: "برای ورود به رقابت رتبه‌دار وارد حساب شو. مسابقه و رتبه به حساب احراز هویت‌شده تو متصل می‌شوند.",
     onlineNoRewards: "XP و رتبه فقط پس از نتیجه معتبر رقابت به‌روزرسانی می‌شوند. در این نسخه ورودیه یا جایزه با ارزش مالی وجود ندارد.", yourMark: "تو", opponentMark: "حریف تصادفی",
@@ -94,7 +84,7 @@ const copy: Record<Locale, Record<string, string>> = {
     onlineLoading: "در حال دریافت وضعیت معتبر مسابقه…", moveRejected: "سرور این حرکت را رد کرد و وضعیت معتبر مسابقه تغییر نکرد.", playAnother: "پیداکردن مسابقه دیگر",
     onlineRules: "قوانین رقابت رتبه‌دار", onlineRuleOne: "حریف‌ها را سرور به‌صورت تصادفی و با توجه به محدوده رتبه انتخاب می‌کند.", onlineRuleTwo: "حرکت، نوبت، برد، XP و رتبه در سرور بررسی می‌شوند.",
     onlineRuleThree: "تمرین با ربات هیچ تغییری در XP یا رتبه رقابتی ایجاد نمی‌کند.", onlineRuleFour: "در این نسخه ورودیه یا پرداخت جایزه فعال نیست.",
-    onlineGameEnabled: "در این مرحله فقط دوز آنلاین رتبه‌دار پیاده‌سازی شده است.", matchIdLabel: "مسابقه",
+    onlineGameEnabled: "حالت‌های رتبه‌دار تا تأیید و فعال‌سازی افزونهٔ بازی در دسترس نیستند.", matchIdLabel: "مسابقه",
     signIn: "ورود", signUp: "ساخت حساب", signOut: "خروج از حساب", resetPassword: "بازنشانی رمز عبور", forgotPassword: "رمزت را فراموش کرده‌ای؟", backToSignIn: "بازگشت به ورود",
     email: "نشانی ایمیل", password: "رمز عبور", displayName: "نام نمایشی", continueWithGoogle: "ادامه با گوگل", authUnavailable: "سرویس حساب هنوز متصل نیست. آدرس پروژه و کلید عمومی Supabase را تنظیم کن و ورود گوگل و مسیرهای تأیید ایمیل را فعال کن.",
     authFailure: "درخواست انجام نشد. اطلاعات را بررسی کن یا دوباره تلاش کن.", checkInbox: "برای تکمیل ساخت حساب، ایمیل خود را برای پیوند تأیید بررسی کن.", resetSent: "اگر حسابی با این ایمیل وجود داشته باشد، دستور بازنشانی رمز ارسال شده است.",
@@ -165,7 +155,7 @@ function GameCard({ game, locale, onOpen, saved, onSave, t }: {
         <div className="game-card-copy">
           <div className="game-card-heading">
             <div><h3>{game.title[locale]}</h3><p>{game.subtitle[locale]}</p></div>
-            <span className={"game-status " + (game.id === "tictactoe" || game.id === "checkers" ? "status-practice" : "")}><span />{t(game.id === "tictactoe" || game.id === "checkers" ? "practiceReady" : "soon")}</span>
+            <span className="game-status"><span />{t("soon")}</span>
           </div>
           <div className="game-card-meta"><span><Users size={14} />{game.players[locale]}</span><span>{t(game.category)}</span><ArrowUpRight size={15} className="game-arrow" /></div>
         </div>
@@ -216,27 +206,6 @@ export default function App() {
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
   const [memberStats, setMemberStats] = useState<MemberGameStats | null>(null);
   const [recentMatches, setRecentMatches] = useState<RankedHistoryRow[]>([]);
-  const [activeGame, setActiveGame] = useState<Game | null>(null);
-  const [ticTacToeState, setTicTacToeState] = useState<TicTacToeState | null>(null);
-  const [checkersState, setCheckersState] = useState<CheckersState | null>(null);
-  const [selectedCheckersFrom, setSelectedCheckersFrom] = useState<number | null>(null);
-  const [onlineStatus, setOnlineStatus] = useState<"idle" | "queueing" | "waiting" | "matched" | "error">("idle");
-  const [onlineError, setOnlineError] = useState("");
-  const [onlineBusy, setOnlineBusy] = useState(false);
-  const [onlineMatchId, setOnlineMatchId] = useState<string | null>(null);
-  const [onlineMatch, setOnlineMatch] = useState<OnlineMatchSnapshot | null>(null);
-  const [onlineSeat, setOnlineSeat] = useState<number | null>(null);
-  const [onlineMoveBusy, setOnlineMoveBusy] = useState(false);
-  const [privateRooms, setPrivateRooms] = useState<PrivateRoomRow[]>([]);
-  const [privateRoomBusy, setPrivateRoomBusy] = useState(false);
-  const [privateRoomCode, setPrivateRoomCode] = useState("");
-  const [latestInviteCode, setLatestInviteCode] = useState("");
-  const [privateRoomError, setPrivateRoomError] = useState("");
-  const [privateMatchId, setPrivateMatchId] = useState<string | null>(null);
-  const [privateMatch, setPrivateMatch] = useState<OnlineMatchSnapshot | null>(null);
-  const [privateSeat, setPrivateSeat] = useState<number | null>(null);
-  const [privateMoveBusy, setPrivateMoveBusy] = useState(false);
-  const [privateRoomRefresh, setPrivateRoomRefresh] = useState(0);
   const [socialRows, setSocialRows] = useState<SocialRelationship[]>([]);
   const [socialQuery, setSocialQuery] = useState("");
   const [socialBusy, setSocialBusy] = useState(false);
@@ -275,24 +244,6 @@ export default function App() {
       setRecentMatches([]);
       setFavorites(nextUserId ? [] : ["chess", "pool"]);
       setFavoritesOnly(false);
-
-      setOnlineStatus("idle");
-      setOnlineError("");
-      setOnlineBusy(false);
-      setOnlineMatchId(null);
-      setOnlineMatch(null);
-      setOnlineSeat(null);
-      setOnlineMoveBusy(false);
-
-      setPrivateRooms([]);
-      setPrivateRoomBusy(false);
-      setPrivateRoomCode("");
-      setLatestInviteCode("");
-      setPrivateRoomError("");
-      setPrivateMatchId(null);
-      setPrivateMatch(null);
-      setPrivateSeat(null);
-      setPrivateMoveBusy(false);
 
       setSocialRows([]);
       setSocialQuery("");
@@ -436,229 +387,6 @@ export default function App() {
     });
     return () => { active = false; };
   }, [session?.user.id]);
-
-  useEffect(() => {
-    if (activeGame?.id !== "checkers" || !checkersState || checkersState.status !== "playing" || checkersState.currentPlayer !== "black") return;
-    const timer = window.setTimeout(() => {
-      setCheckersState(current => {
-        if (!current || current.status !== "playing" || current.currentPlayer !== "black") return current;
-        const move = chooseCheckersBotMove(current);
-        if (!move) return { ...current, status: "won", winner: "red", forcedFrom: null };
-        return applyCheckersMove(current, move.from, move.to);
-      });
-      setSelectedCheckersFrom(null);
-    }, 360);
-    return () => window.clearTimeout(timer);
-  }, [activeGame?.id, checkersState]);
-
-  useEffect(() => {
-    if (activeGame?.id !== "tictactoe" || !ticTacToeState || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "O") return;
-    const timer = window.setTimeout(() => {
-      setTicTacToeState(current => {
-        if (!current || current.status !== "playing" || current.currentPlayer !== "O") return current;
-        const move = chooseTicTacToeBotMove(current.board, "O");
-        return move === null ? current : applyTicTacToeMove(current, move);
-      });
-    }, 280);
-    return () => window.clearTimeout(timer);
-  }, [activeGame?.id, ticTacToeState]);
-
-  useEffect(() => {
-    const db = supabase;
-    if (!db || !session?.user.id || page !== "online" || onlineStatus !== "waiting") return;
-    let stopped = false;
-    let timer: number | undefined;
-    const userId = session.user.id;
-    const pollQueue = async () => {
-      try {
-        const { data, error } = await db
-          .from("matchmaking_queue")
-          .select("status, match_id")
-          .eq("user_id", userId)
-          .eq("game_id", "tictactoe")
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (stopped || activeUserIdRef.current !== userId) return;
-        if (error) throw error;
-        if (data?.status === "matched" && data.match_id) {
-          setOnlineMatchId(data.match_id);
-          setOnlineStatus("matched");
-          return;
-        }
-        if (data?.status === "expired" || data?.status === "cancelled") {
-          setOnlineStatus("idle");
-          setOnlineError(t("onlineError"));
-          return;
-        }
-        timer = window.setTimeout(() => void pollQueue(), 1400);
-      } catch {
-        if (!stopped && activeUserIdRef.current === userId) {
-          setOnlineStatus("error");
-          setOnlineError(t("onlineError"));
-        }
-      }
-    };
-    void pollQueue();
-    return () => {
-      stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [page, onlineStatus, session?.user.id]);
-
-  useEffect(() => {
-    const db = supabase;
-    if (!db || !session?.user.id || page !== "online" || !onlineMatchId) return;
-    let stopped = false;
-    let timer: number | undefined;
-    const userId = session.user.id;
-    const pollMatch = async () => {
-      try {
-        const [matchResult, seatResult] = await Promise.all([
-          db.from("matches")
-            .select("id, status, server_state, state_version")
-            .eq("id", onlineMatchId).maybeSingle(),
-          db.from("match_participants")
-            .select("seat, final_result")
-            .eq("match_id", onlineMatchId)
-            .eq("user_id", userId)
-            .maybeSingle()
-        ]);
-        if (stopped || activeUserIdRef.current !== userId) return;
-        if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) throw new Error("match_unavailable");
-        const rawMatch = matchResult.data as unknown as OnlineMatchSnapshot;
-        if (!Array.isArray(rawMatch.server_state?.board) || rawMatch.server_state.board.length !== 9 ||
-            !Number.isInteger(rawMatch.server_state.current_seat) ||
-            (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
-          throw new Error("invalid_match_state");
-        }
-        setOnlineMatch({ ...rawMatch, my_result: seatResult.data.final_result as OnlineMatchSnapshot["my_result"] });
-        setOnlineSeat(Number(seatResult.data.seat));
-        if (rawMatch.status === "active") {
-          timer = window.setTimeout(() => void pollMatch(), 1200);
-        }
-      } catch {
-        if (!stopped && activeUserIdRef.current === userId) {
-          setOnlineError(t("onlineError"));
-          setOnlineStatus("error");
-        }
-      }
-    };
-    void pollMatch();
-    return () => {
-      stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [page, session?.user.id, onlineMatchId]);
-
-  useEffect(() => {
-    const db = supabase;
-    if (!db || !session?.user.id || page !== "rooms") {
-      if (page !== "rooms" || !session) setPrivateRooms([]);
-      return;
-    }
-    let stopped = false;
-    let timer: number | undefined;
-    const userId = session.user.id;
-    const refreshRooms = async () => {
-      try {
-        const { data, error } = await db
-          .from("private_rooms")
-          .select("id,game_id,status,max_players,expires_at,created_at,match_id")
-          .order("created_at", { ascending: false })
-          .limit(30);
-        if (stopped || activeUserIdRef.current !== userId) return;
-        if (error) throw error;
-        const visibleRooms = data ?? [];
-        const roomIds = visibleRooms.map(room => room.id);
-        let ownRoles = new Map<string, "host" | "player">();
-        if (roomIds.length > 0) {
-          const { data: membershipRows, error: membershipError } = await db
-            .from("room_members")
-            .select("room_id,role")
-            .eq("user_id", userId)
-            .in("room_id", roomIds);
-          if (stopped || activeUserIdRef.current !== userId) return;
-          if (membershipError) throw membershipError;
-          ownRoles = new Map((membershipRows ?? []).map(row => [row.room_id, row.role as "host" | "player"]));
-        }
-        const privateRoomRows = visibleRooms.flatMap(room => {
-          const myRole = ownRoles.get(room.id);
-          return myRole ? [{ ...room, my_role: myRole }] : [];
-        });
-        setPrivateRooms(privateRoomRows as PrivateRoomRow[]);
-        setPrivateRoomError("");
-        timer = window.setTimeout(() => void refreshRooms(), 3500);
-      } catch {
-        if (!stopped && activeUserIdRef.current === userId) {
-          setPrivateRooms([]);
-          setPrivateRoomError(t("privateRoomError"));
-          timer = window.setTimeout(() => void refreshRooms(), 5000);
-        }
-      }
-    };
-    void refreshRooms();
-    return () => {
-      stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [page, session?.user.id, privateRoomRefresh]);
-
-  useEffect(() => {
-    const db = supabase;
-    if (!db || !session?.user.id || page !== "rooms" || !privateMatchId) {
-      if (!privateMatchId || !session) {
-        setPrivateMatch(null);
-        setPrivateSeat(null);
-      }
-      return;
-    }
-    let stopped = false;
-    let timer: number | undefined;
-    const userId = session.user.id;
-    const pollPrivateMatch = async () => {
-      try {
-        const [matchResult, seatResult] = await Promise.all([
-          db.from("matches")
-            .select("id,status,server_state,state_version")
-            .eq("id", privateMatchId).maybeSingle(),
-          db.from("match_participants")
-            .select("seat,final_result")
-            .eq("match_id", privateMatchId)
-            .eq("user_id", userId)
-            .maybeSingle()
-        ]);
-        if (stopped || activeUserIdRef.current !== userId) return;
-        if (matchResult.error || seatResult.error || !matchResult.data || !seatResult.data) {
-          throw new Error("private_match_unavailable");
-        }
-        const rawMatch = matchResult.data as unknown as OnlineMatchSnapshot;
-        if (!Array.isArray(rawMatch.server_state?.board) || rawMatch.server_state.board.length !== 9 ||
-            !Number.isInteger(rawMatch.server_state.current_seat) ||
-            (rawMatch.server_state.current_mark !== "X" && rawMatch.server_state.current_mark !== "O")) {
-          throw new Error("invalid_private_match_state");
-        }
-        setPrivateMatch({ ...rawMatch, my_result: seatResult.data.final_result as OnlineMatchSnapshot["my_result"] });
-        setPrivateSeat(Number(seatResult.data.seat));
-        setPrivateRoomError("");
-        if (rawMatch.status === "active") {
-          timer = window.setTimeout(() => void pollPrivateMatch(), 1100);
-        } else {
-          setPrivateRoomRefresh(value => value + 1);
-        }
-      } catch {
-        if (!stopped && activeUserIdRef.current === userId) {
-          setPrivateRoomError(t("privateMatchError"));
-          timer = window.setTimeout(() => void pollPrivateMatch(), 2500);
-        }
-      }
-    };
-    void pollPrivateMatch();
-    return () => {
-      stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [page, session?.user.id, privateMatchId]);
 
   useEffect(() => {
     const db = supabase;
@@ -973,272 +701,8 @@ export default function App() {
     ? t("balanceUnavailable")
     : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(coinBalance);
 
-  const openGame = (game: Game) => {
-    if (game.id === "tictactoe") {
-      setToast("");
-      setTicTacToeState(createTicTacToeState());
-      setCheckersState(null);
-      setSelectedCheckersFrom(null);
-      setActiveGame(game);
-      setMobileNavOpen(false);
-      return;
-    }
-    if (game.id === "checkers") {
-      setToast("");
-      setCheckersState(createCheckersState());
-      setSelectedCheckersFrom(null);
-      setTicTacToeState(null);
-      setActiveGame(game);
-      setMobileNavOpen(false);
-      return;
-    }
+  const openGame = (_game: Game) => {
     setToast(t("gameNotReady"));
-  };
-  const makeTicTacToeMove = (index: number) => {
-    setTicTacToeState(current => current ? applyTicTacToeMove(current, index) : current);
-  };
-  const restartTicTacToe = () => setTicTacToeState(createTicTacToeState());
-  const restartCheckers = () => {
-    setCheckersState(createCheckersState());
-    setSelectedCheckersFrom(null);
-  };
-  const closePracticeGame = () => {
-    setActiveGame(null);
-    setTicTacToeState(null);
-    setCheckersState(null);
-    setSelectedCheckersFrom(null);
-  };
-  const makeCheckersMove = (index: number) => {
-    const current = checkersState;
-    if (!current || current.status !== "playing" || current.currentPlayer !== "red") return;
-    const legalMoves = getCheckersLegalMoves(current);
-    const selectedMove = selectedCheckersFrom === null ? undefined :
-      legalMoves.find(move => move.from === selectedCheckersFrom && move.to === index);
-    if (selectedMove) {
-      const nextState = applyCheckersMove(current, selectedMove.from, selectedMove.to);
-      setCheckersState(nextState);
-      setSelectedCheckersFrom(nextState.forcedFrom);
-      return;
-    }
-    const piece = current.board[index];
-    if (piece?.player === "red" && legalMoves.some(move => move.from === index)) {
-      setSelectedCheckersFrom(index);
-      return;
-    }
-    setSelectedCheckersFrom(current.forcedFrom);
-  };
-  const legalCheckersMoves = checkersState ? getCheckersLegalMoves(checkersState) : [];
-  const selectedCheckersDestinations = new Set(
-    legalCheckersMoves.filter(move => move.from === selectedCheckersFrom).map(move => move.to)
-  );
-  const checkersStatus = !checkersState ? "" :
-    checkersState.status === "won" ? (checkersState.winner === "red" ? t("checkersHumanWon") : t("checkersBotWon")) :
-    checkersState.status === "draw" ? t("checkersDraw") :
-    checkersState.forcedFrom !== null ? t("checkersContinueCapture") :
-    checkersState.currentPlayer === "red" ? t("checkersYourTurn") : t("checkersBotTurn");
-  const ticTacToeStatus = !ticTacToeState ? "" :
-    ticTacToeState.status === "won" ? (ticTacToeState.winner === "X" ? t("youWin") : t("botWins")) :
-    ticTacToeState.status === "draw" ? t("draw") :
-    ticTacToeState.currentPlayer === "X" ? t("yourTurn") : t("botThinking");
-
-  const startOnlineQueue = async () => {
-    if (!supabase || !session?.user.id) {
-      openAuth("signin");
-      return;
-    }
-    const userId = session.user.id;
-    setOnlineError("");
-    setOnlineBusy(true);
-    setOnlineStatus("queueing");
-    setOnlineMatchId(null);
-    setOnlineMatch(null);
-    setOnlineSeat(null);
-    try {
-      const { data, error } = await supabase.rpc("queue_for_random_match", { p_game_id: "tictactoe" });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-      const result = (Array.isArray(data) ? data[0] : data) as { queue_status?: string; matched_match_id?: string | null } | null;
-      if (result?.queue_status === "matched" && result.matched_match_id) {
-        setOnlineMatchId(result.matched_match_id);
-        setOnlineStatus("matched");
-      } else {
-        setOnlineStatus("waiting");
-      }
-    } catch {
-      if (activeUserIdRef.current === userId) {
-        setOnlineStatus("error");
-        setOnlineError(t("onlineError"));
-      }
-    } finally {
-      if (activeUserIdRef.current === userId) setOnlineBusy(false);
-    }
-  };
-
-  const cancelOnlineQueue = async () => {
-    if (!supabase || !session?.user.id) return;
-    const userId = session.user.id;
-    setOnlineBusy(true);
-    setOnlineError("");
-    try {
-      const { error } = await supabase.rpc("cancel_random_match_queue", { p_game_id: "tictactoe" });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-      setOnlineStatus("idle");
-      setOnlineMatchId(null);
-      setOnlineMatch(null);
-      setOnlineSeat(null);
-    } catch {
-      if (activeUserIdRef.current === userId) setOnlineError(t("onlineError"));
-    } finally {
-      if (activeUserIdRef.current === userId) setOnlineBusy(false);
-    }
-  };
-
-  const submitOnlineMove = async (index: number) => {
-    if (!supabase || !session?.user.id || !onlineMatchId || !onlineMatch || !onlineSeat) return;
-    const userId = session.user.id;
-    if (onlineMatch.status !== "active" || onlineMatch.server_state.current_seat !== onlineSeat ||
-        onlineMatch.server_state.board?.[index] !== null) return;
-    setOnlineMoveBusy(true);
-    setOnlineError("");
-    try {
-      const { error } = await supabase.rpc("submit_tictactoe_move", {
-        p_match_id: onlineMatchId,
-        p_cell_index: index
-      });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-    } catch {
-      if (activeUserIdRef.current === userId) setOnlineError(t("moveRejected"));
-    } finally {
-      if (activeUserIdRef.current === userId) setOnlineMoveBusy(false);
-    }
-  };
-
-  const createPrivateRoom = async () => {
-    if (!supabase || !session?.user.id) {
-      openAuth("signin");
-      return;
-    }
-    const userId = session.user.id;
-    setPrivateRoomBusy(true);
-    setPrivateRoomError("");
-    try {
-      const { data, error } = await supabase.rpc("create_private_room", {
-        p_game_id: "tictactoe",
-        p_max_players: 2
-      });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-      const result = (Array.isArray(data) ? data[0] : data) as {
-        created_room_id?: string; invite_code?: string; room_expires_at?: string
-      } | null;
-      if (!result?.created_room_id || !result.invite_code) throw new Error("invalid_room_response");
-      setLatestInviteCode(result.invite_code);
-      setPrivateRoomCode("");
-      setPrivateRoomRefresh(value => value + 1);
-      setToast(t("inviteCreated"));
-    } catch {
-      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
-    } finally {
-      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
-    }
-  };
-
-  const joinPrivateRoom = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!supabase || !session?.user.id) {
-      openAuth("signin");
-      return;
-    }
-    const userId = session.user.id;
-    const code = privateRoomCode.trim().toLowerCase();
-    if (!/^[0-9a-f]{32}$/.test(code)) {
-      setPrivateRoomError(t("privateRoomError"));
-      return;
-    }
-    setPrivateRoomBusy(true);
-    setPrivateRoomError("");
-    try {
-      const { data, error } = await supabase.rpc("join_private_room", { p_invite_code: code });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-      const result = (Array.isArray(data) ? data[0] : data) as {
-        joined_room_id?: string; joined_game_id?: string; room_status?: string; active_match_id?: string | null
-      } | null;
-      if (!result?.joined_room_id) throw new Error("invalid_join_response");
-      setPrivateRoomCode("");
-      setPrivateRoomRefresh(value => value + 1);
-      if (result.active_match_id) {
-        setPrivateMatchId(result.active_match_id);
-        setPrivateMatch(null);
-        setPrivateSeat(null);
-      }
-    } catch {
-      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
-    } finally {
-      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
-    }
-  };
-
-  const leavePrivateRoom = async (room: PrivateRoomRow) => {
-    if (!supabase || !session?.user.id) return;
-    const userId = session.user.id;
-    setPrivateRoomBusy(true);
-    setPrivateRoomError("");
-    try {
-      const { data, error } = await supabase.rpc("leave_private_room", { p_room_id: room.id });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-      if (data !== true) throw new Error("room_not_left");
-      if (room.match_id && room.match_id === privateMatchId) {
-        setPrivateMatchId(null);
-        setPrivateMatch(null);
-        setPrivateSeat(null);
-      }
-      setPrivateRoomRefresh(value => value + 1);
-      setToast(room.my_role === "host" ? t("closePrivateRoom") : t("leavePrivateRoom"));
-    } catch {
-      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateRoomError"));
-    } finally {
-      if (activeUserIdRef.current === userId) setPrivateRoomBusy(false);
-    }
-  };
-
-  const openPrivateMatch = (matchId: string) => {
-    setPrivateRoomError("");
-    setPrivateMatchId(matchId);
-    setPrivateMatch(null);
-    setPrivateSeat(null);
-  };
-
-  const closePrivateMatchView = () => {
-    setPrivateMatchId(null);
-    setPrivateMatch(null);
-    setPrivateSeat(null);
-    setPrivateMoveBusy(false);
-    setPrivateRoomError("");
-  };
-
-  const submitPrivateMove = async (index: number) => {
-    if (!supabase || !session?.user.id || !privateMatchId || !privateMatch || !privateSeat) return;
-    const userId = session.user.id;
-    if (privateMatch.status !== "active" || privateMatch.server_state.current_seat !== privateSeat ||
-        privateMatch.server_state.board?.[index] !== null) return;
-    setPrivateMoveBusy(true);
-    setPrivateRoomError("");
-    try {
-      const { error } = await supabase.rpc("submit_private_tictactoe_move", {
-        p_match_id: privateMatchId,
-        p_cell_index: index
-      });
-      if (activeUserIdRef.current !== userId) return;
-      if (error) throw error;
-    } catch {
-      if (activeUserIdRef.current === userId) setPrivateRoomError(t("privateMatchError"));
-    } finally {
-      if (activeUserIdRef.current === userId) setPrivateMoveBusy(false);
-    }
   };
 
   const sendFriendRequest = async (event: FormEvent<HTMLFormElement>) => {
@@ -1305,25 +769,6 @@ export default function App() {
     } finally {
       if (activeUserIdRef.current === userId) setSocialBusy(false);
     }
-  };
-
-  const copyInviteCode = async () => {
-    if (!latestInviteCode) return;
-    try {
-      await navigator.clipboard.writeText(latestInviteCode);
-      setToast(t("codeCopied"));
-    } catch {
-      setToast(t("codeCopyFailed"));
-    }
-  };
-
-  const resetOnlineMatch = () => {
-    setOnlineStatus("idle");
-    setOnlineError("");
-    setOnlineMatchId(null);
-    setOnlineMatch(null);
-    setOnlineSeat(null);
-    setOnlineMoveBusy(false);
   };
 
   const pageMeta: Record<Page, { title: string; subtitle: string }> = {
@@ -1437,79 +882,16 @@ export default function App() {
           {page === "online" && <section className="online-page">
             <div className="online-feature-card">
               <div className="online-feature-copy">
-                <span className="hero-eyebrow"><Swords size={14} />{t("matchType")}</span>
-                <h2>{t("rankedTtt")}</h2>
-                <p>{t("rankedTttDetails")}</p>
-                <div className="online-feature-points">
-                  <span><ShieldCheck size={14} />{t("balanced")}</span>
-                  <span><Users size={14} />{t("randomPairing")}</span>
-                  <span><Medal size={14} />{t("statRating")}</span>
-                </div>
-                <p className="online-small-note">{t("onlineNoRewards")}</p>
+                <span className="hero-eyebrow"><ShieldCheck size={14} />{t("matchType")}</span>
+                <h2>{t("findRival")}</h2>
+                <p>{t("rankedUnavailable")}</p>
               </div>
               <div className="online-feature-art" aria-hidden="true">
                 <div className="online-orbit orbit-a" /><div className="online-orbit orbit-b" />
-                <div className="online-versus"><span>X</span><b>VS</b><span>O</span></div>
-                <div className="online-game-grid"><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-                <span className="online-art-glint">✦</span>
+                <div className="online-versus"><span>?</span><b>—</b><span>?</span></div>
               </div>
             </div>
-
-            <div className="online-content-grid">
-              <section className="online-match-panel">
-                <div className="online-panel-heading">
-                  <div><span className="section-eyebrow">{t("onlineTitle")}</span><h2>{onlineMatchId ? t("queueMatched") : t("queueIdle")}</h2></div>
-                  <span className={"online-state-pill state-" + onlineStatus}><i />{onlineStatus === "idle" ? t("queueIdle") : onlineStatus === "queueing" ? t("queueing") : onlineStatus === "waiting" ? t("queueWaiting") : onlineStatus === "matched" ? t("queueMatched") : t("onlineError")}</span>
-                </div>
-
-                {!session && <div className="online-login-prompt"><span className="online-large-icon"><LockKeyhole size={24} /></span><h3>{t("signIn")}</h3><p>{t("onlineNeedsLogin")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
-
-                {session && !onlineMatchId && <div className="online-queue-state">
-                  <div className="online-queue-illustration"><div><Swords size={30} /></div><span className="queue-scan scan-one" /><span className="queue-scan scan-two" /></div>
-                  <p>{onlineStatus === "queueing" ? t("queueing") : onlineStatus === "waiting" ? t("queueWaiting") : onlineStatus === "error" ? (onlineError || t("onlineError")) : t("queueIdle")}</p>
-                  {onlineStatus === "waiting" || onlineStatus === "queueing" ? <button className="btn-ghost" disabled={onlineBusy} onClick={() => void cancelOnlineQueue()}>{onlineBusy ? t("loading") : t("cancelQueue")}<X size={15} /></button> : <button className="btn-gradient" disabled={onlineBusy || authLoading} onClick={() => void startOnlineQueue()}>{onlineBusy ? t("queueing") : t("queueButton")}<ArrowRight size={16} /></button>}
-                  <small>{t("onlineGameEnabled")}</small>
-                </div>}
-
-                {session && onlineMatchId && !onlineMatch && <div className="online-loading-state"><span className="online-loading-spinner" /><p>{t("onlineLoading")}</p></div>}
-
-                {session && onlineMatchId && onlineMatch && onlineSeat && <div className="online-live-match">
-                  <div className="online-player-row">
-                    <div className={"online-player " + (onlineSeat === 1 ? "current-player" : "")}><span className="online-player-mark mark-x">X</span><div><b>{t("yourMark")}</b><small>{t("level")} · {t("member")}</small></div></div>
-                    <span className="online-vs-label">VS</span>
-                    <div className={"online-player " + (onlineSeat === 2 ? "current-player" : "")}><span className="online-player-mark mark-o">O</span><div><b>{t("opponentMark")}</b><small>{t("level")} · {t("statRating")}</small></div></div>
-                  </div>
-                  <div className="ttt-board online-ttt-board" role="group" aria-label={t("gameBoard")}>
-                    {onlineMatch.server_state.board?.map((mark, index) => {
-                      const isMyTurn = onlineMatch.status === "active" && onlineMatch.server_state.current_seat === onlineSeat;
-                      const disabled = mark !== null || !isMyTurn || onlineMoveBusy;
-                      return <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={disabled} onClick={() => void submitOnlineMove(index)}>{mark && <span>{mark}</span>}</button>;
-                    })}
-                  </div>
-                  <div className={"ttt-status " + (onlineMatch.status === "completed" ? "is-complete" : "")} role="status">
-                    <span className="ttt-status-pulse" />
-                    {onlineMatch.status === "completed"
-                      ? (onlineMatch.my_result === "win" ? t("onlineWon") : onlineMatch.my_result === "draw" ? t("onlineDraw") : t("onlineLost"))
-                      : onlineMatch.server_state.current_seat === onlineSeat ? t("onlineYourTurn") : t("onlineOpponentTurn")}
-                  </div>
-                  {onlineError && <p className="online-inline-error" role="alert">{onlineError}</p>}
-                  <div className="online-match-footer"><span>{t("matchIdLabel")}: {onlineMatch.id.slice(0, 8).toUpperCase()}</span>{onlineMatch.status === "completed" && <button className="btn-gradient" onClick={resetOnlineMatch}>{t("playAnother")}<ArrowRight size={15} /></button>}</div>
-                </div>}
-                {session && onlineError && !onlineMatch && onlineStatus === "error" && <p className="online-inline-error" role="alert">{onlineError}</p>}
-              </section>
-
-              <aside className="online-rules-panel">
-                <div className="online-rules-icon"><ShieldCheck size={19} /></div>
-                <h2>{t("onlineRules")}</h2>
-                <ul>
-                  <li><span>01</span><p>{t("onlineRuleOne")}</p></li>
-                  <li><span>02</span><p>{t("onlineRuleTwo")}</p></li>
-                  <li><span>03</span><p>{t("onlineRuleThree")}</p></li>
-                  <li><span>04</span><p>{t("onlineRuleFour")}</p></li>
-                </ul>
-                <div className="online-security-foot"><LockKeyhole size={14} />{t("secureNote")}</div>
-              </aside>
-            </div>
+            <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("rankedUnavailable")}</span></div>
           </section>}
 
           {page === "rooms" && <section className="private-rooms-page">
@@ -1518,80 +900,11 @@ export default function App() {
                 <span className="hero-eyebrow"><ShieldCheck size={14} />{t("privateRooms")}</span>
                 <h2>{t("roomsTitle")}</h2>
                 <p>{t("roomsSub")}</p>
-                <div className="private-room-benefits"><span><LockKeyhole size={14} />{t("secureNote")}</span><span><Coins size={14} />{t("privateNoRewards")}</span></div>
+                <div className="private-room-benefits"><span><LockKeyhole size={14} />{t("secureNote")}</span><span><ShieldCheck size={14} />{t("noGameYet")}</span></div>
               </div>
               <div className="private-room-emblem" aria-hidden="true"><div className="room-emblem-ring"><Users size={34} /></div><span className="room-emblem-dot dot-a" /><span className="room-emblem-dot dot-b" /><span className="room-emblem-dot dot-c" /></div>
             </div>
-
-            {!session && <div className="private-room-login"><div className="private-room-login-icon"><LockKeyhole size={25} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
-
-            {session && <>
-              <div className="private-room-actions-grid">
-                <section className="private-room-action-card">
-                  <span className="private-room-action-icon"><Plus size={20} /></span>
-                  <div><h3>{t("createPrivateRoom")}</h3><p>{t("inviteCreated")}</p></div>
-                  <button className="btn-gradient" disabled={privateRoomBusy} onClick={() => void createPrivateRoom()}>{privateRoomBusy ? t("loading") : t("createPrivateRoom")}<ArrowRight size={15} /></button>
-                </section>
-                <section className="private-room-action-card">
-                  <span className="private-room-action-icon room-join-icon"><Ticket size={20} /></span>
-                  <div><h3>{t("joinPrivateRoom")}</h3><p>{t("enterInviteCode")}</p></div>
-                  <form className="private-room-join-form" onSubmit={event => void joinPrivateRoom(event)}>
-                    <input aria-label={t("inviteCode")} name="inviteCode" type="text" inputMode="text" autoComplete="off" spellCheck={false} maxLength={32} minLength={32} pattern="[0-9a-fA-F]{32}" placeholder="0123456789abcdef…" value={privateRoomCode} onChange={event => setPrivateRoomCode(event.target.value)} required />
-                    <button className="btn-ghost" type="submit" disabled={privateRoomBusy || privateRoomCode.trim().length !== 32}>{privateRoomBusy ? t("loading") : t("joinPrivateRoom")}<ArrowRight size={14} /></button>
-                  </form>
-                </section>
-              </div>
-
-              {latestInviteCode && <section className="private-invite-card">
-                <div className="private-invite-icon"><Ticket size={19} /></div>
-                <div className="private-invite-copy"><b>{t("roomCreated")}</b><p>{t("inviteCreated")}</p><code dir="ltr">{latestInviteCode}</code><small>{t("roomExpiredHint")}</small></div>
-                <button className="btn-gradient" onClick={() => void copyInviteCode()}><CopyIcon />{t("copyInvite")}</button>
-              </section>}
-
-              {privateRoomError && <p className="private-room-error" role="alert"><ShieldCheck size={15} />{privateRoomError}</p>}
-
-              {privateMatchId && <section className="private-match-panel">
-                <div className="private-match-heading"><div><span className="section-eyebrow">{t("privateMatchTitle")}</span><h2>{t("privateNoRewards")}</h2></div><button className="btn-ghost" onClick={closePrivateMatchView}>{t("closeGame")}<X size={14} /></button></div>
-                {!privateMatch && <div className="online-loading-state"><span className="online-loading-spinner" /><p>{t("onlineLoading")}</p></div>}
-                {privateMatch && privateSeat && <div className="private-match-body">
-                  <div className="online-player-row">
-                    <div className={"online-player " + (privateSeat === 1 ? "current-player" : "")}><span className="online-player-mark mark-x">X</span><div><b>{t("yourMark")}</b><small>{t("hostLabel")}</small></div></div>
-                    <span className="online-vs-label">VS</span>
-                    <div className={"online-player " + (privateSeat === 2 ? "current-player" : "")}><span className="online-player-mark mark-o">O</span><div><b>{t("opponentMark")}</b><small>{t("playerLabel")}</small></div></div>
-                  </div>
-                  <div className="ttt-board online-ttt-board" role="group" aria-label={t("gameBoard")}>
-                    {privateMatch.server_state.board?.map((mark,index) => {
-                      const isMyTurn = privateMatch.status === "active" && privateMatch.server_state.current_seat === privateSeat;
-                      const disabled = mark !== null || !isMyTurn || privateMoveBusy;
-                      return <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={disabled} onClick={() => void submitPrivateMove(index)}>{mark && <span>{mark}</span>}</button>;
-                    })}
-                  </div>
-                  <div className={"ttt-status " + (privateMatch.status === "completed" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{privateMatch.status === "completed" ? (privateMatch.my_result === "win" ? t("privateWin") : privateMatch.my_result === "draw" ? t("onlineDraw") : t("privateLoss")) : privateMatch.server_state.current_seat === privateSeat ? t("privateYourTurn") : t("privateOpponentTurn")}</div>
-                  {privateRoomError && <p className="private-room-error" role="alert">{privateRoomError}</p>}
-                  <div className="online-match-footer"><span>{t("matchIdLabel")}: {privateMatch.id.slice(0,8).toUpperCase()}</span>{privateMatch.status === "completed" && <button className="btn-gradient" onClick={closePrivateMatchView}>{t("roomList")}<ArrowRight size={14} /></button>}</div>
-                </div>}
-              </section>}
-
-              <section className="private-room-list-section">
-                <div className="private-room-list-heading"><div><span className="section-eyebrow">{t("privateRooms")}</span><h2>{t("roomList")}</h2></div><span className="private-room-count">{privateRooms.length}</span></div>
-                {privateRooms.length === 0 ? <div className="private-room-empty"><div><Users size={25} /></div><h3>{t("noPrivateRooms")}</h3><p>{t("roomExpiredHint")}</p></div> : <div className="private-room-list">
-                  {privateRooms.map(room => {
-                    const expired = room.status === "expired" || (room.status === "open" && new Date(room.expires_at).getTime() <= Date.now());
-                    const stateKey = expired ? "roomExpired" : room.status === "open" ? "roomOpen" : room.status === "active" ? "roomActive" : "roomClosed";
-                    const isHost = room.my_role === "host";
-                    return <article className="private-room-row" key={room.id}>
-                      <span className="private-room-row-icon"><Grid2X2 size={20} /></span>
-                      <div className="private-room-row-copy"><h3>{t("privateMatchTitle")} <code>{room.id.slice(0,8).toUpperCase()}</code></h3><p><span>{isHost ? t("hostLabel") : t("playerLabel")}</span><i />{t("expiresLabel")}: {new Intl.DateTimeFormat(locale === "fa" ? "fa-IR" : "en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(room.expires_at))}</p></div>
-                      <span className={"private-room-status " + (room.status === "active" ? "is-active" : expired ? "is-expired" : "")}><i />{t(stateKey)}</span>
-                      <div className="private-room-row-actions">
-                        {room.match_id && <button className="btn-outline" onClick={() => openPrivateMatch(room.match_id!)}>{t("openPrivateMatch")}<ArrowRight size={14} /></button>}
-                        {room.status === "open" && <button className="btn-ghost" disabled={privateRoomBusy} onClick={() => void leavePrivateRoom(room)}>{isHost ? t("closePrivateRoom") : t("leavePrivateRoom")}<X size={14} /></button>}
-                      </div>
-                    </article>;
-                  })}
-                </div>}
-              </section>
-            </>}
+            <div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noGameYet")}</span></div>
           </section>}
 
           {page === "tournaments" && <><section className="event-hero"><div><span className="hero-eyebrow"><Trophy size={14} />{t("featured")}</span><h2>{t("weekly")}</h2><p>{t("tournamentsSub")}</p><span className="event-coming">{t("eventStatus")}</span></div><div className="event-hero-icon"><Trophy size={68} /></div></section><div className="event-list">{[{key:"eventOne", icon:Crown, color:"cyan", players:"128"},{key:"eventTwo", icon:Activity, color:"violet", players:"64"},{key:"eventThree", icon:Dices, color:"pink", players:"32"}].map((event) => { const Icon=event.icon; return <article className="event-row" key={event.key}><span className={`event-game-icon tone-${event.color}`}><Icon size={23} /></span><div className="event-row-copy"><h3>{t(event.key)}</h3><p>{t("eventTime")} · {event.players} {t("eventPlayers")}</p></div><span className="event-row-status">{t("eventStatus")}</span><button className="btn-outline" onClick={() => setToast(t("noGameYet"))}>{t("explore")}<ArrowRight size={14} /></button></article>; })}</div><div className="preview-disclaimer"><ShieldCheck size={16} /><span>{t("noMoney")}</span></div></>}
@@ -1661,32 +974,9 @@ export default function App() {
           {page === "leaderboard" && <section className="leaderboard-page">
             <div className="leaderboard-hero">
               <div className="leaderboard-hero-icon"><Trophy size={29} /></div>
-              <div className="leaderboard-hero-copy"><span className="section-eyebrow">{t("rankTitle")}</span><h2>{t("rankTitle")}</h2><p>{t("rankSub")}</p></div>
-              <span className="leaderboard-game-pill"><Grid2X2 size={14} />Tic Tac Toe</span>
+              <div className="leaderboard-hero-copy"><span className="section-eyebrow">{t("rankTitle")}</span><h2>{t("rankTitle")}</h2><p>{t("rankedUnavailable")}</p></div>
             </div>
-            {!session && <div className="social-login-panel"><div className="social-login-icon"><LockKeyhole size={24} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
-            {session && <>
-              <div className="leaderboard-toolbar"><div><b>{t("rankTitle")}</b><span>{t("leaderboardHint")}</span></div><button className="btn-ghost" disabled={leaderboardBusy} onClick={() => setLeaderboardRefresh(value => value + 1)}><Activity size={15} />{leaderboardBusy ? t("loading") : t("leaderboardRefresh")}</button></div>
-              {leaderboardError && <p className="private-room-error" role="alert">{leaderboardError}</p>}
-              {leaderboardBusy && leaderboardRows.length === 0
-                ? <div className="leaderboard-empty"><span className="online-loading-spinner" /><p>{t("leaderboardLoading")}</p></div>
-                : leaderboardRows.length === 0
-                  ? <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("leaderboardEmpty")}</h3><p>{t("leaderboardHint")}</p></div>
-                  : <div className="leaderboard-table-wrap">
-                    <div className="leaderboard-table-header"><span>{t("leaderboardRank")}</span><span>{t("member")}</span><span>{t("leaderboardRating")}</span><span>{t("leaderboardXp")}</span><span>{t("leaderboardMatches")}</span><span>{t("leaderboardWins")}</span></div>
-                    <div className="leaderboard-list">{leaderboardRows.map(entry => {
-                      const rank = Number(entry.rank_position);
-                      return <article className={"leaderboard-row " + (rank <= 3 ? "is-top" : "")} key={entry.username}>
-                        <span className={"leaderboard-rank rank-" + Math.min(rank,3)}>{rank === 1 ? "♛" : rank === 2 ? "Ⅱ" : rank === 3 ? "Ⅲ" : "#" + rank}</span>
-                        <div className="leaderboard-player"><span className="leaderboard-avatar">{(entry.display_name || entry.username).charAt(0).toLocaleUpperCase(locale)}</span><div><b>{entry.display_name || entry.username}</b><small>@{entry.username}</small></div></div>
-                        <b className="leaderboard-value rating-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.competitive_rating))}</b>
-                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.xp))}</span>
-                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.matches_played))}</span>
-                        <span className="leaderboard-value">{new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(Number(entry.wins))}</span>
-                      </article>;
-                    })}</div>
-                  </div>}
-            </>}
+            <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("rankedUnavailable")}</h3></div>
           </section>}
 
           {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
@@ -1723,74 +1013,6 @@ export default function App() {
         </main>
       </div>
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
-      {activeGame?.id === "tictactoe" && ticTacToeState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closePracticeGame(); }}>
-        <section className="game-modal" role="dialog" aria-modal="true" aria-labelledby="ttt-title">
-          <div className="game-modal-top">
-            <span className="practice-badge"><Dices size={14} />{t("practiceTitle")}</span>
-            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closePracticeGame}><X size={18} /></button>
-          </div>
-          <h2 id="ttt-title">{activeGame.title[locale]}</h2>
-          <p className="game-practice-note"><ShieldCheck size={15} />{t("practiceNoRewards")}</p>
-          <div className="ttt-player-strip"><span className="ttt-player human"><b>X</b><span>{locale === "en" ? "You" : "تو"}</span></span><span className="ttt-vs">VS</span><span className="ttt-player bot"><b>O</b><span>{locale === "en" ? "Playora Bot" : "ربات پلیورا"}</span></span></div>
-          <div className="ttt-board" aria-label={t("gameBoard")}>
-            {ticTacToeState.board.map((mark, index) => <button key={index} type="button" className={"tic-cell " + (mark ? "mark-" + mark.toLowerCase() : "")} aria-label={t("cell") + " " + (index + 1) + (mark ? " " + mark : "")} disabled={mark !== null || ticTacToeState.status !== "playing" || ticTacToeState.currentPlayer !== "X"} onClick={() => makeTicTacToeMove(index)}>{mark && <span>{mark}</span>}</button>)}
-          </div>
-          <div className={"ttt-status " + (ticTacToeState.status !== "playing" ? "is-complete" : "")} role="status"><span className="ttt-status-pulse" />{ticTacToeStatus}</div>
-          <div className="game-modal-actions"><button type="button" className="btn-ghost" onClick={closePracticeGame}>{t("closeGame")}</button><button type="button" className="btn-gradient" onClick={restartTicTacToe}><Activity size={15} />{t("restartGame")}</button></div>
-        </section>
-      </div>}
-      {activeGame?.id === "checkers" && checkersState && <div className="game-modal-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) closePracticeGame(); }}>
-        <section className="game-modal checkers-modal" role="dialog" aria-modal="true" aria-labelledby="checkers-title">
-          <div className="game-modal-top">
-            <span className="practice-badge"><Crown size={14} />{t("checkersPracticeTitle")}</span>
-            <button className="auth-close" type="button" aria-label={t("closeGame")} onClick={closePracticeGame}><X size={18} /></button>
-          </div>
-          <h2 id="checkers-title">{activeGame.title[locale]}</h2>
-          <p className="game-practice-note"><ShieldCheck size={15} />{t("practiceNoRewards")}</p>
-          <p className="checkers-rules-note">{t("checkersRulesNote")}</p>
-          <div className="ttt-player-strip">
-            <span className="ttt-player human"><b>R</b><span>{locale === "en" ? "You · Red" : "تو · قرمز"}</span></span>
-            <span className="ttt-vs">VS</span>
-            <span className="ttt-player bot"><b>B</b><span>{locale === "en" ? "Playora Bot · Black" : "ربات پلیورا · سیاه"}</span></span>
-          </div>
-          <div className="checkers-board" role="group" aria-label={t("checkersBoardLabel")}>
-            {checkersState.board.map((piece, index) => {
-              const playable = (Math.floor(index / 8) + (index % 8)) % 2 === 1;
-              const selected = selectedCheckersFrom === index;
-              const destination = selectedCheckersDestinations.has(index);
-              const pieceLabel = piece
-                ? ", " + (piece.player === "red" ? t("checkersRedPiece") : t("checkersBlackPiece")) + (piece.king ? ", " + t("checkersKing") : "")
-                : "";
-              const squareLabel = t("checkersSquare") + " " + (index + 1) + pieceLabel;
-              return <button
-                key={index}
-                type="button"
-                className={"checkers-square " + (playable ? "is-playable" : "is-light") +
-                  (piece ? " has-" + piece.player : "") +
-                  (piece?.king ? " is-king" : "") +
-                  (selected ? " is-selected" : "") +
-                  (destination ? " is-destination" : "")}
-                aria-label={squareLabel}
-                aria-pressed={selected}
-                disabled={!playable || checkersState.status !== "playing" || checkersState.currentPlayer !== "red"}
-                onClick={() => makeCheckersMove(index)}
-              >
-                {piece && <span className={"checkers-piece " + (piece.king ? "is-king" : "")}>
-                  {piece.king ? <Crown size={18} /> : <span className="checkers-piece-dot" />}
-                </span>}
-                {destination && !piece && <span className="checkers-destination-dot" aria-hidden="true" />}
-              </button>;
-            })}
-          </div>
-          <div className={"ttt-status " + (checkersState.status !== "playing" ? "is-complete" : "")} role="status">
-            <span className="ttt-status-pulse" />{checkersStatus}
-          </div>
-          <div className="game-modal-actions">
-            <button type="button" className="btn-ghost" onClick={closePracticeGame}>{t("closeGame")}</button>
-            <button type="button" className="btn-gradient" onClick={restartCheckers}><Activity size={15} />{t("restartGame")}</button>
-          </div>
-        </section>
-      </div>}
       {deleteDialogOpen && session && <div className="auth-backdrop deletion-backdrop" role="presentation" onMouseDown={event => { if (!deleteBusy && event.target === event.currentTarget) setDeleteDialogOpen(false); }}>
         <section className="auth-modal deletion-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
           <div className="auth-modal-top"><span className="auth-modal-mark deletion-mark"><ShieldCheck size={22} /></span><button className="auth-close" type="button" aria-label={t("cancel")} onClick={() => { if (!deleteBusy) setDeleteDialogOpen(false); }} disabled={deleteBusy}><X size={18} /></button></div>
