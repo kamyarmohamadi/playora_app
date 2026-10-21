@@ -8,6 +8,10 @@ import { createSupabaseCatalogProvider } from "./catalog/supabaseCatalogProvider
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./lib/database.types";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
+import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
+import { GamePluginHost } from "./plugin-host/GamePluginHost";
+import { prepareGameLaunch } from "./platform/prepareGameLaunch";
+import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
@@ -22,6 +26,17 @@ const gameCatalogProvider = supabase
         .filter((origin: string) => origin.length > 0),
     })
   : localCatalogProvider;
+
+const pluginRuntimePolicy: PluginRuntimePolicy = {
+  hostOrigin: typeof window === "undefined" ? "https://playora.invalid" : window.location.origin,
+  allowedArtifactOrigins: String(import.meta.env.VITE_PLAYORA_GAME_ARTIFACT_ORIGINS ?? "")
+    .split(",")
+    .map((origin: string) => origin.trim())
+    .filter((origin: string) => origin.length > 0),
+  supportedSdkVersion: "1.0.0",
+  // No ranked-match, room, wallet or payment broker is available to plugins yet.
+  allowedCapabilities: ["locale:read", "profile:read", "session:lifecycle", "telemetry:submit"],
+};
 
 type Locale = "en" | "fa";
 type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | "leaderboard" | "wallet" | "profile" | "settings";
@@ -182,6 +197,7 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>(["chess", "pool"]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [toast, setToast] = useState("");
+  const [activePlugin, setActivePlugin] = useState<ApprovedPluginDescriptor | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
@@ -622,8 +638,18 @@ export default function App() {
     ? t("balanceUnavailable")
     : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(coinBalance);
 
-  const openGame = (_game: Game) => {
-    setToast(t("gameNotReady"));
+  const openGame = async (game: Game) => {
+    try {
+      const result = await prepareGameLaunch(game.id, gameCatalogProvider, pluginRuntimePolicy);
+      if (!result.allowed) {
+        setToast(t("gameNotReady"));
+        return;
+      }
+      setActivePlugin(result.descriptor);
+    } catch {
+      // Launch failures are intentionally generic; never surface raw registry or artifact data.
+      setToast(t("gameNotReady"));
+    }
   };
 
   const sendFriendRequest = async (event: FormEvent<HTMLFormElement>) => {
@@ -926,6 +952,19 @@ export default function App() {
         </main>
       </div>
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
+      {activePlugin && <div className="plugin-launch-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setActivePlugin(null); }}>
+        <section className="plugin-launch-dialog" role="dialog" aria-modal="true" aria-label={locale === "fa" ? "نشست بازی ایزوله" : "Isolated game session"}>
+          <GamePluginHost
+            descriptor={activePlugin}
+            policy={pluginRuntimePolicy}
+            locale={locale}
+            displayAlias={currentName}
+            grantedCapabilities={activePlugin.capabilities}
+            onExit={() => setActivePlugin(null)}
+            onError={() => setToast(t("gameNotReady"))}
+          />
+        </section>
+      </div>}
       {deleteDialogOpen && session && <div className="auth-backdrop deletion-backdrop" role="presentation" onMouseDown={event => { if (!deleteBusy && event.target === event.currentTarget) setDeleteDialogOpen(false); }}>
         <section className="auth-modal deletion-modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
           <div className="auth-modal-top"><span className="auth-modal-mark deletion-mark"><ShieldCheck size={22} /></span><button className="auth-close" type="button" aria-label={t("cancel")} onClick={() => { if (!deleteBusy) setDeleteDialogOpen(false); }} disabled={deleteBusy}><X size={18} /></button></div>
