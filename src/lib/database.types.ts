@@ -198,6 +198,33 @@ export type Database = {
         }
         Relationships: []
       }
+      game_plugin_artifact_origins: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          is_approved: boolean
+          origin: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          is_approved?: boolean
+          origin: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          is_approved?: boolean
+          origin?: string
+        }
+        Relationships: []
+      }
       game_plugin_versions: {
         Row: {
           artifact_sha256: string
@@ -211,9 +238,11 @@ export type Database = {
           requested_capabilities: string[]
           reviewed_at: string | null
           reviewed_by: string | null
+          revoked_at: string | null
           sdk_max_exclusive: string
           sdk_min_version: string
           state: string
+          updated_at: string
           version: string
         }
         Insert: {
@@ -228,9 +257,11 @@ export type Database = {
           requested_capabilities?: string[]
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revoked_at?: string | null
           sdk_max_exclusive: string
           sdk_min_version: string
           state?: string
+          updated_at?: string
           version: string
         }
         Update: {
@@ -245,9 +276,11 @@ export type Database = {
           requested_capabilities?: string[]
           reviewed_at?: string | null
           reviewed_by?: string | null
+          revoked_at?: string | null
           sdk_max_exclusive?: string
           sdk_min_version?: string
           state?: string
+          updated_at?: string
           version?: string
         }
         Relationships: [

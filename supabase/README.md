@@ -17,6 +17,7 @@ This folder documents the backend foundation. It is not evidence that a live Sup
    - supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
    - supabase/migrations/20261022000000_platform_game_plugin_registry.sql
    - supabase/migrations/20261023000000_plugin_registry_hardening.sql
+   - supabase/migrations/20261023000100_plugin_origin_state_guards.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
 8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.
@@ -38,6 +39,7 @@ The UI feature flag stays off by default. Keep VITE_ACCOUNT_DELETION_ENABLED=fal
 The GitHub Actions workflow applies all migrations and runs these SQL tests against a disposable PostgreSQL 16 database:
 
 - supabase/tests/security_invariants.sql
+- supabase/tests/game_plugin_registry.sql
 - supabase/tests/wallet_ledger.sql
 - supabase/tests/rls_member_isolation.sql
 - supabase/tests/ranked_tictactoe.sql
@@ -60,3 +62,8 @@ Private-room invite codes are high-entropy random values; only a SHA-256 hash is
 Before production, complete real Supabase RLS integration tests, session/verification settings, rate limits and abuse controls, monitoring/logging without secrets, backups/recovery, data retention/deletion workflows, dependency/security scans, actual hosting security headers, a real-time service capacity plan, and an independent threat-model review.
 
 public/_headers is a template for compatible static hosts only. It is not automatically enforced on every hosting provider; configure equivalent headers on the selected host and test the effective CSP against the actual Supabase URL.
+
+
+## 6. Plugin registry safety gate
+
+The trusted artifact-origin allowlist is empty by default. A server-only workflow must explicitly approve an HTTPS origin before registering any artifact. Plugin records begin in `draft` and must pass review before enablement; artifact identity is immutable, and revoking an origin revokes its associated plugin versions. Public clients can read only enabled plugin metadata whose catalog entry is visible and enabled. These controls do not themselves make an unreviewed plugin safe to execute: the isolated runtime, sandbox headers, artifact digest verification and a reviewed capability broker remain mandatory before any game is enabled.

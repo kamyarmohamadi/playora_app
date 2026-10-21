@@ -135,12 +135,17 @@ Some current function bodies call `auth.role()`. The current Supabase guidance w
 - [ ] Test backup/recovery expectations; understand Free-plan backup limitations before production.
 - [ ] Keep the account-deletion flag, payments, deposits, paid entry and redeemable prizes disabled until their separate release gates are passed.
 
-## 5. User actions still needed
+## 5. Current setup and remaining user actions
 
-Only one immediate setup approval is required before the project can be provisioned:
-1. Confirm whether the visible Free organization `kamyarmohamade@gmail.com's Org` is the organization to use for the development project. The current base quote for this organization is $0/month, and the recommended region is `eu-central-1`. Project provisioning has **not** been performed.
+The development project has now been provisioned with owner approval and is accessible through the connected Supabase integration:
+- Project: `playora-dev`
+- Project reference: `nnowvfewtrfurnluhflt`
+- Region: EU Central (`eu-central-1`)
+- Plan: Free; recheck current billing/quotas before any production decision.
+- The platform-only migrations have been applied and the latest trusted-origin/state-guard migration is present in the live migration history.
+- The approved artifact-origin allowlist is empty, no plugin records exist, and all catalog games remain disabled.
 
-The owner should create/store the database password privately when the project is created. Do not paste passwords, OAuth client secrets or service-role keys into chat. If the owner chooses not to provision the project yet, development can continue against CI's disposable PostgreSQL database, but live Auth/RLS/Edge Function readiness must remain unverified and non-live.
+No password, OAuth secret, service-role key, or other credential should be pasted into chat or committed. Remaining work is configuration and verification rather than project creation: review the three Security Advisor warnings for the authenticated SECURITY DEFINER social RPCs; configure and test Auth redirects/providers; deploy only reviewed Edge Functions with server-only secrets; test the live Data API with two real members; review logs/advisors; and verify backup/recovery and hosting headers. Do not enable payments, deposits, paid entry or prize-bearing competitions.
 
 ## 6. Completion definition for Supabase
 

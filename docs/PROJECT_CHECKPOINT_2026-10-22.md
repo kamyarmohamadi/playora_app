@@ -39,13 +39,13 @@ Separate the Playora platform from all individual game implementations. The plat
 - Supabase account/source audit: [SUPABASE_READINESS_AUDIT_2026-10-22.md](./supabase/SUPABASE_READINESS_AUDIT_2026-10-22.md)
 
 ## Supabase live status checked 2026-10-22
-- One visible organization: `kamyarmohamade@gmail.com's Org`, plan Free.
-- Supabase project list returned zero projects.
-- Current base quote for a project in the visible Free organization: $0/month.
-- No project has been created and no live migrations/functions were applied/deployed. Owner must explicitly confirm organization and region before project provisioning.
-- Static SQL review found explicit grants/RLS in the existing migrations, but also that the initial migration enables Tic Tac Toe. Plan C requires removing that default before first live apply so no games launch during platform-only development.
-- A relevant Supabase Data API change is scheduled for enforcement across projects on 2026-10-30. Plan C requires explicit minimum grants plus RLS and live verification after provisioning.
-- The GitHub Actions run for the architecture/plan PR was still in progress at the time of this checkpoint update; do not infer a pass until the current head's checks finish.
+- Development project `playora-dev` exists in the connected Supabase account; project reference: `nnowvfewtrfurnluhflt`. The project is in the EU Central region.
+- Applied migrations verified in the connected project include member isolation, private rooms, social/leaderboard, match identifier privacy, account deletion, platform-only game RPC lockdown, public catalog/plugin registry, registry hardening, and `20261023000100_plugin_origin_state_guards`.
+- Live SQL verification after the latest migration confirms RLS is enabled on `catalog_games`, `game_plugin_versions`, and `game_plugin_artifact_origins`; browser roles cannot read or modify the trusted-origin allowlist.
+- Current release-gate state is intentionally closed: zero game plugins are registered, zero origins are approved, and zero catalog games are enabled. The catalog exposes eight display-only metadata rows; no game is launchable.
+- Supabase Security Advisor currently reports three warnings for authenticated execution of SECURITY DEFINER social RPCs (`list_social_relationships`, `send_friend_request`, and `respond_friend_request`). These require code/grant review; do not dismiss them solely because the app has RLS.
+- Live Auth settings, email/OAuth flows, deployed Edge Functions, two-real-user RLS tests, production hosting headers, backups/monitoring, and end-to-end browser verification remain unverified. The live database and CI tests are not a substitute for those checks.
+- The GitHub quality-gate workflow is being rerun after a TypeScript fix; only report success after the latest commit's full CI finishes.
 
 ## Current implementation order
 1. Owner reviews the roadmap and Plans A–C.
