@@ -1,5 +1,5 @@
 // Generated from Supabase project playora-dev (nnowvfewtrfurnluhflt), EU Central.
-// Snapshot date: 2026-10-22. Regenerate after any database migration.
+// Snapshot date: 2026-10-22. Regenerate after database migrations.
 // Do not hand-edit generated schema types; review schema changes in migrations first.
 
 export type Json =
@@ -20,26 +20,50 @@ export type Database = {
     Tables: {
       catalog_games: {
         Row: {
+          catalog_visible: boolean
           category: string
+          color: string
           created_at: string
+          featured: boolean
+          icon_key: string
           id: string
           is_enabled: boolean
+          players_en: string
+          players_fa: string
+          subtitle_en: string
+          subtitle_fa: string
           title_en: string
           title_fa: string
         }
         Insert: {
+          catalog_visible?: boolean
           category: string
+          color?: string
           created_at?: string
+          featured?: boolean
+          icon_key?: string
           id: string
           is_enabled?: boolean
+          players_en?: string
+          players_fa?: string
+          subtitle_en?: string
+          subtitle_fa?: string
           title_en: string
           title_fa: string
         }
         Update: {
+          catalog_visible?: boolean
           category?: string
+          color?: string
           created_at?: string
+          featured?: boolean
+          icon_key?: string
           id?: string
           is_enabled?: boolean
+          players_en?: string
+          players_fa?: string
+          subtitle_en?: string
+          subtitle_fa?: string
           title_en?: string
           title_fa?: string
         }
@@ -173,6 +197,68 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      game_plugin_versions: {
+        Row: {
+          artifact_sha256: string
+          created_at: string
+          created_by: string | null
+          enabled_at: string | null
+          entrypoint_url: string
+          game_id: string
+          id: string
+          manifest: Json
+          requested_capabilities: string[]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sdk_max_exclusive: string
+          sdk_min_version: string
+          state: string
+          version: string
+        }
+        Insert: {
+          artifact_sha256: string
+          created_at?: string
+          created_by?: string | null
+          enabled_at?: string | null
+          entrypoint_url: string
+          game_id: string
+          id?: string
+          manifest: Json
+          requested_capabilities?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sdk_max_exclusive: string
+          sdk_min_version: string
+          state?: string
+          version: string
+        }
+        Update: {
+          artifact_sha256?: string
+          created_at?: string
+          created_by?: string | null
+          enabled_at?: string | null
+          entrypoint_url?: string
+          game_id?: string
+          id?: string
+          manifest?: Json
+          requested_capabilities?: string[]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sdk_max_exclusive?: string
+          sdk_min_version?: string
+          state?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_plugin_versions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       match_participants: {
         Row: {
