@@ -62,7 +62,8 @@
 - Test: `packages/game-sdk/src/protocol.test.ts`
 
 **Interfaces:**
-- Export `GameManifestV1`, `PluginCapability`, `PluginMessageV1`, `PluginHostMessageV1`, `PluginGameMessageV1`, and `SdkCompatibilityRange` from `@playora/game-sdk`.
+- Export `GameManifestV1`, `PluginCapability`, `PluginMessageV1`, `PluginHostMessageV1`, `PluginGameMessageV1`, `SdkCompatibilityRange`, `PluginRegistryState`, `PluginRegistryRecord`, `ApprovedPluginRecord`, and `ApprovedPluginDescriptor` from `@playora/game-sdk`.
+- `PluginRegistryState` is exactly `"draft" | "review" | "approved" | "enabled" | "disabled" | "revoked"`. `PluginRegistryRecord` is a validated manifest plus trusted registry state. `ApprovedPluginRecord` narrows the registry state to `"enabled"` and includes the trusted launch descriptor. `ApprovedPluginDescriptor` contains only `gameId`, `version`, absolute `entrypointUrl`, `artifactSha256`, supported `sdkVersion`, and granted capabilities.
 - A plugin package manifest contains data only; it does not contain executable code, HTML, imports, permission implementation or arbitrary URLs.
 - Registry approval/enablement state belongs to trusted registry records, not to the plugin-authored manifest.
 
@@ -106,7 +107,7 @@
 
 **Interfaces:**
 - `CatalogEntry` carries safe display metadata and a non-authoritative availability state.
-- `PluginRegistryRecord` carries validated manifest/version and trusted approval state, separate from catalogue metadata.
+- `PluginRegistryRecord` from the SDK carries the validated manifest/version and trusted approval state, separate from catalogue metadata. `ApprovedPluginRecord` is the only provider return type eligible for launch decisions.
 - `CatalogProvider.listCatalog(): Promise<CatalogEntry[]>` and `CatalogProvider.listApprovedPlugins(): Promise<ApprovedPluginRecord[]>` are separate read concerns. Production provider can be attached to the trusted backend later; the local provider is a non-production test/demo adapter.
 
 - [ ] Test that zero catalog entries and zero approved plugins are valid states, with no thrown error and no fake installed game.
@@ -129,7 +130,7 @@
 
 **Interfaces:**
 - `getGameAvailability(entry: CatalogEntry, plugin: ApprovedPluginRecord | null): GameAvailability` returns `"unavailable" | "review" | "enabled" | "incompatible"`.
-- `requestGameLaunch(gameId: string, registry: PluginRegistryReader): Promise<LaunchDescriptor>` returns only a host-validated approved descriptor; it does not import a game engine or execute plugin code.
+- `requestGameLaunch(gameId: string, registry: PluginRegistryReader): Promise<ApprovedPluginDescriptor>` returns only a host-validated approved descriptor; it does not import a game engine or execute plugin code.
 - The platform shell owns navigation/account/profile/catalog/social/support/preferences; the plugin host owns only lifecycle for an approved plugin.
 
 - [ ] Add tests showing that an empty registry, disabled plugin, pending-review plugin or incompatible SDK shows an unavailable message and never opens a game UI.
