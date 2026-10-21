@@ -118,6 +118,8 @@ export function GamePluginHost({
 
       const message: PluginGameMessageV1 = result.message;
       if (message.type === "plugin:ready") {
+        // Do not accept a ready signal until the host has loaded the frame and sent host:init.
+        if (statusRef.current !== "handshaking") return;
         if (message.payload.sdkVersion !== descriptor.sdkVersion) {
           fail("incompatible_runtime");
           return;
