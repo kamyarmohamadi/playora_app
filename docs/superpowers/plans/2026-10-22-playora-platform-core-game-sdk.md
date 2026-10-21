@@ -108,7 +108,8 @@
 **Interfaces:**
 - `CatalogEntry` carries safe display metadata and a non-authoritative availability state.
 - `PluginRegistryRecord` from the SDK carries the validated manifest/version and trusted approval state, separate from catalogue metadata. `ApprovedPluginRecord` is the only provider return type eligible for launch decisions.
-- `CatalogProvider.listCatalog(): Promise<CatalogEntry[]>` and `CatalogProvider.listApprovedPlugins(): Promise<ApprovedPluginRecord[]>` are separate read concerns. Production provider can be attached to the trusted backend later; the local provider is a non-production test/demo adapter.
+- `PluginRegistryReader.getRecord(gameId: string): Promise<PluginRegistryRecord | null>` retrieves the trusted record for validation; the reader must never treat browser-supplied records as authoritative.
+- `CatalogProvider extends PluginRegistryReader` and exposes `listCatalog(): Promise<CatalogEntry[]>` plus `listApprovedPlugins(): Promise<ApprovedPluginRecord[]>` as separate read concerns. Production provider can be attached to the trusted backend later; the local provider is a non-production test/demo adapter.
 
 - [ ] Test that zero catalog entries and zero approved plugins are valid states, with no thrown error and no fake installed game.
 - [ ] Test that a visible catalog entry without an approved compatible plugin is rendered as unavailable/upcoming, never as playable.
