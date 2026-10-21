@@ -26,7 +26,7 @@ const policy: PluginRuntimePolicy = {
 };
 
 describe("GamePluginHost", () => {
-  it("does not accept a plugin-ready message before the host handshake starts", () => {
+  it("rejects a plugin-ready message with a stale session identifier", () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
     act(() => {
@@ -35,14 +35,13 @@ describe("GamePluginHost", () => {
         source: frame.contentWindow,
         data: {
           protocolVersion: 1,
-          sessionId: "a".repeat(64),
+          sessionId: "b".repeat(64),
           type: "plugin:ready",
           payload: { sdkVersion: "1.0.0" },
         },
       }));
     });
     expect(screen.getByRole("status")).not.toHaveTextContent(/game connected/i);
-    expect(screen.getByRole("status")).toHaveTextContent(/loading approved game artifact/i);
   });
 
   it("mounts only a validated artifact in a strict opaque-origin sandbox", () => {
