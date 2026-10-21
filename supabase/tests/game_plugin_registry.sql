@@ -36,6 +36,9 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='game_plugin_versions_one_enabled_per_game_idx') THEN
     RAISE EXCEPTION 'Registry must prevent multiple enabled versions per game';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='game_plugin_artifact_origins_created_by_idx') THEN
+    RAISE EXCEPTION 'Artifact-origin creator reference must be indexed';
+  END IF;
 END
 $plugin_registry_initial_state$;
 
