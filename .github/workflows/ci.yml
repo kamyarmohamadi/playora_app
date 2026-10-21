@@ -22,6 +22,8 @@ jobs:
         run: npm audit --audit-level=moderate
       - name: Run unit tests
         run: npm test
+      - name: Enforce platform/game import boundary
+        run: npm run check:platform-boundary
       - name: Type-check
         run: npm run typecheck
       - name: Build production bundle
