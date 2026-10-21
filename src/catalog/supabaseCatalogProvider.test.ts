@@ -56,7 +56,7 @@ describe("Supabase catalog provider", () => {
       subtitle: { en: "Think ahead", fa: "چند حرکت جلوتر فکر کن" },
       category: "strategy",
       featured: true,
-      art: "chess",
+      art_key: "chess",
     });
   });
 
