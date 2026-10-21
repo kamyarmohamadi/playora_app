@@ -28,7 +28,7 @@ describe("Playora global app shell", () => {
     openNavigation("Games");
     expect(screen.getByRole("heading", { name: "Find your game" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Chess" })).toBeInTheDocument();
-    expect(screen.getByText(/Tic Tac Toe and Checkers practice are playable offline/)).toBeInTheDocument();
+    expect(screen.getByText(/All games remain unavailable until an approved plugin is installed/)).toBeInTheDocument();
   });
 
   it("filters games from global search", () => {
@@ -62,10 +62,11 @@ describe("Playora global app shell", () => {
     expect(screen.queryByRole("heading", { name: "Checkers" })).not.toBeInTheDocument();
   });
 
-  it("labels practice-ready games accurately in the catalogue", () => {
+  it("labels all catalog entries as unavailable without approved game plugins", () => {
     render(<App />);
     openNavigation("Games");
-    expect(screen.getAllByText("Practice ready")).toHaveLength(2);
+    expect(screen.queryByText("Practice ready")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Coming soon")).toHaveLength(8);
     expect(screen.getByRole("button", { name: "View details: Checkers" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View details: Tic Tac Toe" })).toBeInTheDocument();
   });
@@ -79,45 +80,21 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
-  it("opens a no-reward Tic Tac Toe practice match against the bot", () => {
+  it("does not launch games when no approved plugin is installed", () => {
     render(<App />);
     openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Tic Tac Toe" }));
-    expect(screen.getByRole("dialog", { name: "Tic Tac Toe" })).toBeInTheDocument();
-    expect(screen.getByText(/awards no XP, rank, coins, or prizes/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cell 1" }));
-    expect(screen.getByRole("button", { name: "Cell 1 X" })).toBeInTheDocument();
-  });
-
-  it("opens the no-reward Checkers practice board and supports piece selection", () => {
-    render(<App />);
-    openNavigation("Games");
+    expect(screen.queryByRole("dialog", { name: "Tic Tac Toe" })).not.toBeInTheDocument();
+    expect(screen.getByText("This game is not playable yet. The card is a design preview.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
-    expect(screen.getByRole("dialog", { name: "Checkers" })).toBeInTheDocument();
-    expect(screen.getByText(/No rewards\./)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Square/ })).toHaveLength(64);
-    const firstRedPiece = screen.getByRole("button", { name: "Square 41, Red piece" });
-    fireEvent.click(firstRedPiece);
-    expect(firstRedPiece).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("plays a Checkers human move and waits for the bot to answer", async () => {
-    render(<App />);
-    openNavigation("Games");
-    fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
-    fireEvent.click(screen.getByRole("button", { name: "Square 41, Red piece" }));
-    fireEvent.click(screen.getByRole("button", { name: "Square 34" }));
-    expect(screen.getByText("Playora Bot is thinking · Black")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByText("Your turn · Red")).toBeInTheDocument();
-    }, { timeout: 2500 });
+    expect(screen.queryByRole("dialog", { name: "Checkers" })).not.toBeInTheDocument();
   });
 
   it("keeps ranked matchmaking behind authenticated account access", () => {
     render(<App />);
     openNavigation("1v1 Arena");
     expect(screen.getByRole("heading", { name: "Find a rival" })).toBeInTheDocument();
-    expect(screen.getByText(/Sign in to join ranked matchmaking/)).toBeInTheDocument();
+    expect(screen.getByText(/Ranked matchmaking is unavailable until an approved game plugin is installed/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Find random opponent" })).not.toBeInTheDocument();
   });
 
