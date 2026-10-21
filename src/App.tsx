@@ -4,11 +4,24 @@ import type { Session } from "@supabase/supabase-js";
 import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
 import { localCatalogPreview, localCatalogProvider } from "./catalog/localCatalogProvider";
+import { createSupabaseCatalogProvider } from "./catalog/supabaseCatalogProvider";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./lib/database.types";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import "./index.css";
+
+const gameCatalogProvider = supabase
+  ? createSupabaseCatalogProvider(supabase as unknown as SupabaseClient<Database>, {
+      supportedSdkVersion: "1.0.0",
+      allowedArtifactOrigins: (import.meta.env.VITE_PLAYORA_GAME_ARTIFACT_ORIGINS ?? "")
+        .split(",")
+        .map(origin => origin.trim())
+        .filter(Boolean),
+    })
+  : localCatalogProvider;
 
 type Locale = "en" | "fa";
 type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | "leaderboard" | "wallet" | "profile" | "settings";
@@ -202,10 +215,10 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    void localCatalogProvider.listCatalog().then(entries => {
+    void gameCatalogProvider.listCatalog().then(entries => {
       if (active) setCatalogGames(entries as Game[]);
     }).catch(() => {
-      if (active) setCatalogGames([]);
+      if (active) setCatalogGames(localCatalogPreview);
     });
     return () => { active = false; };
   }, []);

@@ -16,6 +16,10 @@ const validEntry = () => ({
 const manifest = (...games: unknown[]) => ({ apiVersion: 1, games });
 
 describe("versioned game registry", () => {
+  it("accepts an empty catalog when no game plugins are installed", () => {
+    expect(parseGameRegistry({ apiVersion: 1, games: [] })).toEqual([]);
+  });
+
   it("loads the curated bilingual catalogue through the runtime validator", () => {
     expect(gameList).toHaveLength(8);
     expect(gameList.find(game => game.id === "tictactoe")?.title.en).toBe("Tic Tac Toe");
