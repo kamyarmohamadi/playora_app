@@ -33,6 +33,8 @@ export type PluginRegistryState = "draft" | "review" | "approved" | "enabled" | 
 export interface PluginRegistryRecord {
   manifest: GameManifestV1;
   state: PluginRegistryState;
+  /** Capabilities explicitly granted by the trusted publisher/reviewer; never derived from the manifest request. */
+  grantedCapabilities: PluginCapability[];
 }
 
 export interface ApprovedPluginRecord extends PluginRegistryRecord {
