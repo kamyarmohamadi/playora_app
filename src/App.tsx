@@ -16,10 +16,10 @@ import "./index.css";
 const gameCatalogProvider = supabase
   ? createSupabaseCatalogProvider(supabase as unknown as SupabaseClient<Database>, {
       supportedSdkVersion: "1.0.0",
-      allowedArtifactOrigins: (import.meta.env.VITE_PLAYORA_GAME_ARTIFACT_ORIGINS ?? "")
+      allowedArtifactOrigins: String(import.meta.env.VITE_PLAYORA_GAME_ARTIFACT_ORIGINS ?? "")
         .split(",")
-        .map(origin => origin.trim())
-        .filter(Boolean),
+        .map((origin: string) => origin.trim())
+        .filter((origin: string) => origin.length > 0),
     })
   : localCatalogProvider;
 

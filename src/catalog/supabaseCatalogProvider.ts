@@ -78,7 +78,13 @@ function parseRegistryRow(
   return { manifest, state: "enabled" };
 }
 
-function toCatalogMetadata(row: Database["public"]["Tables"]["catalog_games"]["Row"]) {
+type CatalogMetadataRow = Pick<
+  Database["public"]["Tables"]["catalog_games"]["Row"],
+  "id" | "title_en" | "title_fa" | "category" | "catalog_visible" |
+  "subtitle_en" | "subtitle_fa" | "players_en" | "players_fa" | "icon_key" | "color" | "featured"
+>;
+
+function toCatalogMetadata(row: CatalogMetadataRow) {
   return {
     id: row.id,
     title: { en: row.title_en, fa: row.title_fa },
