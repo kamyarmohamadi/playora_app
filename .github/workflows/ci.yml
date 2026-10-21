@@ -88,6 +88,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000200_registry_origin_actor_index.sql
       - name: Store catalog art as metadata
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261024000000_catalog_art_key.sql
+      - name: Add trusted plugin capability grants
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025000000_plugin_capability_grants.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test visible catalog and trusted plugin registry boundaries

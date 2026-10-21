@@ -25,6 +25,7 @@ const chessManifest: GameManifestV1 = {
 const enabledChess: PluginRegistryRecord = {
   manifest: chessManifest,
   state: "enabled",
+  grantedCapabilities: ["locale:read"],
 };
 
 describe("local catalog provider", () => {

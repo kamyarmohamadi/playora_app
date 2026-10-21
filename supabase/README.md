@@ -20,6 +20,7 @@ This folder documents the backend foundation. It is not evidence that a live Sup
    - supabase/migrations/20261023000100_plugin_origin_state_guards.sql
    - supabase/migrations/20261023000200_registry_origin_actor_index.sql
    - supabase/migrations/20261024000000_catalog_art_key.sql
+   - supabase/migrations/20261025000000_plugin_capability_grants.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
 8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.
@@ -69,3 +70,8 @@ public/_headers is a template for compatible static hosts only. It is not automa
 ## 6. Plugin registry safety gate
 
 The trusted artifact-origin allowlist is empty by default. A server-only workflow must explicitly approve an HTTPS origin before registering any artifact. Plugin records begin in `draft` and must pass review before enablement; artifact identity is immutable, and revoking an origin revokes its associated plugin versions. Public clients can read only enabled plugin metadata whose catalog entry is visible and enabled. These controls do not themselves make an unreviewed plugin safe to execute: the isolated runtime, sandbox headers, artifact digest verification and a reviewed capability broker remain mandatory before any game is enabled.
+
+
+## Explicit plugin capability grants
+
+The plugin manifest lists requested capabilities, but requested capabilities are not automatically granted. The trusted registry stores a separate granted_capabilities array. Database constraints restrict grants to capabilities that were requested and to the platform allowlist. Grants are frozen after the record reaches approved state, and browser roles can read the grant list only for enabled registry records but cannot change it. The host receives only this explicit grant list; backend endpoints must still enforce authorization independently.

@@ -101,6 +101,7 @@ describe("Supabase catalog provider", () => {
       entrypoint_url: "https://games.playora.example/chess/1.0.0/index.html",
       artifact_sha256: "b".repeat(64),
       requested_capabilities: [],
+      granted_capabilities: [],
       state: "enabled",
       created_at: "2026-10-22T00:00:00.000Z",
     };

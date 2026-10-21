@@ -35,6 +35,7 @@ const manifest: GameManifestV1 = {
 const record = (state: PluginRegistryRecord["state"], overrides: Partial<GameManifestV1> = {}): PluginRegistryRecord => ({
   manifest: { ...manifest, ...overrides },
   state,
+  grantedCapabilities: [],
 });
 
 describe("platform game availability", () => {

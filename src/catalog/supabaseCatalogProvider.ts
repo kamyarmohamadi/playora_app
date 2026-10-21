@@ -5,6 +5,7 @@ import {
   type ApprovedPluginRecord,
   type GameManifestV1,
   type PluginRegistryRecord,
+  type PluginCapability,
 } from "@playora/game-sdk";
 import { parseGameRegistry, type GameArt } from "./gameRegistry";
 import type { CatalogProvider, CatalogEntry } from "./catalogTypes";
@@ -35,6 +36,7 @@ type RegistryRow = Pick<
   | "entrypoint_url"
   | "artifact_sha256"
   | "requested_capabilities"
+  | "granted_capabilities"
   | "state"
   | "created_at"
 >;
@@ -70,12 +72,15 @@ function parseRegistryRow(
     manifest.artifact.sha256.toLowerCase() !== row.artifact_sha256.toLowerCase() ||
     manifest.sdkCompatibility.min !== row.sdk_min_version ||
     manifest.sdkCompatibility.maxExclusive !== row.sdk_max_exclusive ||
-    !capabilitiesMatch(manifest.capabilities, row.requested_capabilities)
+    !capabilitiesMatch(manifest.capabilities, row.requested_capabilities) ||
+    !Array.isArray(row.granted_capabilities) ||
+    row.granted_capabilities.some((capability: string) => !manifest.capabilities.includes(capability as PluginCapability)) ||
+    new Set(row.granted_capabilities).size !== row.granted_capabilities.length
   ) {
     throw new CatalogProviderError("invalid_plugin_record", "The registry fields do not match the validated manifest.");
   }
 
-  return { manifest, state: "enabled" };
+  return { manifest, state: "enabled", grantedCapabilities: [...row.granted_capabilities] };
 }
 
 type CatalogMetadataRow = Pick<
@@ -127,7 +132,7 @@ export function createSupabaseCatalogProvider(
     async getRecord(gameId: string): Promise<PluginRegistryRecord | null> {
       const { data, error } = await client
         .from("game_plugin_versions")
-        .select("game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,state,created_at")
+        .select("game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,granted_capabilities,state,created_at")
         .eq("game_id", gameId)
         .eq("state", "enabled")
         .maybeSingle();

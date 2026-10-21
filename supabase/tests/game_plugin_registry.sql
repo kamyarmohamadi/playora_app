@@ -16,6 +16,10 @@ BEGIN
      OR has_table_privilege('anon','public.game_plugin_artifact_origins','INSERT') THEN
     RAISE EXCEPTION 'Browser roles must not inspect or modify approved artifact origins';
   END IF;
+  IF NOT has_column_privilege('anon','public.game_plugin_versions','granted_capabilities','SELECT')
+     OR has_column_privilege('authenticated','public.game_plugin_versions','granted_capabilities','UPDATE') THEN
+    RAISE EXCEPTION 'Explicit plugin grants must be readable but not editable by browser roles';
+  END IF;
   IF has_table_privilege('anon','public.game_plugin_versions','INSERT')
      OR has_table_privilege('authenticated','public.game_plugin_versions','UPDATE')
      OR has_table_privilege('authenticated','public.game_plugin_versions','DELETE') THEN
@@ -66,7 +70,7 @@ DECLARE
       'entrypointUrl','https://games.playora.example/chess/99.0.0/index.html',
       'sha256',repeat('a',64)
     ),
-    'capabilities',jsonb_build_array()
+    'capabilities',jsonb_build_array('locale:read')
   );
   v_bad_manifest jsonb;
   v_origin_blocked boolean := false;
@@ -78,7 +82,7 @@ BEGIN
   v_bad_manifest := jsonb_set(v_bad_manifest,'{artifact,entrypointUrl}','"https://evil.example/chess/98.0.0/index.html"'::jsonb);
   BEGIN
     INSERT INTO public.game_plugin_versions(game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,state)
-    VALUES ('chess','98.0.0',v_bad_manifest,'1.0.0','2.0.0','https://evil.example/chess/98.0.0/index.html',repeat('a',64),array[]::text[],'draft');
+    VALUES ('chess','98.0.0',v_bad_manifest,'1.0.0','2.0.0','https://evil.example/chess/98.0.0/index.html',repeat('a',64),array['locale:read']::text[],'draft');
   EXCEPTION WHEN check_violation THEN v_origin_blocked := true;
   END;
   IF NOT v_origin_blocked THEN RAISE EXCEPTION 'Unapproved artifact origin must be rejected'; END IF;
@@ -94,7 +98,7 @@ BEGIN
   IF NOT v_capability_blocked THEN RAISE EXCEPTION 'Unknown requested capabilities must be rejected'; END IF;
 
   INSERT INTO public.game_plugin_versions(game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,state,created_by)
-  VALUES ('chess','99.0.0',v_valid_manifest,'1.0.0','2.0.0','https://games.playora.example/chess/99.0.0/index.html',repeat('a',64),array[]::text[],'draft','00000000-0000-4000-8000-000000000099')
+  VALUES ('chess','99.0.0',v_valid_manifest,'1.0.0','2.0.0','https://games.playora.example/chess/99.0.0/index.html',repeat('a',64),array['locale:read']::text[],'draft','00000000-0000-4000-8000-000000000099')
   RETURNING id INTO v_id;
 
   BEGIN
@@ -112,6 +116,13 @@ BEGIN
   EXCEPTION WHEN check_violation THEN v_immutable_blocked := true;
   END;
   IF NOT v_immutable_blocked THEN RAISE EXCEPTION 'Artifact digest must be immutable'; END IF;
+
+  BEGIN
+    UPDATE public.game_plugin_versions SET granted_capabilities=array[]::text[] WHERE id=v_id;
+    RAISE EXCEPTION 'Capability grants must be immutable after approval';
+  EXCEPTION WHEN check_violation THEN
+    NULL;
+  END;
 END
 $plugin_registry_lifecycle$;
 
