@@ -80,12 +80,12 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
-  it("does not launch games when no approved plugin is installed", () => {
+  it("does not launch games when no approved plugin is installed", async () => {
     render(<App />);
     openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Tic Tac Toe" }));
     expect(screen.queryByRole("dialog", { name: "Tic Tac Toe" })).not.toBeInTheDocument();
-    expect(screen.getByText("This game is unavailable because no approved game plugin is installed.")).toBeInTheDocument();
+    await expect(screen.findByText("This game is unavailable because no approved game plugin is installed.")).resolves.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
     expect(screen.queryByRole("dialog", { name: "Checkers" })).not.toBeInTheDocument();
   });
