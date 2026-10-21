@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { Crown } from "lucide-react";
 import { getGameAvailability } from "./gameAvailability";
 import type { CatalogEntry } from "../catalog/catalogTypes";
 import type { GameManifestV1, PluginRegistryRecord } from "@playora/game-sdk";
@@ -9,7 +10,7 @@ const catalogEntry: CatalogEntry = {
   subtitle: { en: "Think ahead", fa: "چند حرکت جلوتر فکر کن" },
   category: "strategy",
   players: { en: "2 players", fa: "۲ بازیکن" },
-  iconKey: "crown",
+  icon: Crown,
   art: "chess",
   color: "cyan",
   featured: true,
