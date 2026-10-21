@@ -1,11 +1,15 @@
-import type { ApprovedPluginRecord, GameManifestV1, PluginRegistryRecord } from "@playora/game-sdk";
+import type {
+  ApprovedPluginRecord,
+  GameManifestV1,
+  PluginRegistryRecord,
+} from "@playora/game-sdk";
 import type { CatalogEntry, CatalogProvider } from "./catalogTypes";
 
 export type { CatalogProvider, CatalogEntry } from "./catalogTypes";
 
 /**
- * Development/test adapter only. Production must use a trusted server registry
- * and must validate registry records before returning any launch descriptor.
+ * Development/test adapter only. Production should read from the trusted backend
+ * registry and validate the manifest again before building a launch descriptor.
  */
 function cloneCatalogEntry(entry: CatalogEntry): CatalogEntry {
   return {
@@ -32,7 +36,7 @@ function cloneRegistryRecord(record: PluginRegistryRecord): PluginRegistryRecord
   return {
     state: record.state,
     manifest: cloneManifest(record.manifest),
-    grantedCapabilities: [...(record.grantedCapabilities ?? [])],
+    grantedCapabilities: [...record.grantedCapabilities],
   };
 }
 
@@ -40,7 +44,7 @@ function cloneApprovedRecord(record: ApprovedPluginRecord): ApprovedPluginRecord
   return {
     state: "enabled",
     manifest: cloneManifest(record.manifest),
-    grantedCapabilities: [...(record.grantedCapabilities ?? [])],
+    grantedCapabilities: [...record.grantedCapabilities],
   };
 }
 
@@ -55,10 +59,12 @@ export function createLocalCatalogProvider(
     async listCatalog() {
       return catalogSnapshot.map(cloneCatalogEntry);
     },
+
     async getRecord(gameId) {
       const record = recordSnapshot.find(candidate => candidate.manifest.id === gameId);
       return record ? cloneRegistryRecord(record) : null;
     },
+
     async listApprovedPlugins() {
       return recordSnapshot
         .filter((record): record is ApprovedPluginRecord => record.state === "enabled")
