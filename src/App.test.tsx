@@ -102,7 +102,7 @@ describe("Playora global app shell", () => {
     render(<App />);
     openNavigation("Private Rooms");
     expect(screen.getAllByRole("heading", { name: "Private rooms" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/No game has been enabled in this platform-only build/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Gameplay is not enabled in this build/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Create a free room" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join with invite code" })).not.toBeInTheDocument();
   });
