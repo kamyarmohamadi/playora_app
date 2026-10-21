@@ -161,9 +161,10 @@
 
 - [ ] Inventory every platform route and mark which actions are currently local preview, truly persisted, backend-unavailable or deferred. Remove misleading fake-success states.
 - [ ] Implement real member profile/preferences/favorites/social operations using the reviewed existing tables/RPCs and server-derived identity.
+- [ ] Put platform notification state, catalog fetches and safe telemetry behind platform service interfaces; show empty/unavailable states rather than claiming an alert, message or game action completed when backend persistence failed.
 - [ ] Provide a public `Report a problem` entry point with one durable ticket per submission. A reporting outage must not block gameplay/navigation.
 - [ ] Persist only sanitized diagnostics: app release, browser/OS family, locale, route template, safe error code/stack, request correlation ID and bounded safe breadcrumbs. Redact tokens, cookies, auth headers, credentials, private messages, private keys and seed phrases on both client and server.
-- [ ] Use idempotency keys for retried report submission; individual tickets remain distinct, and shared incident grouping is deferred until sufficient technical evidence exists.
+- [ ] Use idempotency keys for retried report submission; individual tickets remain distinct, and shared incident grouping is deferred until sufficient technical evidence exists. Any future grouping must link reports to an incident without deleting or overwriting the individual ticket history.
 - [ ] Member policies let each member read only their own reports/replies. Clients cannot set staff severity/assignment, write audit events, read another member's diagnostics, or mutate staff incident state.
 - [ ] Do not build the admin support dashboard in this task. The staff console remains explicitly deferred.
 - [ ] Keep wallet UI read-only/informational, with no deposit/payment/transfer flow. Keep tournament/reward screens clearly unavailable until later reviewed services exist.
