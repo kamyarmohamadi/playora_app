@@ -23,6 +23,7 @@ export interface GamePluginHostProps {
 
 const MAX_MESSAGE_BYTES = 16_384;
 const DEFAULT_HANDSHAKE_TIMEOUT_MS = 8_000;
+const EMPTY_CAPABILITIES: readonly PluginCapability[] = [];
 
 function hostMessage(sessionId: string, type: PluginHostMessageV1["type"], payload: PluginHostMessageV1["payload"]): PluginHostMessageV1 {
   return { protocolVersion: 1, sessionId, type, payload } as PluginHostMessageV1;
@@ -34,11 +35,15 @@ function clampFrameHeight(height: number): number {
 
 /** A generic isolated host; it never executes game code in the platform React context. */
 export function GamePluginHost({
-  descriptor, policy, locale, displayAlias, grantedCapabilities = [],
+  descriptor, policy, locale, displayAlias, grantedCapabilities = EMPTY_CAPABILITIES,
   handshakeTimeoutMs = DEFAULT_HANDSHAKE_TIMEOUT_MS, onExit, onError, onCapabilityRequest, onTelemetry,
 }: GamePluginHostProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const statusRef = useRef<PluginHostStatus>("loading");
+  const callbacksRef = useRef({ onExit, onError, onCapabilityRequest, onTelemetry });
+  callbacksRef.current = { onExit, onError, onCapabilityRequest, onTelemetry };
+  const updateStatus = useCallback((next: PluginHostStatus) => { statusRef.current = next; setStatus(next); }, []);
   const timeoutRef = useRef<number | null>(null);
   const [status, setStatus] = useState<PluginHostStatus>("loading");
   const [frameHeight, setFrameHeight] = useState(560);
@@ -65,18 +70,18 @@ export function GamePluginHost({
   const fail = useCallback((reason: PluginHostError) => {
     clearHandshakeTimeout();
     setError(reason);
-    setStatus("failed");
-    onError?.(reason);
-  }, [clearHandshakeTimeout, onError]);
+    updateStatus("failed");
+    callbacksRef.current.onError?.(reason);
+  }, [clearHandshakeTimeout, updateStatus]);
 
   useEffect(() => {
     setError(null);
     setFrameHeight(560);
     if (!decision.allowed) {
       sessionIdRef.current = null;
-      setStatus("failed");
+      updateStatus("failed");
       setError("policy_denied");
-      onError?.("policy_denied");
+      callbacksRef.current.onError?.("policy_denied");
       return;
     }
 
@@ -85,13 +90,13 @@ export function GamePluginHost({
       id = createPluginSessionId();
     } catch {
       sessionIdRef.current = null;
-      setStatus("failed");
+      updateStatus("failed");
       setError("secure_random_unavailable");
-      onError?.("secure_random_unavailable");
+      callbacksRef.current.onError?.("secure_random_unavailable");
       return;
     }
     sessionIdRef.current = id;
-    setStatus("loading");
+    updateStatus("loading");
 
     const onMessage = (event: MessageEvent<unknown>) => {
       const frameWindow = iframeRef.current?.contentWindow;
@@ -118,20 +123,20 @@ export function GamePluginHost({
           return;
         }
         clearHandshakeTimeout();
-        setStatus("ready");
+        updateStatus("ready");
         return;
       }
-      if (status !== "ready") return;
+      if (statusRef.current !== "ready") return;
       if (message.type === "plugin:resize") {
         setFrameHeight(clampFrameHeight(message.payload.height));
       } else if (message.type === "plugin:exit") {
         clearHandshakeTimeout();
-        setStatus("exited");
-        onExit();
+        updateStatus("exited");
+        callbacksRef.current.onExit();
       } else if (message.type === "plugin:capability-request") {
-        onCapabilityRequest?.(message.payload.capability as PluginCapability, message.payload.action);
+        callbacksRef.current.onCapabilityRequest?.(message.payload.capability as PluginCapability, message.payload.action);
       } else if (message.type === "plugin:telemetry") {
-        onTelemetry?.(message.payload.event, message.payload.fields);
+        callbacksRef.current.onTelemetry?.(message.payload.event, message.payload.fields);
       }
     };
 
@@ -141,7 +146,7 @@ export function GamePluginHost({
       clearHandshakeTimeout();
       sessionIdRef.current = null;
     };
-  }, [decision.allowed, descriptor.sdkVersion, granted, status, onError, onExit, onCapabilityRequest, onTelemetry, clearHandshakeTimeout, fail]);
+  }, [decision.allowed, descriptor.sdkVersion, granted, clearHandshakeTimeout, fail, updateStatus]);
 
   useEffect(() => () => clearHandshakeTimeout(), [clearHandshakeTimeout]);
 
@@ -152,7 +157,7 @@ export function GamePluginHost({
       fail("frame_unavailable");
       return;
     }
-    setStatus("handshaking");
+    updateStatus("handshaking");
     const payload: Extract<PluginHostMessageV1, { type: "host:init" }>["payload"] = {
       locale,
       grantedCapabilities: [...granted],
@@ -168,8 +173,8 @@ export function GamePluginHost({
     const frameWindow = iframeRef.current?.contentWindow;
     if (id && frameWindow) frameWindow.postMessage(hostMessage(id, "host:exit", { reason: "user" }), "*");
     clearHandshakeTimeout();
-    setStatus("exited");
-    onExit();
+    updateStatus("exited");
+    callbacksRef.current.onExit();
   };
 
   let statusText = "Loading approved game artifact…";
