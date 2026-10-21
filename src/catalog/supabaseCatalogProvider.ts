@@ -80,7 +80,7 @@ function parseRegistryRow(
     throw new CatalogProviderError("invalid_plugin_record", "The registry fields do not match the validated manifest.");
   }
 
-  return { manifest, state: "enabled", grantedCapabilities: [...row.granted_capabilities] };
+  return { manifest, state: "enabled", grantedCapabilities: [...row.granted_capabilities] as PluginCapability[] };
 }
 
 type CatalogMetadataRow = Pick<
