@@ -4,6 +4,12 @@ import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
 import { GamePluginHost } from "./GamePluginHost";
 import type { PluginRuntimePolicy } from "./pluginPolicy";
 
+vi.mock("./validatePluginMessage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./validatePluginMessage")>();
+  return { ...actual, createPluginSessionId: () => "a".repeat(64) };
+});
+
+
 const descriptor: ApprovedPluginDescriptor = {
   gameId: "chess",
   version: "1.0.0",
@@ -20,6 +26,25 @@ const policy: PluginRuntimePolicy = {
 };
 
 describe("GamePluginHost", () => {
+  it("does not accept a plugin-ready message before the host handshake starts", () => {
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:ready",
+          payload: { sdkVersion: "1.0.0" },
+        },
+      }));
+    });
+    expect(screen.getByRole("status")).not.toHaveTextContent(/game connected/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/loading approved game artifact/i);
+  });
+
   it("mounts only a validated artifact in a strict opaque-origin sandbox", () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
