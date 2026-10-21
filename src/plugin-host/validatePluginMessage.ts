@@ -197,5 +197,5 @@ export function validatePluginMessage(
   };
   if (value.requestId !== undefined) cleanMessage.requestId = value.requestId;
 
-  return { ok: true, message: cleanMessage as PluginGameMessageV1 };
+  return { ok: true, message: cleanMessage as unknown as PluginGameMessageV1 };
 }
