@@ -14,7 +14,7 @@ This folder documents the backend foundation. It is not evidence that a live Sup
    - supabase/migrations/20261020020000_social_and_leaderboard.sql
    - supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
    - supabase/migrations/20261020040000_account_deletion.sql
-6. Only Tic Tac Toe is implemented for server-connected play in this iteration. Other catalog games remain disabled. Do not manually enable incomplete games.
+6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
 8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.
 9. Configure PLAYORA_ALLOWED_ORIGINS as a comma-separated allowlist of exact frontend origins (for example, the production HTTPS origin and localhost during development). Do not use a wildcard. Check that the Edge Function has SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY available as server-side secrets; never paste them in frontend environment variables or the repository.

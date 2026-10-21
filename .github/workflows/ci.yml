@@ -74,6 +74,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
       - name: Apply account deletion cleanup migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020040000_account_deletion.sql
+      - name: Apply platform-only game RPC lockdown migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test wallet ledger idempotency and overdraft protections

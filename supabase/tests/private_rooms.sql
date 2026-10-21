@@ -5,7 +5,12 @@ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
   ('00000000-0000-4000-8000-000000000002','two@example.test','{"display_name":"Member Two","locale":"fa"}')
 ON CONFLICT (id) DO NOTHING;
 
+-- Test-only grants: the live platform-only migration revokes browser access to game RPCs.
 UPDATE public.catalog_games SET is_enabled=true WHERE id='tictactoe';
+GRANT EXECUTE ON FUNCTION public.create_private_room(text,integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.join_private_room(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.leave_private_room(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_private_tictactoe_move(uuid,integer) TO authenticated;
 INSERT INTO public.member_game_stats(user_id,game_id)
 VALUES
   ('00000000-0000-4000-8000-000000000001','tictactoe'),

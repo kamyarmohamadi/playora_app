@@ -6,7 +6,9 @@ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
   ('00000000-0000-4000-8000-000000000013','social-gamma@example.test','{"display_name":"Gamma","locale":"fa"}')
 ON CONFLICT (id) DO NOTHING;
 
+-- Test-only leaderboard grant; the platform-only database migration disables this client RPC.
 UPDATE public.catalog_games SET is_enabled=true WHERE id='tictactoe';
+GRANT EXECUTE ON FUNCTION public.get_game_leaderboard(text,integer) TO authenticated;
 INSERT INTO public.member_game_stats(user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws)
 VALUES
   ('00000000-0000-4000-8000-000000000011','tictactoe',300,1350,5,3,2,0),
