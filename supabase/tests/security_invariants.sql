@@ -175,5 +175,9 @@ BEGIN
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
   END IF;
+
+  IF EXISTS (SELECT 1 FROM public.catalog_games WHERE is_enabled = true) THEN
+    RAISE EXCEPTION 'No game may be launchable in the platform-only staging migration baseline';
+  END IF;
 END
 $playora_security$;
