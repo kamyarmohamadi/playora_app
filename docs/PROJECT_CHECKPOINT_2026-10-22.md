@@ -9,8 +9,8 @@ Separate the Playora platform from all individual game implementations. The plat
 - Baseline commit: `e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3`
 - Architecture branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
 - Draft review PR #7: https://github.com/kamyarmohamadi/playora_app/pull/7 (documentation only; not merged)
-- Architecture spec (awaiting owner review): [2026-10-22-playora-platform-game-plugin-architecture.md](./superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md)
-- Latest architecture spec commit before PR/checkpoint update: `54941f069e811a409c1f54e38a9a06cb32cf54ca`
+- Architecture spec (owner approved 2026-10-22): [2026-10-22-playora-platform-game-plugin-architecture.md](./superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md)
+- Architecture branch head at this checkpoint: `7ad4c17fe9ad07d36c45e53c9fb0f1288769e835`
 - Application PR #5 remains open/draft and is not merged. Admin preview PR #6 remains separate/open/draft and is not in scope.
 - No Supabase project was returned by the connected Supabase account on 2026-10-22. No real database/Auth/Edge Functions may be described as deployed.
 
@@ -21,10 +21,10 @@ Separate the Playora platform from all individual game implementations. The plat
 - CI at baseline includes unit tests, TypeScript, Vite production build, PostgreSQL security/game invariant checks and Deno Edge Function checks. Latest observed run for commit `e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3` passed on 2026-10-20; it is not evidence of current unrun changes or production readiness.
 
 ## Work completed in this checkpoint
-- Created the architecture spec on an isolated feature branch.
-- Defined target boundaries: platform core, versioned Game SDK, trusted registry, isolated iframe runtime, schema-validated message bridge and server-authoritative game services.
-- Defined milestones and acceptance gates from contract tests through platform-only release readiness.
-- No application runtime/source code has been changed yet. This is intentional: Superpowers architectural workflow requires the owner to review the written spec before the implementation plan is written.
+- Created and received owner approval for the architecture spec on an isolated feature branch.
+- Saved a top-level completion roadmap and three task-level plans: core/SDK decoupling, secure plugin runtime, and Supabase/platform readiness.
+- Saved a Supabase readiness audit based on live connector data and current official docs, including the 2026-10-30 Data API explicit-exposure change.
+- No application runtime/source code has been changed yet. This checkpoint is in implementation-plan review; implementation must not begin until the owner approves the plans.
 
 ## Owner approval and current phase
 - The owner approved the modular platform/game architecture on 2026-10-22.
@@ -43,7 +43,9 @@ Separate the Playora platform from all individual game implementations. The plat
 - Supabase project list returned zero projects.
 - Current base quote for a project in the visible Free organization: $0/month.
 - No project has been created and no live migrations/functions were applied/deployed. Owner must explicitly confirm organization and region before project provisioning.
+- Static SQL review found explicit grants/RLS in the existing migrations, but also that the initial migration enables Tic Tac Toe. Plan C requires removing that default before first live apply so no games launch during platform-only development.
 - A relevant Supabase Data API change is scheduled for enforcement across projects on 2026-10-30. Plan C requires explicit minimum grants plus RLS and live verification after provisioning.
+- The GitHub Actions run for the architecture/plan PR was still in progress at the time of this checkpoint update; do not infer a pass until the current head's checks finish.
 
 ## Current implementation order
 1. Owner reviews the roadmap and Plans A–C.
