@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { findForbiddenGameImports } from "./check-platform-boundary.mjs";
 
-const tempDirs: string[] = [];
+const tempDirs = [];
 
 function makeSourceTree() {
   const root = mkdtempSync(path.join(os.tmpdir(), "playora-boundary-"));
