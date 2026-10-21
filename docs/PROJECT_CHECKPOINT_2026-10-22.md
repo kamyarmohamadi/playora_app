@@ -79,3 +79,19 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - Real Supabase Auth/JWT two-account browser integration is not complete. Auth Site URL / exact redirects, custom SMTP, OAuth secrets, frontend hosting/origin, and the remote artifact host still require their own configuration and verification.
 - The artifact-origin allowlist intentionally remains empty; no game should launch in development or production yet.
 - Admin panel work is deferred and remains in its separate PR. No games have been ported or expanded during the platform-only milestone.
+
+## Follow-up session checkpoint — generic launch integration
+- Added `src/platform/prepareGameLaunch.ts`: launch is fail-closed and requires a trusted enabled registry record, manifest revalidation, ID match, supported SDK range, artifact-origin policy, SHA-256 metadata and explicit granted capabilities contained in both the manifest request and runtime allowlist.
+- Connected the application game-card action to the generic launch gate and `GamePluginHost`; an empty/disabled registry must show the safe unavailable state and must not mount an iframe.
+- The catalogue UI now reads display metadata via `gameCatalogProvider.listCatalog()` with a local metadata fallback only for offline/preview conditions. Cards are labelled upcoming until an approved plugin launches; legacy Tic Tac Toe/Checkers engine source remains preserved but outside the host application.
+- Hardened `GamePluginHost` so `plugin:ready` is ignored until the host has started the expected handshake. Added a regression test for ready messages delivered before handshake.
+- Added a platform-launch gate test suite for no plugin, disabled plugin, ID mismatch, untrusted artifact origin and requested-vs-granted capability mismatch.
+- Runtime policy now permits an HTTP localhost host origin only for development while artifact URLs must still be HTTPS and on the explicit origin allowlist. `VITE_PLAYORA_GAME_ARTIFACT_ORIGINS` is intentionally empty by default; no artifact host has been approved.
+- Supabase registry policy additionally requires `game_plugin_versions.state='enabled'` and a matching `catalog_games` record with `catalog_visible=true` and `is_enabled=true`. The current staging dataset keeps every game disabled.
+- **Verification gate:** do not claim this milestone is green until the latest GitHub Actions run on the current branch head completes with all jobs passing. The newest integration changes were still being verified when this checkpoint was written.
+
+## Current external setup blockers
+- `playora-dev` exists and schema/migrations are being exercised, but Auth browser E2E is not verified with real test identities yet.
+- The selected web hosting/domain is not configured. Consequently, Auth Site URL, exact redirect allowlist, production CSP/headers, trusted SMTP sender and the approved separate game-artifact origin still need to be configured against the actual hosting choice.
+- No Google OAuth client secret, SMTP credential or service-role key has been committed or placed in chat. The connected Supabase actions expose project/migration/table/types/functions but not every Auth dashboard setting/secret-writing action.
+- No game has been implemented or launched, and the admin panel is still deferred.
