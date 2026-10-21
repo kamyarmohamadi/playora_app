@@ -20,6 +20,7 @@ export type Database = {
     Tables: {
       catalog_games: {
         Row: {
+          art_key: string
           catalog_visible: boolean
           category: string
           color: string
@@ -36,6 +37,7 @@ export type Database = {
           title_fa: string
         }
         Insert: {
+          art_key?: string
           catalog_visible?: boolean
           category: string
           color?: string
@@ -52,6 +54,7 @@ export type Database = {
           title_fa: string
         }
         Update: {
+          art_key?: string
           catalog_visible?: boolean
           category?: string
           color?: string
