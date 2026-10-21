@@ -2,17 +2,17 @@
 
 - Audit date: 2026-10-22
 - Status: account and repository checks completed; no live project exists in the connected Supabase account, so runtime configuration and production security cannot yet be tested.
-- Repository: \`kamyarmohamadi/playora_app\`
-- Source branch reviewed: \`feature/playora-neon-ui-member-isolation\`
+- Repository: `kamyarmohamadi/playora_app`
+- Source branch reviewed: `feature/playora-neon-ui-member-isolation`
 - This document is a pre-provisioning audit, not a claim that Supabase is connected or production-ready.
 
 ## 1. Verified account status
 
 | Item | Finding |
 |---|---|
-| Connected Supabase organizations | One visible organization: \`kamyarmohamade@gmail.com's Org\` |
+| Connected Supabase organizations | One visible organization: `kamyarmohamade@gmail.com's Org` |
 | Organization subscription | Free |
-| Projects returned by Supabase | None (\`projects: []\`) |
+| Projects returned by Supabase | None (`projects: []`) |
 | Current project-creation cost quote in this Free organization | $0/month base quote |
 | Project created by this audit | No |
 | Migrations applied to a live project | No |
@@ -25,9 +25,9 @@ Current plan reference: https://supabase.com/pricing
 
 ### Recommended first project
 
-- Name: \`playora-dev\`
+- Name: `playora-dev`
 - Organization: the visible Free organization, only after the owner explicitly confirms that organization.
-- Suggested region: \`eu-central-1\` (EU Central / Frankfurt) for an initial EU-based development environment, subject to the owner's data-residency decision.
+- Suggested region: `eu-central-1` (EU Central / Frankfurt) for an initial EU-based development environment, subject to the owner's data-residency decision.
 - Purpose: disposable development/staging only; do not use real member data.
 - Production: a separate project later, after feature scope, data residency, operating costs, backup requirements and deployment choices have been reviewed.
 
@@ -47,46 +47,46 @@ This matters because database access has two separate layers:
 
 RLS does not replace grants, and grants do not replace RLS. For new Playora tables and functions, the migration must explicitly grant only required permissions, enable RLS for exposed user-data tables, add appropriate policies, and restrict function execution. After provisioning, verify the actual behavior through the project's Data API instead of assuming that a successful SQL migration means the frontend can query a table.
 
-Static inspection shows that the current core migration already contains explicit table grants/revokes and RLS for its listed tables, and the social migration explicitly locks down \`social_action_events\`. That is a useful foundation, but it is **not** yet proof against a real Supabase project's current defaults. Review every table/function grant and run live integration tests after applying migrations.
+Static inspection shows that the current core migration already contains explicit table grants/revokes and RLS for its listed tables, and the social migration explicitly locks down `social_action_events`. That is a useful foundation, but it is **not** yet proof against a real Supabase project's current defaults. Review every table/function grant and run live integration tests after applying migrations.
 
 ## 3. Repository-side migration audit
 
 The existing repository contains these migrations, in this order:
 
-1. \`supabase/migrations/20261020000000_secure_member_data.sql\`
-2. \`supabase/migrations/20261020010000_private_rooms.sql\`
-3. \`supabase/migrations/20261020020000_social_and_leaderboard.sql\`
-4. \`supabase/migrations/20261020030000_limit_match_uuid_visibility.sql\`
-5. \`supabase/migrations/20261020040000_account_deletion.sql\`
+1. `supabase/migrations/20261020000000_secure_member_data.sql`
+2. `supabase/migrations/20261020010000_private_rooms.sql`
+3. `supabase/migrations/20261020020000_social_and_leaderboard.sql`
+4. `supabase/migrations/20261020030000_limit_match_uuid_visibility.sql`
+5. `supabase/migrations/20261020040000_account_deletion.sql`
 
-The first migration defines 18 public tables and enables RLS on them. The social migration adds \`social_action_events\`, enables RLS and revokes direct client-role access. The CI workflow applies all five migrations to disposable PostgreSQL 16 and runs SQL security, wallet, member-isolation, ranked Tic Tac Toe, room, social and account-deletion tests. A minimal Auth shim in CI is not a substitute for live Supabase Auth/JWT testing.
+The first migration defines 18 public tables and enables RLS on them. The social migration adds `social_action_events`, enables RLS and revokes direct client-role access. The CI workflow applies all five migrations to disposable PostgreSQL 16 and runs SQL security, wallet, member-isolation, ranked Tic Tac Toe, room, social and account-deletion tests. A minimal Auth shim in CI is not a substitute for live Supabase Auth/JWT testing.
 
 ### Required correction before any live staging rollout
 
 The initial migration contains:
 
-\`update public.catalog_games set is_enabled = true where id = 'tictactoe';\`
+`update public.catalog_games set is_enabled = true where id = 'tictactoe';`
 
 That behavior conflicts with the newly approved delivery order: the platform must first become independent of all games, and games are to be packaged/added only after the platform acceptance gate. Before applying migrations to staging, change the registry semantics so no game is launchable by default. Do not expose ranked or private game sessions as ready until the generic plugin host, game package and server-authoritative implementation have independently passed their gates. Keep legacy engine code for later packaging; do not delete it.
 
 ### Required review of trusted SQL functions
 
 Before a live deploy, review every function created or replaced in these migrations for:
-- \`SECURITY DEFINER\` use only where necessary;
-- a fixed, safe \`search_path\` and schema-qualified references;
+- `SECURITY DEFINER` use only where necessary;
+- a fixed, safe `search_path` and schema-qualified references;
 - identity derived from a verified request/auth context, never trusted client-supplied user IDs;
-- explicit \`REVOKE\` / \`GRANT EXECUTE\` for each callable function, including defaults inherited from \`PUBLIC\`;
+- explicit `REVOKE` / `GRANT EXECUTE` for each callable function, including defaults inherited from `PUBLIC`;
 - transactionality, idempotency, race conditions, rate limits and state-transition validation;
 - no client route to edit wallet, ledger, match result, rating, deposit-verification, audit or privileged role data;
 - no secrets in function responses or logs.
 
-Some current function bodies call \`auth.role()\`. The current Supabase guidance warns against its use as an authorization predicate in RLS policies in favor of explicit policy roles. Do not perform a blind replacement in PL/pgSQL; review each function-level use against current documentation and cover the chosen identity/role check with tests.
+Some current function bodies call `auth.role()`. The current Supabase guidance warns against its use as an authorization predicate in RLS policies in favor of explicit policy roles. Do not perform a blind replacement in PL/pgSQL; review each function-level use against current documentation and cover the chosen identity/role check with tests.
 
 ### Other current source boundaries
 
-- \`.env.example\` contains empty browser config values for the project URL and publishable/anon key; no service-role key is declared there.
-- \`src/lib/supabase.ts\` fails closed when the project URL/key are missing.
-- Account deletion is behind \`VITE_ACCOUNT_DELETION_ENABLED=false\` by default.
+- `.env.example` contains empty browser config values for the project URL and publishable/anon key; no service-role key is declared there.
+- `src/lib/supabase.ts` fails closed when the project URL/key are missing.
+- Account deletion is behind `VITE_ACCOUNT_DELETION_ENABLED=false` by default.
 - Existing match/room RPCs are game-specific to Tic Tac Toe. They must be treated as legacy services, not as the generic plugin contract.
 - There is not yet a plugin-registry/approved-artifact persistence model in the database.
 - No audit of remote-host secrets, deployed Auth settings or actual database advisories is possible before a project exists.
@@ -96,15 +96,15 @@ Some current function bodies call \`auth.role()\`. The current Supabase guidance
 
 ### A. Project and credentials
 - [ ] Owner confirms the target organization and EU region before the project is created.
-- [ ] Create \`playora-dev\`; retain the exact project reference/URL in the deployment record.
+- [ ] Create `playora-dev`; retain the exact project reference/URL in the deployment record.
 - [ ] Set a long, unique database password and store it in a password manager. Do not send it through ChatGPT or commit it.
 - [ ] Retrieve only the project URL and publishable/anon key for browser configuration. These are designed for client use but still must be paired with correct database grants/RLS.
-- [ ] Keep any service-role/secret key exclusively in server-side secret storage. Never use a \`VITE_\` prefix for privileged secrets and never add the value to GitHub.
-- [ ] Store local configuration in ignored \`.env.local\`; verify no real credentials are tracked in Git history or bundled into \`dist\`.
+- [ ] Keep any service-role/secret key exclusively in server-side secret storage. Never use a `VITE_` prefix for privileged secrets and never add the value to GitHub.
+- [ ] Store local configuration in ignored `.env.local`; verify no real credentials are tracked in Git history or bundled into `dist`.
 
 ### B. Database and migrations
 - [ ] Review the game enablement correction and all five migrations against a clean new project before applying them.
-- [ ] Use the repository migration workflow and the Supabase CLI only after checking the installed version and \`--help\`; do not run guessed CLI commands.
+- [ ] Use the repository migration workflow and the Supabase CLI only after checking the installed version and `--help`; do not run guessed CLI commands.
 - [ ] Apply migrations in sequence to the new development project, not to an unknown/existing database.
 - [ ] Verify actual table/function grants and RLS; confirm every exposed user-data table has the intended policies.
 - [ ] Check the Data API behavior for tables, functions and sequences under the new explicit-exposure defaults.
@@ -121,9 +121,9 @@ Some current function bodies call \`auth.role()\`. The current Supabase guidance
 - [ ] Add at least two disposable test accounts to verify account isolation and cross-member denial.
 
 ### D. Edge Functions and server secrets
-- [ ] Review/deploy \`member-self\` to the development project; confirm it uses the caller's verified identity and preserves RLS.
-- [ ] Keep \`delete-account\` disabled until its cleanup migration/function pass end-to-end tests using disposable accounts.
-- [ ] Configure an exact \`PLAYORA_ALLOWED_ORIGINS\` list for development origins; no wildcard.
+- [ ] Review/deploy `member-self` to the development project; confirm it uses the caller's verified identity and preserves RLS.
+- [ ] Keep `delete-account` disabled until its cleanup migration/function pass end-to-end tests using disposable accounts.
+- [ ] Configure an exact `PLAYORA_ALLOWED_ORIGINS` list for development origins; no wildcard.
 - [ ] Place server-only secrets in the project's Edge Function secrets. Never expose them in browser configuration.
 - [ ] Test unauthenticated calls, invalid JWTs, expired/revoked sessions, forged member IDs, bad request bodies, CORS rejection and repeated/idempotent requests.
 
@@ -138,7 +138,7 @@ Some current function bodies call \`auth.role()\`. The current Supabase guidance
 ## 5. User actions still needed
 
 Only one immediate setup approval is required before the project can be provisioned:
-1. Confirm whether the visible Free organization \`kamyarmohamade@gmail.com's Org\` is the organization to use for the development project. The current base quote for this organization is $0/month, and the recommended region is \`eu-central-1\`. Project provisioning has **not** been performed.
+1. Confirm whether the visible Free organization `kamyarmohamade@gmail.com's Org` is the organization to use for the development project. The current base quote for this organization is $0/month, and the recommended region is `eu-central-1`. Project provisioning has **not** been performed.
 
 The owner should create/store the database password privately when the project is created. Do not paste passwords, OAuth client secrets or service-role keys into chat. If the owner chooses not to provision the project yet, development can continue against CI's disposable PostgreSQL database, but live Auth/RLS/Edge Function readiness must remain unverified and non-live.
 
