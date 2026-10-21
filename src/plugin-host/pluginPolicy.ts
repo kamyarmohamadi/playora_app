@@ -65,6 +65,19 @@ function normaliseOrigin(origin: string): string | null {
   }
 }
 
+function normaliseHostOrigin(origin: string): string | null {
+  try {
+    const url = new URL(origin);
+    const localDevHost = url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]");
+    if ((url.protocol !== "https:" && !localDevHost) ||
+        url.username || url.password || url.pathname !== "/" || url.search || url.hash) return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fails closed before a plugin is mounted. This checks the launch descriptor only;
  * artifact integrity must also be checked in the trusted release pipeline.
@@ -94,7 +107,7 @@ export function validateLaunchDescriptor(
     return { allowed: false, reason: "invalid_url" };
   }
 
-  const hostOrigin = normaliseOrigin(policy.hostOrigin);
+  const hostOrigin = normaliseHostOrigin(policy.hostOrigin);
   if (!hostOrigin) return { allowed: false, reason: "invalid_descriptor" };
   if (url.origin === hostOrigin) return { allowed: false, reason: "same_origin" };
 

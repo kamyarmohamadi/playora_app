@@ -53,4 +53,11 @@ describe("plugin launch policy", () => {
     expect(validateLaunchDescriptor({ gameId: "chess" }, policy))
       .toEqual({ allowed: false, reason: "invalid_descriptor" });
   });
+  it("allows a secure external game origin from a localhost development host", () => {
+    expect(validateLaunchDescriptor(descriptor(), {
+      ...policy,
+      hostOrigin: "http://localhost:5173",
+    })).toEqual({ allowed: true });
+  });
+
 });
