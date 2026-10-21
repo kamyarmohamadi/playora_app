@@ -6,7 +6,7 @@ import {
   type GameManifestV1,
   type PluginRegistryRecord,
 } from "@playora/game-sdk";
-import { parseGameRegistry } from "./gameRegistry";
+import { parseGameRegistry, type GameArt } from "./gameRegistry";
 import type { CatalogProvider, CatalogEntry } from "./catalogTypes";
 
 const DEFAULT_SDK_VERSION = "1.0.0";
@@ -81,7 +81,7 @@ function parseRegistryRow(
 type CatalogMetadataRow = Pick<
   Database["public"]["Tables"]["catalog_games"]["Row"],
   "id" | "title_en" | "title_fa" | "category" | "catalog_visible" |
-  "subtitle_en" | "subtitle_fa" | "players_en" | "players_fa" | "icon_key" | "color" | "featured"
+  "subtitle_en" | "subtitle_fa" | "players_en" | "players_fa" | "icon_key" | "art_key" | "color" | "featured"
 >;
 
 function toCatalogMetadata(row: CatalogMetadataRow) {
@@ -92,8 +92,8 @@ function toCatalogMetadata(row: CatalogMetadataRow) {
     category: row.category,
     players: { en: row.players_en, fa: row.players_fa },
     iconKey: row.icon_key,
-    // Art is deliberately generic; individual game boards are not rendered by the platform.
-    art: "tic",
+    // The art key is display metadata, not a game-engine import or execution permission.
+    art: row.art_key as GameArt,
     color: row.color,
     featured: row.featured,
   };
@@ -111,7 +111,7 @@ export function createSupabaseCatalogProvider(
     async listCatalog(): Promise<CatalogEntry[]> {
       const { data, error } = await client
         .from("catalog_games")
-        .select("id,title_en,title_fa,category,catalog_visible,subtitle_en,subtitle_fa,players_en,players_fa,icon_key,color,featured")
+        .select("id,title_en,title_fa,category,catalog_visible,subtitle_en,subtitle_fa,players_en,players_fa,icon_key,art_key,color,featured")
         .eq("catalog_visible", true)
         .order("featured", { ascending: false })
         .order("title_en", { ascending: true });

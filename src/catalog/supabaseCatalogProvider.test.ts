@@ -14,7 +14,7 @@ const catalogRow = () => ({
   players_en: "2 players",
   players_fa: "۲ بازیکن",
   icon_key: "crown",
-  art: "chess",
+  art_key: "chess",
   color: "cyan",
   featured: true,
 });
