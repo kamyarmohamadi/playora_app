@@ -25,6 +25,10 @@ BEGIN
      OR has_table_privilege('authenticated','public.game_plugin_versions','DELETE') THEN
     RAISE EXCEPTION 'Browser roles must not modify the trusted plugin registry';
   END IF;
+  IF NOT has_column_privilege('anon','public.game_plugin_versions','granted_capabilities','SELECT')
+     OR has_column_privilege('authenticated','public.game_plugin_versions','granted_capabilities','UPDATE') THEN
+    RAISE EXCEPTION 'Explicit plugin grants must be readable but not editable by browser roles';
+  END IF;
   IF NOT has_column_privilege('anon','public.game_plugin_versions','entrypoint_url','SELECT')
      OR NOT has_column_privilege('authenticated','public.game_plugin_versions','manifest','SELECT') THEN
     RAISE EXCEPTION 'Public descriptors must be readable when RLS permits';
@@ -97,8 +101,8 @@ BEGIN
   END;
   IF NOT v_capability_blocked THEN RAISE EXCEPTION 'Unknown requested capabilities must be rejected'; END IF;
 
-  INSERT INTO public.game_plugin_versions(game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,state,created_by)
-  VALUES ('chess','99.0.0',v_valid_manifest,'1.0.0','2.0.0','https://games.playora.example/chess/99.0.0/index.html',repeat('a',64),array['locale:read']::text[],'draft','00000000-0000-4000-8000-000000000099')
+  INSERT INTO public.game_plugin_versions(game_id,version,manifest,sdk_min_version,sdk_max_exclusive,entrypoint_url,artifact_sha256,requested_capabilities,granted_capabilities,state,created_by)
+  VALUES ('chess','99.0.0',v_valid_manifest,'1.0.0','2.0.0','https://games.playora.example/chess/99.0.0/index.html',repeat('a',64),array['locale:read']::text[],array['locale:read']::text[],'draft','00000000-0000-4000-8000-000000000099')
   RETURNING id INTO v_id;
 
   BEGIN

@@ -236,6 +236,7 @@ export type Database = {
           enabled_at: string | null
           entrypoint_url: string
           game_id: string
+          granted_capabilities: string[]
           id: string
           manifest: Json
           requested_capabilities: string[]
@@ -255,6 +256,7 @@ export type Database = {
           enabled_at?: string | null
           entrypoint_url: string
           game_id: string
+          granted_capabilities?: string[]
           id?: string
           manifest: Json
           requested_capabilities?: string[]
@@ -274,6 +276,7 @@ export type Database = {
           enabled_at?: string | null
           entrypoint_url?: string
           game_id?: string
+          granted_capabilities?: string[]
           id?: string
           manifest?: Json
           requested_capabilities?: string[]
