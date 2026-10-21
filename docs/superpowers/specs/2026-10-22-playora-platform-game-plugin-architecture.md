@@ -1,7 +1,7 @@
 # Playora Platform–Game Plugin Architecture
 
 - Date: 2026-10-22
-- Status: Proposed architecture; awaiting owner review
+- Status: Owner-approved architecture; implementation in progress (approved 2026-10-22)
 - Source baseline: `feature/playora-neon-ui-member-isolation` at `e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3`
 - Scope: decouple the Playora platform from game-specific code before implementing or porting more games.
 
