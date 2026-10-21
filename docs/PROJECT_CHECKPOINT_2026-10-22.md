@@ -54,3 +54,28 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - The trusted artifact-origin allowlist stays empty until the hosting origin and artifact verification process are explicitly reviewed.
 - Keep payments, crypto deposits, paid entry and prize-bearing competitions disabled.
 - Save each meaningful change to this feature branch and update this checkpoint; do not rewrite from scratch or modify main.
+
+
+## Implementation progress recorded after owner approval
+
+### Platform/core and plugin launch
+- Added a private npm workspace package `@playora/game-sdk` with versioned manifest/protocol types and strict runtime manifest validation.
+- Added local and Supabase catalog adapters. The display-only catalog is independent of installed/launchable plugin records; backend artwork metadata is stored as a key, not game code.
+- Removed platform-shell imports of the legacy Tic Tac Toe and Checkers engines and removed their ranked stats/leaderboard polling from the generic account-profile path. Legacy engine source/tests are preserved for later packaging.
+- Added the source import-boundary checker to CI so platform code cannot directly import `src/games/*`.
+- Added plugin launch-policy and message validation: exact descriptor keys, approved HTTPS origins, immutable game/version artifact path, digest, supported SDK version, session/source/message schema, and strict capability allowlists.
+- Added the generic launch gate `src/platform/prepareGameLaunch.ts`. It revalidates the trusted registry manifest and requires granted capabilities to be a subset of both the manifest request and the host runtime allowlist.
+- The platform UI is wired to request launch via this gate; when no enabled/compatible plugin exists it must fail closed and not mount an iframe.
+- Added `GamePluginHost` with strict `sandbox="allow-scripts"`, no-referrer policy, host-controlled close/recovery and session handshake. The ready message is rejected before the host has entered its handshaking state.
+
+### Supabase development project
+- Project: `playora-dev`; ref `nnowvfewtrfurnluhflt`; region `eu-central-1`; Free-plan base project quote was $0/month at creation.
+- Base security/data migrations, game-RPC lockdown, plugin registry, origin/state guards, artifact-origin index, catalog art metadata and the requested-vs-granted capability schema have been added/applied in the development project as recorded in the active migration history.
+- Non-negotiable live state: every catalog game has `is_enabled=false`; no plugin is `enabled`; no artifact origin is approved; legacy Tic Tac Toe online RPCs remain revoked from browser roles.
+- Generated TypeScript types are maintained from the actual development schema. Credentials, database passwords, service-role keys, and auth tokens are not stored in source control.
+
+### Validation and current limitations
+- CI includes unit tests, platform/game import boundary, TypeScript, production build, SQL RLS/wallet/plugin-registry checks, and Deno Edge Function validation. Use the latest run on the current branch head before declaring this checkpoint green.
+- Real Supabase Auth/JWT two-account browser integration is not complete. Auth Site URL / exact redirects, custom SMTP, OAuth secrets, frontend hosting/origin, and the remote artifact host still require their own configuration and verification.
+- The artifact-origin allowlist intentionally remains empty; no game should launch in development or production yet.
+- Admin panel work is deferred and remains in its separate PR. No games have been ported or expanded during the platform-only milestone.
