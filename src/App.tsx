@@ -574,13 +574,6 @@ export default function App() {
       setMemberProfile(null);
       setMemberWallet(null);
       setFavorites(["chess", "pool"]);
-      setPrivateRooms([]);
-      setPrivateMatchId(null);
-      setPrivateMatch(null);
-      setPrivateSeat(null);
-      setOnlineMatchId(null);
-      setOnlineMatch(null);
-      setOnlineSeat(null);
       setSocialRows([]);
       setPage("home");
       setDeleteDialogOpen(false);
