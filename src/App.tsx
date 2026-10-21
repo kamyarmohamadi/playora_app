@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
-import { gameList } from "./catalog/gameRegistry";
+import { localCatalogPreview, localCatalogProvider } from "./catalog/localCatalogProvider";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import {
   Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, Zap
@@ -32,10 +32,10 @@ const copy: Record<Locale, Record<string, string>> = {
     profileTitle: "Player profile", profileSub: "This is sample UI data, not a signed-in account.", settingsTitle: "Preferences", settingsSub: "Choose your language and review the security model.", language: "Language", english: "English", persian: "فارسی",
     security: "Privacy by design", securityText: "Private account data is intended to be isolated server-side by authenticated user ID and database row-level security. Live authentication is not connected yet.",
     secureNote: "Never put secret keys in browser code. Client-side UI checks do not replace server authorization.", about: "About Playora", help: "Help & support", profileMenu: "Open profile", notifications: "Notifications", noAlerts: "You’re all caught up.", account: "Guest preview", online: "Online competition", privateRooms: "Private rooms", refresh: "Refresh", you: "You", strategy: "Strategy", board: "Board", cards: "Card", puzzle: "Puzzle",
-    gameNotReady: "This game is not playable yet. The card is a design preview.", privateRoomOnlyGame: "Private rooms currently support Tic Tac Toe only.", createPrivateRoom: "Create a free room", joinPrivateRoom: "Join with invite code", inviteCode: "Invite code", inviteCreated: "Room created. Copy this code and share it with your friend.", copyInvite: "Copy code", codeCopied: "Invite code copied.", codeCopyFailed: "Copy failed. Select and copy the code manually.", enterInviteCode: "Enter the 32-character invite code", roomList: "Your rooms", noPrivateRooms: "No private rooms yet. Create one to invite a friend.", roomCreated: "Room created", roomOpen: "Waiting for a friend", roomActive: "Match ready", roomClosed: "Closed", roomExpired: "Expired", hostLabel: "Host", playerLabel: "Player", expiresLabel: "Expires", openPrivateMatch: "Open match", leavePrivateRoom: "Leave room", closePrivateRoom: "Close room", privateMatchTitle: "Private match", privateNoRewards: "Private play is free. No coins, XP, rating or prizes are awarded.", privateYourTurn: "Your turn", privateOpponentTurn: "Friend’s turn", privateWin: "You won the private match.", privateLoss: "Your friend won the private match.", privateWaiting: "Waiting for the other player to join…", privateRoomError: "That room could not be opened. Check the invite code or try again.", privateMatchError: "The private match request failed. Please refresh and try again.", noPrivateMatch: "This room has not started a match yet.", roomExpiredHint: "Invite codes expire after 24 hours.", settingsSaved: "Preference updated for this preview.", walletToast: "Deposits are disabled until the secure backend is configured.", nav: "Main navigation",
+    gameNotReady: "This game is unavailable because no approved game plugin is installed.", privateRoomOnlyGame: "Private rooms currently support Tic Tac Toe only.", createPrivateRoom: "Create a free room", joinPrivateRoom: "Join with invite code", inviteCode: "Invite code", inviteCreated: "Room created. Copy this code and share it with your friend.", copyInvite: "Copy code", codeCopied: "Invite code copied.", codeCopyFailed: "Copy failed. Select and copy the code manually.", enterInviteCode: "Enter the 32-character invite code", roomList: "Your rooms", noPrivateRooms: "No private rooms yet. Create one to invite a friend.", roomCreated: "Room created", roomOpen: "Waiting for a friend", roomActive: "Match ready", roomClosed: "Closed", roomExpired: "Expired", hostLabel: "Host", playerLabel: "Player", expiresLabel: "Expires", openPrivateMatch: "Open match", leavePrivateRoom: "Leave room", closePrivateRoom: "Close room", privateMatchTitle: "Private match", privateNoRewards: "Private play is free. No coins, XP, rating or prizes are awarded.", privateYourTurn: "Your turn", privateOpponentTurn: "Friend’s turn", privateWin: "You won the private match.", privateLoss: "Your friend won the private match.", privateWaiting: "Waiting for the other player to join…", privateRoomError: "That room could not be opened. Check the invite code or try again.", privateMatchError: "The private match request failed. Please refresh and try again.", noPrivateMatch: "This room has not started a match yet.", roomExpiredHint: "Invite codes expire after 24 hours.", settingsSaved: "Preference updated for this preview.", walletToast: "Deposits are disabled until the secure backend is configured.", nav: "Main navigation",
     statMatches: "Matches", statWins: "Wins", statRating: "Rating", footer: "Play anywhere. Compete with purpose.", rights: "Preview build · Not a live service", matchMade: "Skill-based matchmaking", safePlay: "Built with privacy in mind",
     matchType: "1v1 MATCH", findRival: "Find a rival", randomPairing: "Random opponent matching", balanced: "Skill-aware matchmaking", noGameYet: "Gameplay is not enabled in this build.",
-    eventOne: "Chess Champions", eventTwo: "Pool Masters", eventThree: "Ludo League", eventPlayers: "Players", eventTime: "Starts soon", explore: "Explore", mode: "Game mode",
+    eventOne: "Weekly Open", eventTwo: "Season Cup", eventThree: "Community Challenge", eventPlayers: "Players", eventTime: "Starts soon", explore: "Explore", mode: "Game mode",
     demoCoins: "2,450", sampleProfile: "OrbitRider", level: "Level", points: "XP", noMoney: "No real-money functionality",
     practiceAvailable: "Practice", onlineTitle: "Find a rival", onlineSub: "Start a ranked match against a randomly selected player. No choosing opponents, no paid entry in this build.",
     rankedTtt: "Ranked 1v1", rankedTttDetails: "Ranked play requires an approved game plugin and a verified server-side game service.",
@@ -67,10 +67,10 @@ const copy: Record<Locale, Record<string, string>> = {
     profileTitle: "پروفایل بازیکن", profileSub: "این اطلاعات نمونهٔ رابط است، نه یک حساب واردشده.", settingsTitle: "ترجیحات", settingsSub: "زبان را انتخاب و معماری امنیت را بررسی کن.", language: "زبان", english: "English", persian: "فارسی",
     security: "حریم خصوصی از ابتدا", securityText: "اطلاعات خصوصی حساب باید در سمت سرور با شناسه کاربر احراز هویت‌شده و امنیت سطح ردیف پایگاه داده جدا شود. ورود واقعی هنوز متصل نیست.",
     secureNote: "کلیدهای محرمانه را در کد مرورگر قرار نده. بررسی سمت رابط جایگزین مجوزدهی سمت سرور نیست.", about: "درباره پلیورا", help: "راهنما و پشتیبانی", profileMenu: "بازکردن پروفایل", notifications: "اعلان‌ها", noAlerts: "اعلان جدیدی نداری.", account: "پیش‌نمایش مهمان", online: "رقابت آنلاین", privateRooms: "اتاق خصوصی", refresh: "تازه‌سازی", you: "تو", strategy: "استراتژی", board: "رومیزی", cards: "کارتی", puzzle: "فکری",
-    gameNotReady: "این بازی هنوز قابل اجرا نیست. کارت صرفاً پیش‌نمایش طراحی است.", privateRoomOnlyGame: "در حال حاضر اتاق خصوصی فقط از بازی دوز پشتیبانی می‌کند.", createPrivateRoom: "ساخت اتاق رایگان", joinPrivateRoom: "ورود با کد دعوت", inviteCode: "کد دعوت", inviteCreated: "اتاق ساخته شد. کد را کپی کن و برای دوستت بفرست.", copyInvite: "کپی کد", codeCopied: "کد دعوت کپی شد.", codeCopyFailed: "کپی انجام نشد. کد را دستی انتخاب و کپی کن.", enterInviteCode: "کد دعوت ۳۲ نویسه‌ای را وارد کن", roomList: "اتاق‌های تو", noPrivateRooms: "هنوز اتاق خصوصی نداری. یک اتاق بساز و دوستت را دعوت کن.", roomCreated: "اتاق ساخته شد", roomOpen: "در انتظار دوست", roomActive: "مسابقه آماده است", roomClosed: "بسته‌شده", roomExpired: "منقضی‌شده", hostLabel: "میزبان", playerLabel: "بازیکن", expiresLabel: "انقضا", openPrivateMatch: "ورود به مسابقه", leavePrivateRoom: "ترک اتاق", closePrivateRoom: "بستن اتاق", privateMatchTitle: "مسابقه خصوصی", privateNoRewards: "بازی خصوصی رایگان است و سکه، XP، رتبه یا جایزه نمی‌دهد.", privateYourTurn: "نوبت تو", privateOpponentTurn: "نوبت دوستت", privateWin: "تو مسابقه خصوصی را بردی.", privateLoss: "دوستت مسابقه خصوصی را برد.", privateWaiting: "در انتظار ورود بازیکن دیگر…", privateRoomError: "اتاق باز نشد. کد دعوت را بررسی و دوباره تلاش کن.", privateMatchError: "درخواست مسابقه خصوصی انجام نشد. صفحه را تازه‌سازی و دوباره تلاش کن.", noPrivateMatch: "این اتاق هنوز مسابقه‌ای را آغاز نکرده است.", roomExpiredHint: "کد دعوت پس از ۲۴ ساعت منقضی می‌شود.", settingsSaved: "ترجیح در این پیش‌نمایش تغییر کرد.", walletToast: "تا زمان پیکربندی backend امن، شارژ غیرفعال است.", nav: "ناوبری اصلی",
+    gameNotReady: "این بازی در دسترس نیست؛ هنوز افزونهٔ تأییدشده‌ای نصب نشده است.", privateRoomOnlyGame: "در حال حاضر اتاق خصوصی فقط از بازی دوز پشتیبانی می‌کند.", createPrivateRoom: "ساخت اتاق رایگان", joinPrivateRoom: "ورود با کد دعوت", inviteCode: "کد دعوت", inviteCreated: "اتاق ساخته شد. کد را کپی کن و برای دوستت بفرست.", copyInvite: "کپی کد", codeCopied: "کد دعوت کپی شد.", codeCopyFailed: "کپی انجام نشد. کد را دستی انتخاب و کپی کن.", enterInviteCode: "کد دعوت ۳۲ نویسه‌ای را وارد کن", roomList: "اتاق‌های تو", noPrivateRooms: "هنوز اتاق خصوصی نداری. یک اتاق بساز و دوستت را دعوت کن.", roomCreated: "اتاق ساخته شد", roomOpen: "در انتظار دوست", roomActive: "مسابقه آماده است", roomClosed: "بسته‌شده", roomExpired: "منقضی‌شده", hostLabel: "میزبان", playerLabel: "بازیکن", expiresLabel: "انقضا", openPrivateMatch: "ورود به مسابقه", leavePrivateRoom: "ترک اتاق", closePrivateRoom: "بستن اتاق", privateMatchTitle: "مسابقه خصوصی", privateNoRewards: "بازی خصوصی رایگان است و سکه، XP، رتبه یا جایزه نمی‌دهد.", privateYourTurn: "نوبت تو", privateOpponentTurn: "نوبت دوستت", privateWin: "تو مسابقه خصوصی را بردی.", privateLoss: "دوستت مسابقه خصوصی را برد.", privateWaiting: "در انتظار ورود بازیکن دیگر…", privateRoomError: "اتاق باز نشد. کد دعوت را بررسی و دوباره تلاش کن.", privateMatchError: "درخواست مسابقه خصوصی انجام نشد. صفحه را تازه‌سازی و دوباره تلاش کن.", noPrivateMatch: "این اتاق هنوز مسابقه‌ای را آغاز نکرده است.", roomExpiredHint: "کد دعوت پس از ۲۴ ساعت منقضی می‌شود.", settingsSaved: "ترجیح در این پیش‌نمایش تغییر کرد.", walletToast: "تا زمان پیکربندی backend امن، شارژ غیرفعال است.", nav: "ناوبری اصلی",
     statMatches: "بازی‌ها", statWins: "بردها", statRating: "رتبه", footer: "هرجا بازی کن. هدفمند رقابت کن.", rights: "نسخه پیش‌نمایش · سرویس زنده نیست", matchMade: "مسابقه‌یابی مبتنی بر مهارت", safePlay: "با توجه به حریم خصوصی ساخته شده",
     matchType: "مسابقه یک‌به‌یک", findRival: "پیداکردن حریف", randomPairing: "تطبیق با حریف تصادفی", balanced: "تطبیق متناسب با مهارت", noGameYet: "بازی در این نسخه فعال نیست.",
-    eventOne: "قهرمانان شطرنج", eventTwo: "استادان بیلیارد", eventThree: "لیگ منچ", eventPlayers: "بازیکن", eventTime: "شروع به‌زودی", explore: "بررسی", mode: "حالت بازی",
+    eventOne: "رقابت هفتگی", eventTwo: "جام فصل", eventThree: "چالش جامعه", eventPlayers: "بازیکن", eventTime: "شروع به‌زودی", explore: "بررسی", mode: "حالت بازی",
     demoCoins: "۲٬۴۵۰", sampleProfile: "OrbitRider", level: "سطح", points: "XP", noMoney: "بدون قابلیت پول واقعی",
     practiceAvailable: "تمرینی", onlineTitle: "پیداکردن حریف", onlineSub: "مسابقه رتبه‌دار با بازیکنی تصادفی را شروع کن. در این نسخه ورودیه یا جایزه مالی فعال نیست.",
     rankedTtt: "رقابت رتبه‌دار یک‌به‌یک", rankedTttDetails: "مسابقهٔ رتبه‌دار به افزونهٔ بازی تأییدشده و سرویس معتبر سمت سرور نیاز دارد.",
@@ -126,17 +126,10 @@ function CopyIcon() {
 function GameArtwork({ game }: { game: Game }) {
   const Icon = game.icon;
   return (
-    <div className={`game-art art-${game.art} tone-${game.color}`} aria-hidden="true">
+    <div className={`game-art tone-${game.color}`} aria-hidden="true">
       <span className="art-orb orb-one" /><span className="art-orb orb-two" />
       <div className="art-platform" />
-      {game.art === "chess" && <div className="chess-symbol">♞</div>}
-      {game.art === "pool" && <div className="pool-table"><i /><i /><i /><b /><span /></div>}
-      {game.art === "ludo" && <div className="ludo-board">{["red", "blue", "yellow", "green"].map(c => <i className={c} key={c} />)}</div>}
-      {game.art === "checkers" && <div className="checker-board">{Array.from({ length: 16 }, (_, i) => <i key={i} className={i % 3 === 0 ? "piece" : ""} />)}</div>}
-      {game.art === "cards" && <div className="card-fan"><i>♠</i><i>♥</i><i>♦</i></div>}
-      {game.art === "backgammon" && <div className="mini-board">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div>}
-      {game.art === "tic" && <div className="tic-symbols"><i>×</i><b>○</b><i>×</i><b>○</b></div>}
-      {game.art === "rummy" && <div className="rummy-cards"><i>A<span>♠</span></i><i>7<span>♥</span></i><i>K<span>♦</span></i></div>}
+      <div className="game-art-glyph"><Icon size={38} strokeWidth={1.6} /></div>
       <span className="art-badge"><Icon size={16} /></span>
     </div>
   );
@@ -209,6 +202,17 @@ export default function App() {
   const activeUserIdRef = useRef<string | null>(null);
 
   const t = (key: string) => copy[locale][key] ?? key;
+  const [catalogGames, setCatalogGames] = useState<Game[]>(localCatalogPreview);
+
+  useEffect(() => {
+    let active = true;
+    void localCatalogProvider.listCatalog().then(entries => {
+      if (active) setCatalogGames(entries as Game[]);
+    }).catch(() => {
+      if (active) setCatalogGames([]);
+    });
+    return () => { active = false; };
+  }, []);
   const direction = locale === "fa" ? "rtl" : "ltr";
 
   useEffect(() => {
@@ -388,12 +392,12 @@ export default function App() {
     document.documentElement.dir = direction;
   }, [locale, direction]);
 
-  const filteredGames = useMemo(() => gameList.filter((game) => {
+  const filteredGames = useMemo(() => catalogGames.filter((game) => {
     const matchesCategory = category === "all" || game.category === category;
     const matchesFavorite = !favoritesOnly || favorites.includes(game.id);
     const haystack = [game.title[locale], game.title.en, game.subtitle[locale], copy[locale][game.category] ?? game.category].join(" ").toLocaleLowerCase(locale);
     return matchesCategory && matchesFavorite && haystack.includes(search.trim().toLocaleLowerCase(locale));
-  }), [category, favorites, favoritesOnly, locale, search]);
+  }), [catalogGames, category, favorites, favoritesOnly, locale, search]);
 
   const go = (nextPage: Page) => {
     setPage(nextPage);
@@ -779,7 +783,7 @@ export default function App() {
             <section className="games-section">
               <SectionHeading eyebrow={t("popularSub")} title={t("popular")} action={t("seeAll")} onAction={() => go("games")} />
               <div className="games-grid home-games">
-                {gameList.filter(g => g.featured).map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={openGame} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}
+                {catalogGames.filter(g => g.featured).map(game => <GameCard key={game.id} game={game} locale={locale} onOpen={openGame} saved={favorites.includes(game.id)} onSave={() => toggleFavorite(game.id)} t={t} />)}
               </div>
             </section>
 

@@ -85,7 +85,7 @@ describe("Playora global app shell", () => {
     openNavigation("Games");
     fireEvent.click(screen.getByRole("button", { name: "View details: Tic Tac Toe" }));
     expect(screen.queryByRole("dialog", { name: "Tic Tac Toe" })).not.toBeInTheDocument();
-    expect(screen.getByText("This game is not playable yet. The card is a design preview.")).toBeInTheDocument();
+    expect(screen.getByText("This game is unavailable because no approved game plugin is installed.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "View details: Checkers" }));
     expect(screen.queryByRole("dialog", { name: "Checkers" })).not.toBeInTheDocument();
   });
