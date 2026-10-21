@@ -18,6 +18,7 @@ This folder documents the backend foundation. It is not evidence that a live Sup
    - supabase/migrations/20261022000000_platform_game_plugin_registry.sql
    - supabase/migrations/20261023000000_plugin_registry_hardening.sql
    - supabase/migrations/20261023000100_plugin_origin_state_guards.sql
+   - supabase/migrations/20261023000200_registry_origin_actor_index.sql
    - supabase/migrations/20261024000000_catalog_art_key.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
