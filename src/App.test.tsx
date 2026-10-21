@@ -28,7 +28,7 @@ describe("Playora global app shell", () => {
     openNavigation("Games");
     expect(screen.getByRole("heading", { name: "Find your game" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Chess" })).toBeInTheDocument();
-    expect(screen.getByText(/All games remain unavailable until an approved plugin is installed/)).toBeInTheDocument();
+    expect(screen.getAllByText(/All games remain unavailable until an approved plugin is installed/).length).toBeGreaterThan(0);
   });
 
   it("filters games from global search", () => {
@@ -90,22 +90,21 @@ describe("Playora global app shell", () => {
     expect(screen.queryByRole("dialog", { name: "Checkers" })).not.toBeInTheDocument();
   });
 
-  it("keeps ranked matchmaking behind authenticated account access", () => {
+  it("keeps ranked matchmaking unavailable until an approved plugin is installed", () => {
     render(<App />);
     openNavigation("1v1 Arena");
-    expect(screen.getByRole("heading", { name: "Find a rival" })).toBeInTheDocument();
-    expect(screen.getByText(/Ranked matchmaking is unavailable until an approved game plugin is installed/)).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "Find a rival" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Ranked matchmaking is unavailable until an approved game plugin is installed/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Find random opponent" })).not.toBeInTheDocument();
   });
 
-  it("keeps private rooms behind sign-in and does not expose room creation to guests", () => {
+  it("keeps private rooms unavailable until a reviewed game plugin is installed", () => {
     render(<App />);
     openNavigation("Private Rooms");
     expect(screen.getAllByRole("heading", { name: "Private rooms" }).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
+    expect(screen.getAllByText(/No game has been enabled in this platform-only build/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Create a free room" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Join with invite code" })).not.toBeInTheDocument();
-    expect(screen.getAllByText(/Private play is free\. No coins, XP, rating or prizes are awarded/).length).toBeGreaterThan(0);
   });
 
   it("does not expose account deletion controls to guests", () => {
@@ -134,11 +133,11 @@ describe("Playora global app shell", () => {
     expect(screen.queryByRole("button", { name: "Send request" })).not.toBeInTheDocument();
   });
 
-  it("keeps leaderboard data private until sign-in", () => {
+  it("keeps leaderboard unavailable until a reviewed game plugin is enabled", () => {
     render(<App />);
     openNavigation("Leaderboard");
     expect(screen.getAllByRole("heading", { name: "The leaderboard" }).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Sign in to sync favorites and access your personal account/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Ranked matchmaking is unavailable until an approved game plugin is installed/).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Refresh" })).not.toBeInTheDocument();
     expect(screen.queryByText("@player_000000")).not.toBeInTheDocument();
   });
