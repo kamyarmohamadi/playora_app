@@ -14,6 +14,7 @@ This folder documents the backend foundation. It is not evidence that a live Sup
    - supabase/migrations/20261020020000_social_and_leaderboard.sql
    - supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
    - supabase/migrations/20261020040000_account_deletion.sql
+   - supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
 8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.

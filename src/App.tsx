@@ -119,10 +119,6 @@ function GoogleGlyph() {
   return <span className="google-glyph" aria-hidden="true">G</span>;
 }
 
-function CopyIcon() {
-  return <span className="copy-icon" aria-hidden="true">▢</span>;
-}
-
 function GameArtwork({ game }: { game: Game }) {
   const Icon = game.icon;
   return (
