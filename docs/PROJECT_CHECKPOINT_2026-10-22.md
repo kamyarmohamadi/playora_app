@@ -181,3 +181,13 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - A test-only permission assertion was corrected after CI showed the migration intentionally uses column-level grants rather than table-wide SELECT/INSERT. Do not broaden client grants to satisfy a table-level assertion.
 - Keep the development Supabase migration unapplied until the known remote migration-history mismatch has been reconciled. No playable games are enabled; the trusted plugin-origin allowlist remains empty.
 - Next: confirm full CI completion, then continue browser-runtime lifecycle coverage and Auth/JWT integration planning.
+
+
+## Verified support-report integration checkpoint — 2026-10-23
+
+- Latest verified commit: `fff3c7badde09cf7467e32986f47abafe49b1ec2`.
+- CI run [39855051815](https://github.com/kamyarmohamadi/playora_app/actions/runs/39855051815) passed all three jobs, including browser E2E.
+- Added an accessible English/Persian support-report dialog to the platform shell, with sign-in gating, minimized diagnostics, field validation, recent ticket summaries and server-owned status display.
+- Added a service adapter that scopes history and idempotency-retry lookup to the active member, rejects session changes, maps rate limiting to a safe message and recovers the original ticket after a duplicate idempotency response.
+- The support backend is deliberately gated by `VITE_SUPPORT_REPORTS_ENABLED=false`. The migration is not applied to the live development project because its migration history requires reconciliation first.
+- No playable games, approved artifact origins, payments or prize-bearing features are enabled. Keep PR #7 in Draft until the remaining platform security/release gates are reviewed.

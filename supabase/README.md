@@ -90,3 +90,8 @@ For a complete device/session recovery procedure, current CI link, private-repos
 The `support_reports` migration provides a separate ticket per submission. Authenticated members can insert approved report fields and read only their own tickets; client update/delete and workflow-field edits are denied. Diagnostics are limited to a small allowlisted shape and the database enforces idempotency and a five-report-per-member-per-hour rate limit. Duplicate-ticket grouping and root-cause incident aggregation are future privileged triage workflows, not a reason to merge or discard individual reports.
 
 The source migration is committed, but **do not apply it to the existing `playora-dev` project yet**. First reconcile the project's existing migration history with the source files and inspect the actual remote schema. CI tests use a disposable PostgreSQL database and do not mean the support workflow is live in Supabase.
+
+
+## 7. Support UI rollout gate
+
+The member-facing support dialog is connected to the platform shell and the source-level service adapter. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until the `support_reports` migration is safely applied to the development project, generated database types are refreshed from the actual schema, and the live RLS/API behavior is verified with two separate Auth members. The dialog remains visible but reports that the backend is not connected while the flag is false. CI uses a disposable PostgreSQL schema; it is not proof that the live Supabase table exists.

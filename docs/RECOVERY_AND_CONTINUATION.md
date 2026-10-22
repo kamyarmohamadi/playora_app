@@ -154,3 +154,14 @@ Next steps, in order:
 3. Keep `support_reports` member-owned: do not grant authenticated users update/delete or table-wide privileges, and never let client input choose owner/status/timestamps.
 4. Do not apply the new support-report migration to the live development Supabase project until its migration-history ordering is reconciled and the migration is reviewed against the actual remote schema.
 5. Continue with browser E2E completion, update the checkpoint, and commit each verified milestone.
+
+
+## 10. Verified support-report UI integration — 2026-10-23
+
+- Latest verified source commit: `fff3c7badde09cf7467e32986f47abafe49b1ec2`.
+- Successful CI: https://github.com/kamyarmohamadi/playora_app/actions/runs/39855051815 — all three jobs passed: unit tests/app and E2E TypeScript/production build/Chromium E2E, PostgreSQL security tests, and Deno Edge Function checks.
+- The support dialog is wired into the app footer in English and Persian. It collects only a bounded category/title/description plus minimized diagnostics (app version, locale, allowlisted route, coarse browser family and coarse OS family); it never stores a raw URL, user-agent, stack trace, token or cookie.
+- Submission/history calls are isolated in `src/platform/supportReportService.ts`. History explicitly filters by the current member in addition to relying on RLS; requests are rejected if the active member changes during the request. Duplicate idempotency-key conflicts look up and return the original ticket scoped to the same member.
+- `VITE_SUPPORT_REPORTS_ENABLED=false` is the default. The UI intentionally shows that support submission is not connected while this flag is false.
+- **Do not enable the flag yet.** The source migration and disposable PostgreSQL tests are committed, but the live `playora-dev` migration history still needs reconciliation before applying the support-report migration and refreshing generated database types.
+- Current branch is still a draft PR. No playable game is enabled and the artifact-origin allowlist remains empty.
