@@ -90,7 +90,7 @@ alter table public.support_reports enable row level security;
 
 revoke all on table public.support_reports from public, anon, authenticated, service_role;
 grant select (
-  id, user_id, category, title, description, app_version, locale, route_key,
+  id, user_id, idempotency_key, category, title, description, app_version, locale, route_key,
   diagnostics, status, created_at, updated_at
 ) on public.support_reports to authenticated;
 grant insert (
