@@ -22,6 +22,7 @@ The development Supabase project has been provisioned and the listed development
    - supabase/migrations/20261024000000_catalog_art_key.sql
    - supabase/migrations/20261025000000_plugin_capability_grants.sql
    - supabase/migrations/20261026000000_support_reports.sql
+   - supabase/migrations/20261027000000_capacity_query_indexes.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Function source is tracked in `supabase/functions/`, but the live project currently reports zero deployed Edge Functions. Deploy `member-self` only after Auth/JWT, origin, secret and endpoint reviews pass, then verify it against the live project. Do not deploy `delete-account` until its full disposable-account end-to-end test and cleanup verification pass.
 9. Configure PLAYORA_ALLOWED_ORIGINS as a comma-separated allowlist of exact frontend origins (for example, the production HTTPS origin and localhost during development). Do not use a wildcard. Check that the Edge Function has SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY available as server-side secrets; never paste them in frontend environment variables or the repository.
@@ -42,6 +43,7 @@ The UI feature flag stays off by default. Keep VITE_ACCOUNT_DELETION_ENABLED=fal
 The GitHub Actions workflow applies all migrations and runs these SQL tests against a disposable PostgreSQL 16 database:
 
 - supabase/tests/security_invariants.sql
+- supabase/tests/capacity_indexes.sql
 - supabase/tests/game_plugin_registry.sql
 - supabase/tests/wallet_ledger.sql
 - supabase/tests/rls_member_isolation.sql
