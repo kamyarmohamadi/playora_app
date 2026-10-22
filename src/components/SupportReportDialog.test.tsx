@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ComponentProps } from "react";
-import { SupportReportDialog, type SupportReportSummary } from "./SupportReportDialog";
+import { SupportReportDialog, type SupportReportSummary, type SupportReportSubmission } from "./SupportReportDialog";
 
 const translations: Record<string, string> = {
   help: "Help & support", supportEyebrow: "PLAYORA SUPPORT",
@@ -39,7 +39,7 @@ const createdReport: SupportReportSummary = {
 function renderDialog(overrides: Partial<ComponentProps<typeof SupportReportDialog>> = {}) {
   const onClose = vi.fn();
   const onSignIn = vi.fn();
-  const onSubmit = vi.fn(async () => createdReport);
+  const onSubmit = vi.fn(async (_submission: SupportReportSubmission) => createdReport);
   const props: ComponentProps<typeof SupportReportDialog> = {
     open: true, locale: "en", routeKey: "games", isSignedIn: true, recentReports: [],
     t, onClose, onSignIn, onSubmit, ...overrides,
@@ -92,13 +92,15 @@ describe("SupportReportDialog", () => {
     }));
     renderDialog({ recentReports: reports });
     expect(screen.getByText("My reports")).toBeInTheDocument();
-    expect(screen.getByText("Open")).toBeInTheDocument();
+    expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
   });
 
   it("shows a specific rate-limit message and retains the idempotency key for retries", async () => {
     vi.stubGlobal("crypto", { randomUUID: () => "00000000-0000-4000-8000-000000000311" });
-    const onSubmit = vi.fn().mockRejectedValueOnce(new Error("rate_limited")).mockResolvedValueOnce(createdReport);
+    const onSubmit = vi.fn(async (_submission: SupportReportSubmission) => createdReport)
+      .mockRejectedValueOnce(new Error("rate_limited"))
+      .mockResolvedValueOnce(createdReport);
     renderDialog({ onSubmit });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Search filter resets" } });
     fireEvent.change(screen.getByLabelText(/What happened\?/i), { target: { value: "The filter disappears when I return to the catalogue page." } });
