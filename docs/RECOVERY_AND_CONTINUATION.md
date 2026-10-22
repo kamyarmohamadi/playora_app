@@ -33,6 +33,8 @@ npm test
 npm run check:platform-boundary
 npm run typecheck
 npm run build
+npm run typecheck:e2e
+npm run test:e2e
 ```
 
 To open the local development UI after configuring optional local environment values:

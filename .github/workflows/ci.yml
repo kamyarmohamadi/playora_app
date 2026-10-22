@@ -28,6 +28,8 @@ jobs:
         run: npm run typecheck
       - name: Build production bundle
         run: npm run build
+      - name: Type-check browser end-to-end tests
+        run: npm run typecheck:e2e
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run browser end-to-end tests
