@@ -39,7 +39,7 @@ INSERT INTO public.support_reports (
   idempotency_key, category, title, description, app_version, locale, route_key, diagnostics
 ) VALUES (
   '00000000-0000-4000-8000-000000000311',
-  'bug','Catalog search issue','The catalog search does not preserve my current filter when I change pages.',
+  'catalog','Catalog search issue','The catalog search does not preserve my current filter when I change pages.',
   '0.1.0','en','games',
   '{"appVersion":"0.1.0","locale":"en","route":"games","browserFamily":"Firefox","osFamily":"Linux"}'
 );
