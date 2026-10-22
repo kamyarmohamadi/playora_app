@@ -213,3 +213,13 @@ Next steps, in order:
 - All three jobs completed successfully: tests/types/production build/Chromium E2E; PostgreSQL RLS and wallet privilege tests; Deno Edge Function checks. The run includes the new resize-clamping and post-exit replay regression tests and the workflow-level `contents: read` permission change.
 - This verifies the CI-tested commit only. It does not mean the app is deployed, real-user Auth/JWT browser tests are complete, a playable game is enabled, or the release blockers below are resolved.
 - No live Supabase settings, game enablement, secrets, or production deployment were changed.
+
+
+## 2026-10-23 continuation — master checklist and telemetry hardening
+
+- Master Persian release checklist: [docs/PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md](PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md). Use this file as the shared acceptance tracker across frontend, backend/API, Auth/RLS, plugin runtime, security, games/rooms, wallet, admin, installation/release and operations.
+- Project checkpoint update: https://github.com/kamyarmohamadi/playora_app/commit/732f4b5302b239aa7c58300c293470d7edc1dd46
+- New plugin runtime change limits telemetry callbacks to 30 events per 60-second session window. A regression test sends 35 messages and expects 30 callbacks. Code commit: https://github.com/kamyarmohamadi/playora_app/commit/ec8623b3224d01e360282b5a5220ce89036c6f6d; test commit: https://github.com/kamyarmohamadi/playora_app/commit/744ab5e5c420bc23baaf0179caaf208cccfe4c55.
+- CI must be rechecked against the exact test commit and all its follow-up docs commits. Do not call telemetry rate limiting verified until unit tests, types, build, Chromium E2E, PostgreSQL/RLS and Deno checks pass for the tested code head.
+- Latest fully verified code checkpoint before this change: commit `da97be30946b9646c53afc033cf9130cbbeb6128`, CI run [39870334277](https://github.com/kamyarmohamadi/playora_app/actions/runs/39870334277), all three jobs successful.
+- Keep the artifact-origin allowlist empty and all games disabled. No live Supabase settings, migrations, credentials or deployment changed. `main` untouched; PR #7 remains draft/unmerged.
