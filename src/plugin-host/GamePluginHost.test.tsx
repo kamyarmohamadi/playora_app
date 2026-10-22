@@ -125,6 +125,37 @@ describe("GamePluginHost", () => {
     expect(screen.getByText(/session has ended/i)).toBeTruthy();
   });
 
+  it("stops a session when the embedded document unexpectedly loads a second time", () => {
+    const onError = vi.fn();
+    const onExit = vi.fn();
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={onExit} onError={onError} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    const readyMessage = () => window.dispatchEvent(new MessageEvent("message", {
+      origin: "null",
+      source: frame.contentWindow,
+      data: {
+        protocolVersion: 1,
+        sessionId: "a".repeat(64),
+        type: "plugin:ready",
+        payload: { sdkVersion: "1.0.0" },
+      },
+    }));
+
+    fireEvent.load(frame);
+    act(() => { readyMessage(); });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+
+    fireEvent.load(frame);
+
+    expect(onError).toHaveBeenCalledWith("unexpected_navigation");
+    expect(screen.getByRole("status")).toHaveTextContent(/navigated unexpectedly and was stopped/i);
+    expect(screen.queryByTitle("chess isolated game")).toBeNull();
+
+    act(() => { readyMessage(); });
+    expect(screen.getByRole("status")).not.toHaveTextContent(/game connected/i);
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
   it("does not grant requested capabilities by default", () => {
     const onCapabilityRequest = vi.fn();
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} onCapabilityRequest={onCapabilityRequest} />);
