@@ -142,6 +142,13 @@ describe("Playora global app shell", () => {
     expect(screen.queryByText("@player_000000")).not.toBeInTheDocument();
   });
 
+  it("keeps support submissions unavailable until its feature flag and backend are configured", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Help & support" }));
+    expect(screen.getByRole("status")).toHaveTextContent(/support submissions are not connected yet/i);
+    expect(screen.queryByRole("button", { name: "Submit report" })).not.toBeInTheDocument();
+  });
+
   it("shows notices without claiming online play is active", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Notifications" }));
