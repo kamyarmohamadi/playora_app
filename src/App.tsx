@@ -10,12 +10,16 @@ import type { Database } from "./lib/database.types";
 import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
 import { GamePluginHost } from "./plugin-host/GamePluginHost";
+import { SupportReportDialog, type SupportReportSubmission, type SupportReportSummary } from "./components/SupportReportDialog";
+import { listMySupportReports, submitMySupportReport } from "./platform/supportReportService";
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
-  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
+  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import "./index.css";
+
+const supportReportsEnabled = import.meta.env.VITE_SUPPORT_REPORTS_ENABLED === "true";
 
 const gameCatalogProvider = supabase
   ? createSupabaseCatalogProvider(supabase as unknown as SupabaseClient<Database>, {
@@ -123,6 +127,49 @@ const categories: { id: Category; key: string }[] = [
   { id: "puzzle", key: "categoryPuzzle" }
 ];
 
+const supportCopy: Record<Locale, Record<string, string>> = {
+  en: {
+    supportEyebrow:"PLAYORA SUPPORT", supportSubtitle:"Send a report to the Playora team.",
+    supportSignInRequired:"Sign in to submit and track a support report.",
+    supportDiagnosticsNotice:"Only app version, language, page key and coarse browser/OS families are sent.",
+    supportReportSubmitted:"Your report was submitted.", supportCategory:"Category", supportCategoryBug:"Bug report",
+    supportCategoryAccount:"Account", supportCategoryCatalog:"Game catalogue", supportCategoryAccessibility:"Accessibility",
+    supportCategoryOther:"Other", supportReportTitle:"Title", supportTitlePlaceholder:"Summarize what happened",
+    supportReportDescription:"What happened?", supportDescriptionPlaceholder:"Describe the steps and what you expected.",
+    supportSubmitReport:"Submit report", supportMyReports:"My reports",
+    supportHistoryUnavailable:"Report history is temporarily unavailable.", supportNoReports:"You have not submitted any reports yet.",
+    supportStatusOpen:"Open", supportStatusTriaged:"Triaged", supportStatusInProgress:"In progress",
+    supportStatusResolved:"Resolved", supportStatusClosed:"Closed", supportReportInvalid:"Please review the report fields.",
+    supportReportInvalidCategory:"Choose a category.", supportReportInvalidTitle:"Enter a title between 5 and 120 characters.",
+    supportReportInvalidDescription:"Enter a description between 20 and 4000 characters.",
+    supportReportRateLimited:"You have submitted too many reports. Please try again later.",
+    supportReportSessionChanged:"Your session changed. Please try again.",
+    supportSecureContextRequired:"Secure browser context is required to submit a report.",
+    supportReportFailed:"Your report could not be submitted. Please retry.",
+    supportBackendUnavailable:"Support submissions are not connected yet. Please try again after the service is enabled.",
+  },
+  fa: {
+    supportEyebrow:"پشتیبانی پلیورا", supportSubtitle:"گزارش خود را برای تیم پلیورا بفرست.",
+    supportSignInRequired:"برای ارسال و پیگیری گزارش، ابتدا وارد حساب شو.",
+    supportDiagnosticsNotice:"فقط نسخهٔ برنامه، زبان، شناسهٔ صفحه و خانوادهٔ کلی مرورگر و سیستم‌عامل ارسال می‌شود.",
+    supportReportSubmitted:"گزارش تو ثبت شد.", supportCategory:"دسته‌بندی", supportCategoryBug:"گزارش باگ",
+    supportCategoryAccount:"حساب کاربری", supportCategoryCatalog:"فهرست بازی‌ها", supportCategoryAccessibility:"دسترس‌پذیری",
+    supportCategoryOther:"سایر", supportReportTitle:"عنوان", supportTitlePlaceholder:"خلاصه کن چه اتفاقی افتاده",
+    supportReportDescription:"چه اتفاقی افتاد؟", supportDescriptionPlaceholder:"مراحل و نتیجه‌ای را که انتظار داشتی توضیح بده.",
+    supportSubmitReport:"ارسال گزارش", supportMyReports:"گزارش‌های من",
+    supportHistoryUnavailable:"تاریخچهٔ گزارش‌ها موقتاً در دسترس نیست.", supportNoReports:"هنوز گزارشی ارسال نکرده‌ای.",
+    supportStatusOpen:"باز", supportStatusTriaged:"بررسی اولیه", supportStatusInProgress:"در حال انجام",
+    supportStatusResolved:"حل‌شده", supportStatusClosed:"بسته", supportReportInvalid:"اطلاعات گزارش را بررسی کن.",
+    supportReportInvalidCategory:"یک دسته‌بندی انتخاب کن.", supportReportInvalidTitle:"عنوان باید بین ۵ تا ۱۲۰ نویسه باشد.",
+    supportReportInvalidDescription:"توضیحات باید بین ۲۰ تا ۴۰۰۰ نویسه باشد.",
+    supportReportRateLimited:"تعداد گزارش‌ها زیاد است. کمی بعد دوباره تلاش کن.",
+    supportReportSessionChanged:"حساب کاربری تغییر کرده است. دوباره تلاش کن.",
+    supportSecureContextRequired:"برای ارسال گزارش، مرورگر امن لازم است.",
+    supportReportFailed:"گزارش ارسال نشد. دوباره تلاش کن.",
+    supportBackendUnavailable:"ثبت گزارش هنوز به سرویس پشتیبانی متصل نشده است.",
+  },
+};
+
 const navigation: { id: Page; key: string; icon: LucideIcon }[] = [
   { id: "home", key: "navHome", icon: Home },
   { id: "games", key: "navGames", icon: Grid2X2 },
@@ -218,6 +265,11 @@ export default function App() {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteMessage, setDeleteMessage] = useState("");
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const [supportReports, setSupportReports] = useState<SupportReportSummary[]>([]);
+  const [supportReportsLoading, setSupportReportsLoading] = useState(false);
+  const [supportReportsUnavailable, setSupportReportsUnavailable] = useState(false);
+  const [supportRefresh, setSupportRefresh] = useState(0);
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
   const [socialRows, setSocialRows] = useState<SocialRelationship[]>([]);
   const [socialQuery, setSocialQuery] = useState("");
@@ -226,7 +278,7 @@ export default function App() {
   const [socialRefresh, setSocialRefresh] = useState(0);
   const activeUserIdRef = useRef<string | null>(null);
 
-  const t = (key: string) => copy[locale][key] ?? key;
+  const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
   const [catalogGames, setCatalogGames] = useState<Game[]>(localCatalogPreview);
 
   useEffect(() => {
@@ -416,6 +468,28 @@ export default function App() {
     document.documentElement.lang = locale;
     document.documentElement.dir = direction;
   }, [locale, direction]);
+
+  useEffect(() => {
+    if (!supportDialogOpen || !supportReportsEnabled || !supabase || !session?.user.id) {
+      setSupportReports([]);
+      setSupportReportsLoading(false);
+      setSupportReportsUnavailable(false);
+      return;
+    }
+    let stopped = false;
+    const userId = session.user.id;
+    setSupportReportsLoading(true);
+    setSupportReportsUnavailable(false);
+    void listMySupportReports(supabase, userId, () => activeUserIdRef.current)
+      .then(rows => { if (!stopped && activeUserIdRef.current === userId) setSupportReports(rows); })
+      .catch(() => {
+        if (stopped || activeUserIdRef.current !== userId) return;
+        setSupportReports([]);
+        setSupportReportsUnavailable(true);
+      })
+      .finally(() => { if (!stopped && activeUserIdRef.current === userId) setSupportReportsLoading(false); });
+    return () => { stopped = true; };
+  }, [supportDialogOpen, session?.user.id, supportRefresh]);
 
   const filteredGames = useMemo(() => catalogGames.filter((game) => {
     const matchesCategory = category === "all" || game.category === category;
@@ -948,9 +1022,31 @@ export default function App() {
 
           {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => changeLocale("en")}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => changeLocale("fa")}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><p className="security-live-note">{session ? t("securityLiveNote") : t("securityText")}</p><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div>{session && <div className="settings-card danger-card"><div className="settings-card-heading"><div className="settings-icon danger"><ShieldCheck size={20} /></div><div><h2>{t("accountDangerTitle")}</h2><p>{t("accountDangerBody")}</p></div></div><button className="danger-action" type="button" onClick={() => { setDeleteConfirmation(""); setDeleteMessage(""); setDeleteDialogOpen(true); }} disabled={!supabaseConfigured || !accountDeletionEnabled || deleteBusy}><X size={15} />{t("deleteAccount")}</button>{!accountDeletionEnabled && <p className="danger-unavailable-note">{t("deleteAccountNotEnabled")}</p>}</div>}</section>}
 
-          <footer className="main-footer"><div><BrandMark /><span>{t("footer")}</span></div><span>{t("rights")}</span><button onClick={() => go("settings")}><ShieldCheck size={13} />{t("security")}</button></footer>
+          <footer className="main-footer"><div><BrandMark /><span>{t("footer")}</span></div><span>{t("rights")}</span><button type="button" onClick={() => setSupportDialogOpen(true)}><LifeBuoy size={13} />{t("help")}</button><button onClick={() => go("settings")}><ShieldCheck size={13} />{t("security")}</button></footer>
         </main>
       </div>
+      <SupportReportDialog
+        open={supportDialogOpen}
+        backendReady={supportReportsEnabled && supabaseConfigured}
+        locale={locale}
+        routeKey={page}
+        isSignedIn={Boolean(session?.user.id)}
+        recentReports={supportReports}
+        reportsLoading={supportReportsLoading}
+        reportsUnavailable={supportReportsUnavailable}
+        t={t}
+        onClose={() => setSupportDialogOpen(false)}
+        onSignIn={() => { setSupportDialogOpen(false); openAuth("signin"); }}
+        onSubmit={async (report: SupportReportSubmission) => {
+          if (!supabase || !session?.user.id) throw new Error("session_changed");
+          return submitMySupportReport(supabase, report, session.user.id, () => activeUserIdRef.current);
+        }}
+        onReportCreated={report => {
+          setSupportReports(current => [report, ...current.filter(item => item.id !== report.id)].slice(0, 5));
+          setSupportRefresh(value => value + 1);
+          setToast(t("supportReportSubmitted"));
+        }}
+      />
       {toast && <div className="toast-message" role="status"><span className="toast-check"><Check size={15} /></span>{toast}<button aria-label="Dismiss notification" onClick={() => setToast("")}><X size={15} /></button></div>}
       {activePlugin && <div className="plugin-launch-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setActivePlugin(null); }}>
         <section className="plugin-launch-dialog" role="dialog" aria-modal="true" aria-label={locale === "fa" ? "نشست بازی ایزوله" : "Isolated game session"}>

@@ -41,7 +41,7 @@ function renderDialog(overrides: Partial<ComponentProps<typeof SupportReportDial
   const onSignIn = vi.fn();
   const onSubmit = vi.fn(async (_submission: SupportReportSubmission) => createdReport);
   const props: ComponentProps<typeof SupportReportDialog> = {
-    open: true, locale: "en", routeKey: "games", isSignedIn: true, recentReports: [],
+    open: true, backendReady: true, locale: "en", routeKey: "games", isSignedIn: true, recentReports: [],
     t, onClose, onSignIn, onSubmit, ...overrides,
   };
   render(<SupportReportDialog {...props} />);
@@ -50,6 +50,13 @@ function renderDialog(overrides: Partial<ComponentProps<typeof SupportReportDial
 afterEach(() => vi.unstubAllGlobals());
 
 describe("SupportReportDialog", () => {
+  it("fails closed when the support backend is not enabled", () => {
+    const { onSubmit } = renderDialog({ backendReady: false });
+    expect(screen.getByRole("status")).toHaveTextContent(/not connected yet/i);
+    expect(screen.queryByRole("button", { name: "Submit report" })).not.toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("requires sign-in before creating a persistent report", () => {
     const { onSubmit, onSignIn } = renderDialog({ isSignedIn: false });
     expect(screen.getByText("Sign in to submit and track a support report.")).toBeInTheDocument();

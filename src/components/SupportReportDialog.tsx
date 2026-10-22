@@ -32,6 +32,7 @@ export interface SupportReportSubmission {
 }
 export interface SupportReportDialogProps {
   open: boolean;
+  backendReady: boolean;
   locale: SupportLocale;
   routeKey: SupportRoute;
   isSignedIn: boolean;
@@ -77,7 +78,7 @@ function failureMessage(error: unknown, t: (key: string) => string): string {
 }
 
 export function SupportReportDialog({
-  open, locale, routeKey, isSignedIn, recentReports, reportsLoading = false,
+  open, backendReady, locale, routeKey, isSignedIn, recentReports, reportsLoading = false,
   reportsUnavailable = false, t, onClose, onSignIn, onSubmit, onReportCreated,
 }: SupportReportDialogProps) {
   const titleId = useId();
@@ -167,7 +168,12 @@ export function SupportReportDialog({
           <p id={descriptionId}>{t("supportSubtitle")}</p>
         </div>
 
-        {!isSignedIn ? (
+        {!backendReady ? (
+          <div className="support-signin-required" role="status">
+            <span className="support-lock-icon"><LockKeyhole size={23} /></span>
+            <p>{t("supportBackendUnavailable")}</p>
+          </div>
+        ) : !isSignedIn ? (
           <div className="support-signin-required">
             <span className="support-lock-icon"><LockKeyhole size={23} /></span>
             <p>{t("supportSignInRequired")}</p>
