@@ -383,6 +383,10 @@ describe("GamePluginHost", () => {
     fireEvent.click(screen.getByRole("button", { name: "Exit game" }));
     expect(onExit).toHaveBeenCalledTimes(1);
 
+    // Repeated UI exits must be idempotent as well as replayed plugin messages.
+    fireEvent.click(screen.getByRole("button", { name: "Exit game" }));
+    expect(onExit).toHaveBeenCalledTimes(1);
+
     act(() => {
       window.dispatchEvent(new MessageEvent("message", {
         origin: "null",
