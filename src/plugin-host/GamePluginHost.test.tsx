@@ -1,12 +1,17 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
 import { GamePluginHost } from "./GamePluginHost";
 import type { PluginRuntimePolicy } from "./pluginPolicy";
 
+const sessionSequence = vi.hoisted(() => ({ counter: 0 }));
+
 vi.mock("./validatePluginMessage", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./validatePluginMessage")>();
-  return { ...actual, createPluginSessionId: () => "a".repeat(64) };
+  return {
+    ...actual,
+    createPluginSessionId: () => (sessionSequence.counter++ === 0 ? "a" : "b").repeat(64),
+  };
 });
 
 
@@ -26,6 +31,59 @@ const policy: PluginRuntimePolicy = {
 };
 
 describe("GamePluginHost", () => {
+  beforeEach(() => {
+    sessionSequence.counter = 0;
+  });
+
+  it("replaces the session nonce when the immutable artifact changes and rejects stale runtime messages", () => {
+    const onError = vi.fn();
+    const onExit = vi.fn();
+    const { rerender } = render(
+      <GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={onExit} onError={onError} />,
+    );
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+
+    fireEvent.load(frame);
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:ready",
+          payload: { sdkVersion: "1.0.0" },
+        },
+      }));
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+
+    const nextDescriptor = {
+      ...descriptor,
+      version: "1.1.0",
+      entrypointUrl: "https://games.playora.example/chess/1.1.0/index.html",
+      artifactSha256: "b".repeat(64),
+    };
+    rerender(<GamePluginHost descriptor={nextDescriptor} policy={policy} locale="en" onExit={onExit} onError={onError} />);
+    fireEvent.load(screen.getByTitle("chess isolated game"));
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:ready",
+          payload: { sdkVersion: "1.0.0" },
+        },
+      }));
+    });
+
+    expect(screen.getByRole("status")).not.toHaveTextContent(/game connected/i);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("rejects a plugin-ready message with a stale session identifier", () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
