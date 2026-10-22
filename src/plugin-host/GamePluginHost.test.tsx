@@ -310,7 +310,7 @@ describe("GamePluginHost", () => {
     render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
     const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
     fireEvent.load(frame);
-    const send = (height: number) => window.dispatchEvent(new MessageEvent("message", {
+    const sendReady = () => window.dispatchEvent(new MessageEvent("message", {
       origin: "null",
       source: frame.contentWindow,
       data: {
@@ -320,7 +320,7 @@ describe("GamePluginHost", () => {
         payload: { sdkVersion: "1.0.0" },
       },
     }));
-    act(() => { send(600); });
+    act(() => { sendReady(); });
     expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
 
     act(() => {
