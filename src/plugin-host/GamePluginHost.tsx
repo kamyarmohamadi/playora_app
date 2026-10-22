@@ -41,6 +41,7 @@ export function GamePluginHost({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const sessionIdRef = useRef<string | null>(null);
   const frameLoadHandledRef = useRef(false);
+  const exitNotifiedRef = useRef(false);
   const statusRef = useRef<PluginHostStatus>("loading");
   const callbacksRef = useRef({ onExit, onError, onCapabilityRequest, onTelemetry });
   callbacksRef.current = { onExit, onError, onCapabilityRequest, onTelemetry };
@@ -79,6 +80,7 @@ export function GamePluginHost({
 
   useEffect(() => {
     frameLoadHandledRef.current = false;
+    exitNotifiedRef.current = false;
     setError(null);
     setFrameHeight(560);
     if (!decision.allowed) {
@@ -138,7 +140,10 @@ export function GamePluginHost({
       } else if (message.type === "plugin:exit") {
         clearHandshakeTimeout();
         updateStatus("exited");
-        callbacksRef.current.onExit();
+        if (!exitNotifiedRef.current) {
+          exitNotifiedRef.current = true;
+          callbacksRef.current.onExit();
+        }
       } else if (message.type === "plugin:capability-request") {
         callbacksRef.current.onCapabilityRequest?.(message.payload.capability as PluginCapability, message.payload.action);
       } else if (message.type === "plugin:telemetry") {
@@ -196,12 +201,16 @@ export function GamePluginHost({
   };
 
   const handleExit = () => {
+    if (statusRef.current === "exited" && exitNotifiedRef.current) return;
     const id = sessionIdRef.current;
     const frameWindow = iframeRef.current?.contentWindow;
     if (id && frameWindow) frameWindow.postMessage(hostMessage(id, "host:exit", { reason: "user" }), "*");
     clearHandshakeTimeout();
     updateStatus("exited");
-    callbacksRef.current.onExit();
+    if (!exitNotifiedRef.current) {
+      exitNotifiedRef.current = true;
+      callbacksRef.current.onExit();
+    }
   };
 
   let statusText = "Loading approved game artifact…";
