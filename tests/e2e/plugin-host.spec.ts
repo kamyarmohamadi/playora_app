@@ -33,7 +33,7 @@ test("approved external artifacts run sandboxed and cannot read the host documen
   const frame = page.locator("iframe[title='chess isolated game']");
   await expect(frame).toHaveAttribute("sandbox", "allow-scripts");
   await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
-  await expect(page.getByRole("status")).toHaveText("Game connected in an isolated session.");
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("Game connected in an isolated session.");
   await expect(page.getByTestId("capability-request-count")).toHaveText("0");
 
   const pluginFrame = page.frames().find(candidate => candidate.url().startsWith(ARTIFACT_ORIGIN));
@@ -56,7 +56,7 @@ test("approved external artifacts run sandboxed and cannot read the host documen
 
 test("changing an immutable artifact version creates a fresh session nonce", async ({ page }) => {
   await page.goto("/tests/e2e/host-harness.html?scenario=replace");
-  await expect(page.getByRole("status")).toHaveText("Game connected in an isolated session.");
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("Game connected in an isolated session.");
   const initialFrame = page.frames().find(candidate => candidate.url().includes("/1.0.0/safe.html"));
   if (!initialFrame) throw new Error("Initial versioned artifact frame was not created");
   const oldSessionId = await initialFrame.evaluate(() => (
@@ -67,7 +67,7 @@ test("changing an immutable artifact version creates a fresh session nonce", asy
   await page.getByRole("button", { name: "Switch artifact version" }).click();
   const iframe = page.locator("iframe[title='chess isolated game']");
   await expect(iframe).toHaveAttribute("src", /1\.1\.0\/silent\.html/);
-  await expect(page.getByRole("status")).toHaveText("Checking the isolated game session…");
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("Checking the isolated game session…");
   await expect.poll(() => page.frames().some(candidate => candidate.url().includes("/1.1.0/silent.html"))).toBe(true);
   const updatedFrame = page.frames().find(candidate => candidate.url().includes("/1.1.0/silent.html"));
   if (!updatedFrame) throw new Error("Updated versioned artifact frame was not created");
@@ -80,14 +80,14 @@ test("changing an immutable artifact version creates a fresh session nonce", asy
 
 test("a second document load inside one session is stopped", async ({ page }) => {
   await page.goto("/tests/e2e/host-harness.html?scenario=navigate");
-  await expect(page.getByRole("status")).toHaveText("Game connected in an isolated session.");
-  await expect(page.getByRole("status")).toHaveText("The game navigated unexpectedly and was stopped.", { timeout: 7_500 });
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("Game connected in an isolated session.");
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("The game navigated unexpectedly and was stopped.", { timeout: 7_500 });
   await expect(page.locator("iframe[title='chess isolated game']")).toHaveCount(0);
 });
 
 test("malformed plugin messages fail closed and keep the platform host recoverable", async ({ page }) => {
   await page.goto("/tests/e2e/host-harness.html?scenario=invalid");
-  await expect(page.getByRole("status")).toHaveText("The game sent an invalid message and was stopped.");
+  await expect(page.locator(".playora-plugin-host__status")).toHaveText("The game sent an invalid message and was stopped.");
   await expect(page.getByText("The Playora platform remains available.")).toBeVisible();
   await expect(page.locator("iframe[title='chess isolated game']")).toHaveCount(0);
   await expect(page.getByTestId("plugin-error-log")).toContainText("invalid_message");
