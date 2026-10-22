@@ -110,8 +110,12 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025000000_plugin_capability_grants.sql
       - name: Add member-owned support report intake
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026000000_support_reports.sql
+      - name: Add capacity-oriented query indexes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261027000000_capacity_query_indexes.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+      - name: Verify capacity query indexes are valid
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/capacity_indexes.sql
       - name: Test visible catalog and trusted plugin registry boundaries
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/game_plugin_registry.sql
       - name: Test member-owned support reports, idempotency and rate limits
