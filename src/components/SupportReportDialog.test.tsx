@@ -63,7 +63,7 @@ describe("SupportReportDialog", () => {
     const { onSubmit } = renderDialog();
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "catalog" } });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Search filter resets" } });
-    fireEvent.change(screen.getByLabelText("What happened?"), { target: { value: "The filter disappears when I return to the catalogue page." } });
+    fireEvent.change(screen.getByLabelText(/What happened\?/i), { target: { value: "The filter disappears when I return to the catalogue page." } });
     fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     const submitted = onSubmit.mock.calls[0][0];
@@ -80,7 +80,7 @@ describe("SupportReportDialog", () => {
   it("does not call the backend for invalid text", async () => {
     const { onSubmit } = renderDialog();
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "bad" } });
-    fireEvent.change(screen.getByLabelText("What happened?"), { target: { value: "too short" } });
+    fireEvent.change(screen.getByLabelText(/What happened\?/i), { target: { value: "too short" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(await screen.findByRole("alert")).toHaveTextContent(/title/i);
@@ -101,7 +101,7 @@ describe("SupportReportDialog", () => {
     const onSubmit = vi.fn().mockRejectedValueOnce(new Error("rate_limited")).mockResolvedValueOnce(createdReport);
     renderDialog({ onSubmit });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Search filter resets" } });
-    fireEvent.change(screen.getByLabelText("What happened?"), { target: { value: "The filter disappears when I return to the catalogue page." } });
+    fireEvent.change(screen.getByLabelText(/What happened\?/i), { target: { value: "The filter disappears when I return to the catalogue page." } });
     fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/too many reports/i);
     fireEvent.click(screen.getByRole("button", { name: "Submit report" }));

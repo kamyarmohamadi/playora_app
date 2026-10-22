@@ -7,7 +7,7 @@ create table public.support_reports (
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   idempotency_key uuid not null,
   category text not null
-    check (category in ('bug','account','social','accessibility','other')),
+    check (category in ('bug','account','catalog','accessibility','other')),
   title text not null
     check (char_length(btrim(title)) between 5 and 120),
   description text not null
