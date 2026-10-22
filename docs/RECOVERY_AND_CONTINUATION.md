@@ -185,3 +185,12 @@ Next steps, in order:
 - The pre-commit parity check found 295 keys in each locale and no missing keys. This is a source-level check only; rely on the new GitHub Actions run for TypeScript/build/test verification.
 - No playable game is enabled. Continue separating platform-owned UI/services from game engines and keep the game-plugin launch gate closed.
 - Current source change: see the latest commit and Actions run on [the active architecture branch](https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22). Do not mark this refactor fully verified until all CI jobs complete successfully.
+
+
+## Continuation update — 2026-10-23
+
+- Latest code/test commit: https://github.com/kamyarmohamadi/playora_app/commit/70e7b6a394c9dc842d83c86ba2b905ed2b8626e1
+- Added plugin-host regression coverage for resize clamping (320–900 px) and rejecting replayed exit/telemetry messages after session termination.
+- Updated project checkpoint: https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
+- CI for these newly added tests must be checked on the latest branch head before considering them verified. Prior green runs only cover their respective earlier commits.
+- No secrets were written to GitHub. No changes were made to live Supabase configuration or game enablement.
