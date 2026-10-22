@@ -208,3 +208,17 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added `src/i18n/copy.test.ts` to guard locale key parity and prevent empty translation values.
 - This is a behavior-preserving refactor: no game engine, launch permission, route behavior, or Supabase policy was changed. CI must pass before treating this commit as verified.
 - The work remains on the architecture branch and draft PR #7; `main` is untouched.
+
+
+## Continuation checkpoint — plugin host lifecycle regression tests (2026-10-23)
+
+- Work resumed from the architecture branch; `main` and the separate admin preview PR remain untouched.
+- Added two regression tests in `src/plugin-host/GamePluginHost.test.tsx`:
+  - Valid plugin resize messages are clamped to the host's safe iframe height range (320–900 px).
+  - Replayed `plugin:exit` and telemetry messages after the host session ends cannot trigger a second exit or late telemetry callback.
+- Saved test changes to the active GitHub branch:
+  - Test additions commit: https://github.com/kamyarmohamadi/playora_app/commit/57feee2debf15ce710246616bd3fcd669cc45107
+  - Follow-up test-helper cleanup: https://github.com/kamyarmohamadi/playora_app/commit/70e7b6a394c9dc842d83c86ba2b905ed2b8626e1
+- These are new tests, not a verified pass yet. The previously successful CI run does not cover these new commits. Re-check GitHub Actions on the latest branch head before declaring this checkpoint green.
+- No live Supabase schema, credentials, Auth configuration, production deployment, game registry, or enabled-game state was changed in this step.
+- Next exact task: review the current workflow dependency pins and CI permissions, then continue the artifact provenance/release pipeline and real two-member staging Auth/RLS verification. Keep the plugin artifact-origin allowlist empty and all games disabled.
