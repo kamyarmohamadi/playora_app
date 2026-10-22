@@ -261,3 +261,11 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Verification status for the new telemetry cap: pending CI on the exact test commit; do not mark it green until the test/type/build/browser jobs complete successfully.
 - The latest previously verified runtime checkpoint remains commit `da97be30946b9646c53afc033cf9130cbbeb6128`, with all three CI jobs passing: https://github.com/kamyarmohamadi/playora_app/actions/runs/39870334277.
 - No game was enabled, no secret was added, and no live Supabase migration/configuration or deployment was changed. PR #7 remains draft/unmerged and `main` remains untouched.
+
+
+## Scalability requirement added — 2026-10-23
+- User requirement: plan Playora for growth to 100,000 members, including burst traffic when many users click the same feature and concurrent online gameplay.
+- Added `docs/SCALABILITY_AND_LOAD_TEST_PLAN_FA.md` with capacity architecture principles, stress/spike/soak scenarios, initial latency/error targets, data-integrity checks and explicit rule that capacity is not claimed until measured.
+- Added capacity gates to `docs/PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md`. Only the plan/documentation item is checked; no load-test evidence exists yet, so 100,000 concurrent sessions are **not yet verified**.
+- Architecture priorities: stateless/scalable API, protected pooled database connections, query/index profiling, idempotency, layered rate limits, backpressure, controlled async queues, realtime channel authorization/fan-out testing, and security/RLS verification under load.
+- Keep game catalog disabled and do not change `main` or live Supabase as part of this documentation step.
