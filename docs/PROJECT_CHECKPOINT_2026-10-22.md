@@ -251,3 +251,13 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Review the three authenticated social `SECURITY DEFINER` warnings with an independent security review before production.
 - Trusted artifact build/provenance/revocation, hosting/domain, Auth redirects, CSP/headers, Edge Function deployment verification, monitoring/backups and browser preview remain open.
 - No secrets were added; no deployment, live Supabase configuration, payments or game enablement changed.
+
+
+## 2026-10-23 continuation — release checklist and telemetry rate limit
+
+- Added the comprehensive Persian release-readiness checklist: [docs/PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md](PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md). It covers frontend, backend/API, identity and member isolation, plugin runtime, security, games/rooms, wallet/payments, admin, installation/release and operations. Items are checked only with evidence; it explicitly documents current release blockers.
+- Latest coding change: plugin telemetry forwarding is limited to 30 events per 60-second session window. Additional telemetry is dropped; session lifecycle, gameplay messages and the UI are not modified by this cap.
+- Added a regression test sending 35 telemetry messages and asserting that only 30 reach the platform callback. Code/test commits: [ec8623b](https://github.com/kamyarmohamadi/playora_app/commit/ec8623b3224d01e360282b5a5220ce89036c6f6d) and [744ab5e](https://github.com/kamyarmohamadi/playora_app/commit/744ab5e5c420bc23baaf0179caaf208cccfe4c55).
+- Verification status for the new telemetry cap: pending CI on the exact test commit; do not mark it green until the test/type/build/browser jobs complete successfully.
+- The latest previously verified runtime checkpoint remains commit `da97be30946b9646c53afc033cf9130cbbeb6128`, with all three CI jobs passing: https://github.com/kamyarmohamadi/playora_app/actions/runs/39870334277.
+- No game was enabled, no secret was added, and no live Supabase migration/configuration or deployment was changed. PR #7 remains draft/unmerged and `main` remains untouched.
