@@ -194,3 +194,12 @@ Next steps, in order:
 - Updated project checkpoint: https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
 - CI for these newly added tests must be checked on the latest branch head before considering them verified. Prior green runs only cover their respective earlier commits.
 - No secrets were written to GitHub. No changes were made to live Supabase configuration or game enablement.
+
+
+## CI least-privilege update — 2026-10-23
+
+- Added explicit workflow-level `permissions: contents: read` to `.github/workflows/ci.yml`.
+- Commit: https://github.com/kamyarmohamadi/playora_app/commit/48d1e3a60f3dd18c74f2fbd9d4b3c3bcd8fc7f82
+- Added two host regression tests for resize clamping and replayed messages after exit; test code commit: https://github.com/kamyarmohamadi/playora_app/commit/57feee2debf15ce710246616bd3fcd669cc45107
+- Latest checkpoint: https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
+- The connected Actions query did not return a run or status for the new commits. Treat the new tests and workflow permission change as pending CI verification, not as passing.
