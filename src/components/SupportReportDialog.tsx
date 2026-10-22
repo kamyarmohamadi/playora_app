@@ -193,7 +193,7 @@ export function SupportReportDialog({
                   required disabled={submitting} autoComplete="off" placeholder={t("supportTitlePlaceholder")} />
               </label>
               <label>{t("supportReportDescription")}
-                <textarea name="supportDescription" value={description}
+                <textarea aria-label={t("supportReportDescription")} name="supportDescription" value={description}
                   onChange={event => setDescription(event.target.value)} minLength={20} maxLength={4000}
                   rows={4} required disabled={submitting} placeholder={t("supportDescriptionPlaceholder")} />
                 <span className="support-character-count">{description.length}/4000</span>
