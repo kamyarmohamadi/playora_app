@@ -3,13 +3,15 @@ import type { SupportReportCategory } from "./supportReports";
 
 type DbError = { message: string; code?: string };
 type QueryResult<T> = { data: T | null; error: DbError | null };
+type SelectBuilder = {
+  eq: (column: "user_id" | "idempotency_key", value: string) => SelectBuilder;
+  order: (column: "created_at", options: { ascending: boolean }) => SelectBuilder;
+  limit: (count: number) => Promise<QueryResult<unknown[]>>;
+  maybeSingle: () => Promise<QueryResult<unknown>>;
+};
 type SupportClient = {
   from: (table: "support_reports") => {
-    select: (columns: string) => {
-      order: (column: "created_at", options: { ascending: boolean }) => {
-        limit: (count: number) => Promise<QueryResult<unknown[]>>;
-      };
-    };
+    select: (columns: string) => SelectBuilder;
     insert: (row: Record<string, unknown>) => {
       select: (columns: string) => { single: () => Promise<QueryResult<unknown>> };
     };
@@ -40,6 +42,7 @@ export async function listMySupportReports(client: unknown, expectedUserId: stri
   assertMember(expectedUserId, getCurrentUserId);
   const db = client as SupportClient;
   const { data, error } = await db.from("support_reports").select(columns)
+    .eq("user_id", expectedUserId)
     .order("created_at", { ascending: false }).limit(5);
   assertMember(expectedUserId, getCurrentUserId);
   if (error) throw new Error("reports_unavailable");
@@ -56,6 +59,18 @@ export async function submitMySupportReport(client: unknown, report: SupportRepo
     description: report.description, app_version: report.appVersion, locale: report.locale,
     route_key: report.routeKey, diagnostics: report.diagnostics as unknown as Record<string, unknown>,
   }).select(columns).single();
+
+  if (error?.code === "23505") {
+    // A request may have succeeded on the server while the response was lost.
+    // Return the existing member-owned ticket for the same idempotency key.
+    const retry = await db.from("support_reports").select(columns)
+      .eq("user_id", expectedUserId)
+      .eq("idempotency_key", report.idempotencyKey)
+      .maybeSingle();
+    assertMember(expectedUserId, getCurrentUserId);
+    if (!retry.error && retry.data) return parseSummary(retry.data);
+    throw new Error("submit_failed");
+  }
   if (error) {
     if (error.code === "P0001" || error.message.includes("support_report_rate_limited")) throw new Error("rate_limited");
     throw new Error("submit_failed");
