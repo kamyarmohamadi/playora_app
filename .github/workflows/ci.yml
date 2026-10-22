@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+# CI jobs only need to read source; do not grant write access to GITHUB_TOKEN.
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: Tests, types and production build
