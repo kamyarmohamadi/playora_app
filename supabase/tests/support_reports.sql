@@ -9,9 +9,12 @@ on conflict (id) do nothing;
 
 DO $support_privilege_contract$
 BEGIN
-  IF NOT has_table_privilege('authenticated','public.support_reports','SELECT')
-     OR NOT has_table_privilege('authenticated','public.support_reports','INSERT') THEN
-    RAISE EXCEPTION 'Authenticated members must be able to submit and read their own support reports';
+  -- The migration intentionally grants column-level permissions, not table-wide SELECT/INSERT.
+  IF NOT has_column_privilege('authenticated','public.support_reports','id','SELECT')
+     OR NOT has_column_privilege('authenticated','public.support_reports','title','SELECT')
+     OR NOT has_column_privilege('authenticated','public.support_reports','idempotency_key','INSERT')
+     OR NOT has_column_privilege('authenticated','public.support_reports','diagnostics','INSERT') THEN
+    RAISE EXCEPTION 'Authenticated members must be able to submit and read only approved support-report columns';
   END IF;
   IF has_table_privilege('anon','public.support_reports','SELECT')
      OR has_table_privilege('anon','public.support_reports','INSERT')
