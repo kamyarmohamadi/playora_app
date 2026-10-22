@@ -203,3 +203,13 @@ Next steps, in order:
 - Added two host regression tests for resize clamping and replayed messages after exit; test code commit: https://github.com/kamyarmohamadi/playora_app/commit/57feee2debf15ce710246616bd3fcd669cc45107
 - Latest checkpoint: https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
 - The connected Actions query did not return a run or status for the new commits. Treat the new tests and workflow permission change as pending CI verification, not as passing.
+
+
+## CI verification correction — 2026-10-23
+
+- This section supersedes the earlier note above that said CI verification for the resize/replayed-message tests was pending.
+- Verified GitHub Actions run #733: https://github.com/kamyarmohamadi/playora_app/actions/runs/39869596269
+- The run's exact head SHA is `0e1b4dafba1fc79fc6bfbc531a4c2b82931e5d65`, on `feature/playora-platform-game-plugin-architecture-2026-10-22` and PR #7.
+- All three jobs completed successfully: tests/types/production build/Chromium E2E; PostgreSQL RLS and wallet privilege tests; Deno Edge Function checks. The run includes the new resize-clamping and post-exit replay regression tests and the workflow-level `contents: read` permission change.
+- This verifies the CI-tested commit only. It does not mean the app is deployed, real-user Auth/JWT browser tests are complete, a playable game is enabled, or the release blockers below are resolved.
+- No live Supabase settings, game enablement, secrets, or production deployment were changed.
