@@ -233,3 +233,21 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - The change is limited to the active feature branch. `main` and admin PR #6 remain untouched; PR #7 remains draft/unmerged.
 - No live Supabase settings/migrations, credentials, artifact allowlist, or game-enabled state were changed.
 - Next: obtain a CI run for the current branch head; then continue trusted artifact provenance/release verification and review the three live Supabase social-function Advisor warnings before any staging expansion.
+
+
+## Session continuation checkpoint — 2026-10-23 (plugin host CI verified)
+
+### Verified latest quality gate
+- Verified GitHub Actions run #733: https://github.com/kamyarmohamadi/playora_app/actions/runs/39869596269
+- Exact tested head: `0e1b4dafba1fc79fc6bfbc531a4c2b82931e5d65` on `feature/playora-platform-game-plugin-architecture-2026-10-22`, PR #7.
+- All three jobs passed: unit tests, type checks, production build, platform/game boundary, Playwright Chromium E2E; PostgreSQL RLS/wallet/registry/support/private-room/social/account-deletion tests; Deno Edge Function type checks.
+- This run includes plugin-host regression tests for iframe resize clamping (320–900 px) and ignoring replayed exit/telemetry messages after host exit, plus workflow-level `permissions: contents: read`.
+- Corrected continuation record: [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.md).
+
+### Remaining release gates — unchanged
+- No game is enabled; the trusted artifact-origin allowlist remains empty. Do not implement/enable a playable game until the platform-only acceptance gate is complete.
+- Real Supabase Auth/JWT two-member browser integration remains outstanding.
+- Reconcile duplicate Supabase migration-history labels before any migration replay/push; do not alter live project settings as part of this checkpoint.
+- Review the three authenticated social `SECURITY DEFINER` warnings with an independent security review before production.
+- Trusted artifact build/provenance/revocation, hosting/domain, Auth redirects, CSP/headers, Edge Function deployment verification, monitoring/backups and browser preview remain open.
+- No secrets were added; no deployment, live Supabase configuration, payments or game enablement changed.
