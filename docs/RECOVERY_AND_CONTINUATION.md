@@ -152,8 +152,9 @@ Next steps, in order:
 1. Fetch the latest branch head and CI status before editing; the branch may advance as new small commits land.
 2. Read this guide and `docs/PROJECT_CHECKPOINT_2026-10-22.md`.
 3. Keep `support_reports` member-owned: do not grant authenticated users update/delete or table-wide privileges, and never let client input choose owner/status/timestamps.
-4. Do not apply the new support-report migration to the live development Supabase project until its migration-history ordering is reconciled and the migration is reviewed against the actual remote schema.
-5. Continue with browser E2E completion, update the checkpoint, and commit each verified milestone.
+4. The support-report migration `20261026000000_support_reports.sql` has already been applied directly to `playora-dev` via the Supabase connector (remote migration version `20261022210510`). Do not replay the migration or run bulk `supabase db push`: reconcile the duplicate `plugin_registry_hardening` labels and remote/source migration history first.
+5. Live database smoke test on 2026-10-23 used two synthetic Auth identities in a transaction: Member A inserted and read its ticket, Member B saw none of A's rows and inserted a separate ticket, and rollback left zero rows. This does not verify real Auth, browser sessions, or production readiness.
+6. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until real Auth/JWT two-account browser tests and the current-head Chromium E2E suite pass. Keep all secrets outside committed files.
 
 
 ## 10. Verified support-report UI integration — 2026-10-23
@@ -165,3 +166,13 @@ Next steps, in order:
 - `VITE_SUPPORT_REPORTS_ENABLED=false` is the default. The UI intentionally shows that support submission is not connected while this flag is false.
 - **Do not enable the flag yet.** The source migration and disposable PostgreSQL tests are committed, but the live `playora-dev` migration history still needs reconciliation before applying the support-report migration and refreshing generated database types.
 - Current branch is still a draft PR. No playable game is enabled and the artifact-origin allowlist remains empty.
+
+
+## 10. Current support-intake state — 2026-10-23
+
+- Latest code checkpoint before this documentation commit: `99182cd8989ea41eb2a1b8b46988f375ea5dc808` on `feature/playora-platform-game-plugin-architecture-2026-10-22`.
+- The support dialog is integrated into the platform footer and includes English/Persian copy, member sign-in gating, minimized diagnostics, a recent-ticket list, status badges and explicit backend-unavailable state.
+- `src/platform/supportReportService.ts` scopes report reads to the current member and uses a per-member idempotency key to recover an existing ticket after a duplicate/retried submission. DB identity and row visibility remain enforced by RLS; the frontend is not the authorization boundary.
+- The support feature flag defaults off in `.env.example`. No public frontend URL/domain or production Auth redirect has been configured; do not enable the feature just because the SQL table exists.
+- CI run [39855320009](https://github.com/kamyarmohamadi/playora_app/actions/runs/39855320009) has passed unit tests, platform/game import boundary, type-check, production build, E2E type-check and PostgreSQL security tests; Chromium installation/E2E is still in progress at this checkpoint. Recheck the run before describing the current head as fully green.
+- Live database security advisor still reports three authenticated `SECURITY DEFINER` social functions; they remain a documented release blocker. Performance advisor unused-index notices are informational on this empty development database.

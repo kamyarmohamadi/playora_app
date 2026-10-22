@@ -179,7 +179,7 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added the member-owned `support_reports` schema and disposable PostgreSQL test. Coverage includes column-scoped grants, own-row RLS for two members, immutable workflow fields from the client, safe diagnostics shape/size, idempotent submissions, and the five-per-hour rate limit.
 - Current verification run: [39853259272](https://github.com/kamyarmohamadi/playora_app/actions/runs/39853259272). At the last check, unit tests, PostgreSQL security tests (including support reports), and Deno checks had passed; the Chromium install/browser E2E step was still running. This checkpoint does not claim all CI is green.
 - A test-only permission assertion was corrected after CI showed the migration intentionally uses column-level grants rather than table-wide SELECT/INSERT. Do not broaden client grants to satisfy a table-level assertion.
-- Keep the development Supabase migration unapplied until the known remote migration-history mismatch has been reconciled. No playable games are enabled; the trusted plugin-origin allowlist remains empty.
+- Support migration `20261026000000_support_reports.sql` was applied directly through the Supabase connector to `playora-dev` on 2026-10-22; remote migration version is `20261022210510`. Live two-identity transaction smoke test passed and rollback left zero support tickets. Do not bulk-replay migrations until the duplicate `plugin_registry_hardening` labels are reconciled. No playable games are enabled; the trusted plugin-origin allowlist remains empty.
 - Next: confirm full CI completion, then continue browser-runtime lifecycle coverage and Auth/JWT integration planning.
 
 
@@ -191,3 +191,14 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added a service adapter that scopes history and idempotency-retry lookup to the active member, rejects session changes, maps rate limiting to a safe message and recovers the original ticket after a duplicate idempotency response.
 - The support backend is deliberately gated by `VITE_SUPPORT_REPORTS_ENABLED=false`. The migration is not applied to the live development project because its migration history requires reconciliation first.
 - No playable games, approved artifact origins, payments or prize-bearing features are enabled. Keep PR #7 in Draft until the remaining platform security/release gates are reviewed.
+
+
+## Current code checkpoint — support intake milestone (2026-10-23)
+
+- Latest code head before this docs commit: `99182cd8989ea41eb2a1b8b46988f375ea5dc808`.
+- Active work branch: [feature/playora-platform-game-plugin-architecture-2026-10-22](https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22); draft review PR [#7](https://github.com/kamyarmohamadi/playora_app/pull/7) remains open/unmerged.
+- Support intake is wired into the platform footer through `SupportReportDialog` and the platform persistence adapter. Ticket inputs are allowlisted and normalized; diagnostics omit raw URLs, raw user-agent, cookies, tokens, stacks, private messages and local storage. The DB defaults owner to `auth.uid()`, keeps status/server fields client-unwritable, applies own-row RLS, enforces a five-ticket-per-hour limit and has a unique per-member idempotency key.
+- Live support migration applied: remote history `20261022210510 / 20261026000000_support_reports`. Live transaction smoke test using two synthetic Auth identity claims passed: each member saw only its own ticket; transaction rollback left the table empty.
+- The `VITE_SUPPORT_REPORTS_ENABLED` feature flag is intentionally false by default. No real sign-in/confirmation/recovery browser E2E has been completed using configured Supabase Auth and real test identities.
+- CI run [39855320009](https://github.com/kamyarmohamadi/playora_app/actions/runs/39855320009): unit tests, import-boundary guard, type-check, production build, E2E type-check and PostgreSQL/RLS security tests are green; Playwright Chromium installation/browser E2E is in progress at the moment of writing. Recheck the live run and update this checkpoint before resting.
+- Current hard blockers for release remain: three authenticated social `SECURITY DEFINER` Advisor warnings, no deployed Edge Functions, no real Auth/JWT two-account browser tests, no selected production domain/hosting/CSP/SMTP, and no external artifact host. No game/plugin is enabled.

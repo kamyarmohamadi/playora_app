@@ -89,7 +89,9 @@ For a complete device/session recovery procedure, current CI link, private-repos
 
 The `support_reports` migration provides a separate ticket per submission. Authenticated members can insert approved report fields and read only their own tickets; client update/delete and workflow-field edits are denied. Diagnostics are limited to a small allowlisted shape and the database enforces idempotency and a five-report-per-member-per-hour rate limit. Duplicate-ticket grouping and root-cause incident aggregation are future privileged triage workflows, not a reason to merge or discard individual reports.
 
-The source migration is committed, but **do not apply it to the existing `playora-dev` project yet**. First reconcile the project's existing migration history with the source files and inspect the actual remote schema. CI tests use a disposable PostgreSQL database and do not mean the support workflow is live in Supabase.
+The support migration was applied directly to `playora-dev` through the Supabase connector on 2026-10-22. The remote migration history records version `20261022210510` under the name `20261026000000_support_reports`. A live transaction smoke test used two synthetic Auth identities and verified that each identity could read only its own report; the transaction was rolled back and the table was left with **zero tickets**. This is a database/RLS smoke test, not a substitute for real Supabase sign-in and browser end-to-end tests.
+
+Do **not** run a bulk Supabase CLI migration push/replay yet. The remote history has duplicate `plugin_registry_hardening` labels and connector-applied versions that do not map one-to-one to source filename prefixes. Reconcile that history separately before using the CLI. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until browser configuration, real Auth/JWT two-account verification, and the current-head Playwright tests have passed.
 
 
 ## 7. Support UI rollout gate
