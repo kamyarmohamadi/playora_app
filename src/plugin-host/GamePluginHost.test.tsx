@@ -260,7 +260,7 @@ describe("GamePluginHost", () => {
     expect(initCall).toBeDefined();
     expect(initCall?.[0]).toMatchObject({
       type: "host:init",
-      payload: { locale: "en", grantedCapabilities: ["locale:read", "session:lifecycle"] },
+      payload: { locale: "en", grantedCapabilities: [] },
     });
     expect(JSON.stringify(initCall?.[0])).not.toContain("private-alias");
     postMessage.mockRestore();
