@@ -222,3 +222,14 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - These are new tests, not a verified pass yet. The previously successful CI run does not cover these new commits. Re-check GitHub Actions on the latest branch head before declaring this checkpoint green.
 - No live Supabase schema, credentials, Auth configuration, production deployment, game registry, or enabled-game state was changed in this step.
 - Next exact task: review the current workflow dependency pins and CI permissions, then continue the artifact provenance/release pipeline and real two-member staging Auth/RLS verification. Keep the plugin artifact-origin allowlist empty and all games disabled.
+
+
+## Continuation checkpoint — CI least-privilege hardening (2026-10-23)
+
+- Hardened `.github/workflows/ci.yml` with explicit workflow-level `permissions: contents: read`; CI jobs no longer inherit broader default repository-token permissions.
+- Commit: https://github.com/kamyarmohamadi/playora_app/commit/48d1e3a60f3dd18c74f2fbd9d4b3c3bcd8fc7f82
+- Plugin-host test coverage added in this session remains: resize clamp boundaries and rejection of replayed exit/telemetry messages after session end.
+- Verification caveat: the connected GitHub Actions interface returned no workflow run or status for the new commits, so these latest test/workflow changes are **not yet CI-verified**. Do not treat previous green runs as covering these commits.
+- The change is limited to the active feature branch. `main` and admin PR #6 remain untouched; PR #7 remains draft/unmerged.
+- No live Supabase settings/migrations, credentials, artifact allowlist, or game-enabled state were changed.
+- Next: obtain a CI run for the current branch head; then continue trusted artifact provenance/release verification and review the three live Supabase social-function Advisor warnings before any staging expansion.
