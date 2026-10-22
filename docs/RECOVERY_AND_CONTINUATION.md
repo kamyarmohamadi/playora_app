@@ -7,14 +7,15 @@
 
 - **Private GitHub repository:** https://github.com/kamyarmohamadi/playora_app
 - **Active development branch:** https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22
-- **Fixed recovery snapshot branch:** https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22 (fallback snapshot; do not do active development on this branch)
-- **Active development commit at the time of this audit:** `d0ad10dcfb0049ecf97c955ae46afd75bfcf41da`
+- **Original fallback snapshot:** https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22 (preserved historical checkpoint; do not develop on it)
+- **Latest lifecycle-hardening snapshot:** https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22-session-hardening (read-only recovery snapshot for the newest verified checkpoint)
+- **Latest verified application-code commit:** `b3b32ea48d06af1ba4b7976e2f3948480f2dd2fb` (plugin session replacement/navigation guard and regression tests).
 - **Open draft PR:** https://github.com/kamyarmohamadi/playora_app/pull/7
 - **Current project checkpoint:** https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
 - **Architecture specification:** https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/superpowers/specs/2026-10-22-playora-platform-game-plugin-architecture.md
 - **Overall roadmap:** https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/superpowers/plans/2026-10-22-playora-platform-completion-roadmap.md
 - **Supabase setup audit:** https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/supabase/SUPABASE_READINESS_AUDIT_2026-10-22.md
-- **Last verified successful CI run for the code head above:** https://github.com/kamyarmohamadi/playora_app/actions/runs/39691688068
+- **Latest verified successful CI run for that application-code commit:** https://github.com/kamyarmohamadi/playora_app/actions/runs/39697862076 (106 Vitest tests, typecheck/build, PostgreSQL security tests, and Deno checks all passed).
 
 The `main` branch has not been used as the working branch for this architecture work. PR #7 is open and draft; do not merge it merely to recover files. PR #6 contains the separate admin preview and remains out of this workstream.
 
@@ -114,12 +115,12 @@ No real game/user population has been launched in this project at the last check
 
 ## 6. Current work and exact next steps
 
-The last verified CI run linked above passed the repository's unit tests, TypeScript/typecheck and production build, platform/game import-boundary checks, PostgreSQL security/wallet/plugin registry tests, and Deno function-source checks. This is CI evidence for the checked commit; it is not proof that the site is deployed or that live Auth/browser E2E is complete.
+The latest verified application-code commit `b3b32ea48d06af1ba4b7976e2f3948480f2dd2fb` passed all three CI jobs in [run 39697862076](https://github.com/kamyarmohamadi/playora_app/actions/runs/39697862076): 106 unit tests, the import-boundary check, TypeScript, production build, PostgreSQL RLS/wallet/plugin registry tests, and Deno checks. The regression suite proves that replacing an artifact rotates the session identifier and rejects stale `plugin:ready` messages; a second document load in one session stops the frame. CI evidence does not substitute for browser E2E or a deployed site.
 
 Next steps, in order:
-1. Continue adversarial plugin-host tests for handshake timeout, replayed messages, session replacement, cleanup, error recovery and revocation.
-2. Finish the platform-shell audit and keep game engines out of platform imports.
-3. Reconcile the live migration history before any further CLI-driven database changes.
+1. Add and verify real-browser hostile-plugin tests for cross-origin messaging, teardown, repeated malformed messages, capability denial and mobile/RTL behavior; no Playwright suite is present yet.
+2. Finish the platform-shell and accessibility audit while preserving the no-game state and keeping engine imports outside the host.
+3. Reconcile the live migration history (including duplicate `plugin_registry_hardening` labels) before any Supabase CLI push/replay or further migration write.
 4. Configure Auth redirects/providers only for an actual chosen local/staging origin; test with two disposable members and verify cross-member denial.
 5. Review the three Security Advisor warnings, deploy a function only after its source and secrets/origins are reviewed, and test the real Data API.
 6. Select hosting/domain, verify CSP/HTTP headers and the separate artifact host before approving any game.

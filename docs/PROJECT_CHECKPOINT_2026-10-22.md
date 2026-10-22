@@ -119,3 +119,27 @@ This section and [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.m
 
 ## Fixed recovery snapshot
 A separate snapshot branch preserves the complete code/docs/migration tree recorded in the recovery guide: https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22. Use the active architecture branch for ongoing work; use the snapshot branch only to recover the exact saved state if a later change breaks the working tree.
+
+
+## Session continuation checkpoint — 2026-10-22 (plugin lifecycle hardening)
+
+### Verified source and CI
+- Active development branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`.
+- Application/test commit: `b3b32ea48d06af1ba4b7976e2f3948480f2dd2fb`.
+- Successful quality gate: https://github.com/kamyarmohamadi/playora_app/actions/runs/39697862076
+- All three jobs passed: 106 Vitest tests (16 files), the platform/game import-boundary check, TypeScript/typecheck, production Vite build, PostgreSQL RLS/wallet/plugin registry tests, and Deno Edge Function source checks.
+- PR #7 remains open and draft, not merged: https://github.com/kamyarmohamadi/playora_app/pull/7.
+
+### Code change and red/green evidence
+- Added a regression test that changes the immutable artifact version/URL/digest and sends `plugin:ready` using the previous session nonce.
+- That test failed on commit `f97db67432bcd6753b7873b4354815fd2fa47c33`; CI showed 1 failed / 104 passed because the previous nonce was accepted after artifact replacement.
+- Fixed in `767888886f2321126b39ff31c28b2985e1ba300e`: the host lifecycle now restarts for descriptor and runtime-policy changes, creates a fresh session ID and rejects stale messages. Run: https://github.com/kamyarmohamadi/playora_app/actions/runs/39697749758 (all jobs passed).
+- Added a second test for a second iframe document load in one session. The host now fails closed with `unexpected_navigation`, invalidates the session ID and ignores messages after failure/exit.
+- The combined test/code commit is verified in run `39697862076` (all jobs passed).
+
+### Current boundaries and next exact work
+- No games are launchable: 8 catalogue metadata rows, 0 enabled games, 0 registry versions, 0 approved artifact origins.
+- No Supabase Edge Functions are deployed. Real Auth/JWT cross-member browser tests are still outstanding.
+- Supabase migration history still has duplicate `plugin_registry_hardening` labels; do not run migration replay/push until the remote/source history is reconciled.
+- Three Security Advisor warnings remain for authenticated social `SECURITY DEFINER` RPCs and are a production blocker pending security review.
+- Next task: add real-browser Playwright tests for iframe navigation/message isolation, teardown and mobile/RTL, then reconcile migration history without reapplying migrations. Do not add a game, enable a plugin, deploy the admin panel, enable payments or merge PR #7.
