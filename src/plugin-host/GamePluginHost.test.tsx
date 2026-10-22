@@ -238,4 +238,71 @@ describe("GamePluginHost", () => {
     await act(async () => { fireEvent.load(frame); });
     expect(screen.getByText(/وضعیت نشست بازی/)).toBeTruthy();
   });
+
+  it("does not disclose a display alias unless profile:read is explicitly granted", () => {
+    render(
+      <GamePluginHost
+        descriptor={descriptor}
+        policy={policy}
+        locale="en"
+        displayAlias="private-alias"
+        onExit={vi.fn()}
+      />,
+    );
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    const postMessage = vi.spyOn(frame.contentWindow!, "postMessage");
+    fireEvent.load(frame);
+
+    const initCall = postMessage.mock.calls.find(([message]) =>
+      typeof message === "object" && message !== null &&
+      (message as { type?: string }).type === "host:init",
+    );
+    expect(initCall).toBeDefined();
+    expect(initCall?.[0]).toMatchObject({
+      type: "host:init",
+      payload: { locale: "en", grantedCapabilities: ["locale:read", "session:lifecycle"] },
+    });
+    expect(JSON.stringify(initCall?.[0])).not.toContain("private-alias");
+    postMessage.mockRestore();
+  });
+
+  it("removes message listeners and pending handshake timers when unmounted", async () => {
+    vi.useFakeTimers();
+    const onError = vi.fn();
+    const onExit = vi.fn();
+    try {
+      const { unmount } = render(
+        <GamePluginHost
+          descriptor={descriptor}
+          policy={policy}
+          locale="en"
+          onExit={onExit}
+          onError={onError}
+          handshakeTimeoutMs={500}
+        />,
+      );
+      const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+      await act(async () => { fireEvent.load(frame); });
+      unmount();
+
+      await act(async () => { vi.advanceTimersByTime(5_000); });
+      act(() => {
+        window.dispatchEvent(new MessageEvent("message", {
+          origin: "null",
+          source: frame.contentWindow,
+          data: {
+            protocolVersion: 1,
+            sessionId: "a".repeat(64),
+            type: "plugin:exit",
+            payload: { reason: "user" },
+          },
+        }));
+      });
+
+      expect(onError).not.toHaveBeenCalled();
+      expect(onExit).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
