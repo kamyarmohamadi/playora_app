@@ -8,7 +8,7 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - Baseline branch: feature/playora-neon-ui-member-isolation at e5ab2b0d6c5bb82eb2685333e7e1c6743b25d7f3
 - Active architecture branch: feature/playora-platform-game-plugin-architecture-2026-10-22
 - Active draft PR #7: https://github.com/kamyarmohamadi/playora_app/pull/7
-- Latest saved checkpoint commit before this update: fa02cfde769f81d20a42d82d135de8474566cc33
+- Source-code head at the latest verified CI checkpoint before recovery-doc refresh: `d0ad10dcfb0049ecf97c955ae46afd75bfcf41da`
 - Main remains untouched. PR #7 is open/draft and must not be merged until review gates are satisfied.
 - Admin preview PR #6 remains separate and out of scope for this stage.
 
@@ -97,3 +97,21 @@ Finish the platform shell, backend/security contracts, catalogue, and isolated g
 - The selected web hosting/domain is not configured. Consequently, Auth Site URL, exact redirect allowlist, production CSP/headers, trusted SMTP sender and the approved separate game-artifact origin still need to be configured against the actual hosting choice.
 - No Google OAuth client secret, SMTP credential or service-role key has been committed or placed in chat. The connected Supabase actions expose project/migration/table/types/functions but not every Auth dashboard setting/secret-writing action.
 - No game has been implemented or launched, and the admin panel is still deferred.
+
+
+## Recovery audit — current verified status (2026-10-22)
+
+This section and [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.md) supersede any older setup statements in this checkpoint if they conflict.
+
+- Private repo: https://github.com/kamyarmohamadi/playora_app
+- Active branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
+- Source-code head before this documentation refresh: `d0ad10dcfb0049ecf97c955ae46afd75bfcf41da`
+- PR #7 is open/draft and remains unmerged: https://github.com/kamyarmohamadi/playora_app/pull/7
+- Last verified CI run for that head passed: https://github.com/kamyarmohamadi/playora_app/actions/runs/39691688068
+- Supabase dev project: `playora-dev`, `nnowvfewtrfurnluhflt`, `eu-central-1`; dashboard https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt; API URL https://nnowvfewtrfurnluhflt.supabase.co
+- Live database status: 8 visible catalog rows, 0 enabled games, 0 plugin versions, 0 approved origins, RLS enabled on catalog/registry tables; browser roles cannot write registry state or read trusted origin approvals.
+- Supabase migration history has 13 entries and repeated `plugin_registry_hardening` labels; reconcile before running Supabase CLI migration pushes/replays.
+- The connected project tool reports zero deployed Edge Functions. Function source remains in the repo, but this is not a live deployment.
+- The three authenticated social SECURITY DEFINER warnings remain a documented production blocker. Auth redirects/provider setup, two-user live browser verification, hosting/domain, CSP, SMTP, artifact host and independent security review are not complete.
+- Recovery/keys/connection instructions are in [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.md). Do not store secrets in GitHub files or chat.
+- The GitHub Actions run verifies code/SQL/Deno checks; it does not claim a hosted website or production-ready backend.

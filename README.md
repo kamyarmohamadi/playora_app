@@ -1,46 +1,72 @@
 # Playora
 
-Playora is an English-first competitive games platform with Persian localization (RTL), a neon arena visual system, account flows and per-member data isolation.
+Playora is an English-first social games platform with Persian localization (RTL), a neon arena design system and an independently versioned game-plugin architecture.
 
-## Run the frontend
+## Status and source of truth
 
-Requirements: Node.js compatible with the pinned Vite toolchain.
+- **Private repository:** https://github.com/kamyarmohamadi/playora_app
+- **Active development branch:** https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22
+- **Open draft PR:** https://github.com/kamyarmohamadi/playora_app/pull/7
+- **Recovery guide:** [docs/RECOVERY_AND_CONTINUATION.md](docs/RECOVERY_AND_CONTINUATION.md)
+- **Project checkpoint:** [docs/PROJECT_CHECKPOINT_2026-10-22.md](docs/PROJECT_CHECKPOINT_2026-10-22.md)
 
-    npm ci
-    npm test
-    npm run typecheck
-    npm run build
-    npm run dev
+Do not treat \`main\` or the separate admin-preview PR as the active source of this architecture work. Read the recovery guide first when resuming on another device or after a lost session.
 
-Copy .env.example to .env.local and configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY only after you create a Supabase project. Without those values, account and server-connected features fail closed and explain that the backend is not configured.
+## Run locally
 
-## Implemented in this branch
+Use a Node.js/npm version compatible with the pinned Vite toolchain:
 
-- English and Persian interface, RTL switching, game catalogue and favorites.
-- Supabase Auth flows for email/password sign-in, account creation, email confirmation, password reset, and Google OAuth (requires provider configuration).
-- Local Tic Tac Toe practice against an optimal bot; practice awards no XP, rank, coins or prizes.
-- Server-authoritative ranked Tic Tac Toe: random matchmaking, move/turn validation, result resolution, XP/rating updates and recent-opponent rematch suppression.
-- Private Tic Tac Toe rooms with one-time invite codes, invite hashes at rest, room creation/join/leave APIs and no rewards or rating changes.
-- PostgreSQL row-level security policies, member-scoped wallet/ledger reads, and a transactional idempotent server-only coin operation.
-- A member-self Edge Function that returns only the authenticated member's records while preserving RLS.
-- A trusted account-deletion Edge Function with recent-authentication checks and cleanup that cancels unfinished matches without reward side effects; its UI feature flag is disabled by default.
+\`\`\`bash
+npm ci
+npm test
+npm run check:platform-boundary
+npm run typecheck
+npm run build
+npm run dev
+\`\`\`
 
-## Not yet a live production service
+Copy \`.env.example\` to an ignored local \`.env.local\` and configure only the browser-safe Supabase project URL plus publishable/legacy anon key if backend-connected local tests are needed. Without those values, the client must fail closed. Never put a service-role key in a \`VITE_\` variable or commit populated local environment files.
 
-No Supabase project is currently wired into this repository, and no production database migration or Edge Function has been deployed. Therefore real sign-in, matchmaking, rooms and private accounts cannot work from a deployed website until project URL, keys, Auth providers, migrations, Edge Function secrets and hosting configuration are supplied and tested.
+## Platform architecture
 
-Also not live: other game engines, real-time WebSocket transport (current match state uses polling), crypto deposit confirmation, paid entry, tournaments with awards, prize fulfillment, external wallet transfers and production monitoring. The catalog and UI must not be treated as proof that those features are launched.
+The app owns navigation, account/profile surfaces, localization, catalogue metadata and platform services. Individual games are meant to be independently versioned plugins loaded only through the validated Game SDK contract and isolated runtime. Platform-owned source must not import \`src/games/*\`; the import-boundary checker enforces this in CI.
 
-## Security
+The legacy Tic Tac Toe and Checkers engine code is preserved in the repository for later packaging/porting, but no game is currently approved for launch in this platform-only stage. The live development catalog contains 8 visible metadata rows; 0 catalog games are enabled, 0 plugin versions are registered, and 0 artifact origins are approved. A catalogue card is not proof that a playable engine exists.
 
-See docs/SECURITY_MODEL.md and supabase/README.md. RLS and server-owned RPCs are tested in CI with PostgreSQL, including cross-member isolation and ranked/private Tic Tac Toe match integrity. CI tests do not replace a reviewed test against the actual Supabase project before launch.
+Core modules include:
+- \`packages/game-sdk/\` — versioned manifest and host/plugin protocol types plus strict runtime validation.
+- \`src/plugin-host/\` — isolated game iframe lifecycle, validated messages, launch-policy enforcement and recoverable error state.
+- \`src/catalog/\` — catalogue types, local fixture and Supabase-backed provider; metadata is separate from launch authorization.
+- \`src/platform/\` — launch gate and platform-owned services/state.
+- \`supabase/migrations/\` and \`supabase/tests/\` — schema, grants, RLS, registry and regression invariants.
+- \`docs/superpowers/\` — approved architecture spec and phased implementation plans.
 
-Never place passwords, service-role keys, wallet seed phrases or private keys in frontend code or source control. Do not enable deposits, paid entry or convertible prizes until server-side payment verification and market-specific legal review are complete.
+## Supabase development environment
 
-## Account deletion and security status
+A development project already exists:
 
-A trusted Supabase Edge Function for account deletion is included in source. It requires `SUPABASE_SERVICE_ROLE_KEY` only as a server secret, checks the caller's verified JWT and recent `auth_time`, cancels unfinished matches without results/rewards, then deletes the Auth user. The UI remains disabled by default: keep `VITE_ACCOUNT_DELETION_ENABLED=false` until both the Edge Function and cleanup migration are deployed and verified in a Supabase project. Never place the service-role key in frontend variables or source control.
+- **Name:** \`playora-dev\`
+- **Reference:** \`nnowvfewtrfurnluhflt\`
+- **Region:** \`eu-central-1\`
+- **Dashboard:** https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt
+- **API URL:** https://nnowvfewtrfurnluhflt.supabase.co
+
+RLS is enabled for the catalogue/plugin registry tables; client roles cannot write plugin state or inspect approved artifact origins; legacy game RPCs remain blocked for browser roles. See [the current Supabase audit](docs/supabase/SUPABASE_READINESS_AUDIT_2026-10-22.md).
+
+**Not yet live/verified:** the connected Supabase tool reports no deployed Edge Functions. Auth redirects/provider configuration, SMTP, real two-user Auth/JWT isolation tests, the frontend hosting/domain, CSP headers and the separate game artifact host remain incomplete. The remote migration history also contains duplicate \`plugin_registry_hardening\` labels; reconcile remote history and source files before any \`supabase db push\` or migration replay.
+
+The latest verified CI run for the source head recorded in the recovery guide is linked there. CI success does not substitute for live Auth/browser testing, an independent security review, or a production deployment.
+
+## Security rules
+
+- Game code is untrusted and must not execute in the platform React origin.
+- The game iframe receives no auth tokens, cookies, service-role keys, wallet details or privileged clients.
+- Game messages are untrusted intents; protected data, match results and permissions remain server-authoritative.
+- Keep the artifact-origin allowlist empty until hosting, digest verification, sandbox/CSP and revocation have been reviewed.
+- Keep account deletion disabled until its real function is deployed and verified.
+- Keep real-money/crypto deposits, paid entry and prize-bearing/convertible rewards disabled pending verified server-side payment controls and legal review.
+- Never commit credentials or secrets. See the recovery guide for the exact secret/configuration boundary.
 
 ## Release process
 
-Use **docs/PRODUCTION_READINESS.md** as the mandatory staging and production gate. Do not enable account deletion or any payment/reward feature until the listed tests and environment setup are complete.
+Use [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) and [docs/RECOVERY_AND_CONTINUATION.md](docs/RECOVERY_AND_CONTINUATION.md) as release and recovery gates. No game should be implemented/ported until the platform-only acceptance gate is passed. The existing admin preview remains deferred and separate in PR #6.

@@ -1,37 +1,42 @@
 # Supabase Readiness Audit — Playora
 
 - Audit date: 2026-10-22
-- Status: account and repository checks completed; no live project exists in the connected Supabase account, so runtime configuration and production security cannot yet be tested.
-- Repository: `kamyarmohamadi/playora_app`
-- Source branch reviewed: `feature/playora-neon-ui-member-isolation`
-- This document is a pre-provisioning audit, not a claim that Supabase is connected or production-ready.
+- Status: post-provisioning audit. The development project exists and is active/healthy; production readiness has **not** been established.
+- Repository: \`kamyarmohamadi/playora_app\`
+- Active branch: \`feature/playora-platform-game-plugin-architecture-2026-10-22\`
+- Recovery guide: [RECOVERY_AND_CONTINUATION.md](../RECOVERY_AND_CONTINUATION.md)
 
-## 1. Verified account status
+## 1. Verified current account and project status
 
 | Item | Finding |
 |---|---|
-| Connected Supabase organizations | One visible organization: `kamyarmohamade@gmail.com's Org` |
-| Organization subscription | Free |
-| Projects returned by Supabase | None (`projects: []`) |
-| Current project-creation cost quote in this Free organization | $0/month base quote |
-| Project created by this audit | No |
-| Migrations applied to a live project | No |
-| Edge Functions deployed | No live project was available to query |
+| Supabase organization | The connected owner's Free organization |
+| Project | \`playora-dev\` |
+| Project reference | \`nnowvfewtrfurnluhflt\` |
+| Region | EU Central (\`eu-central-1\`) |
+| Dashboard | https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt |
+| Project API URL | https://nnowvfewtrfurnluhflt.supabase.co |
+| Project status | \`ACTIVE_HEALTHY\` |
+| Current project records | 8 visible catalog metadata rows; 0 enabled catalog games; 0 plugin versions; 0 approved artifact origins |
+| RLS | Enabled for \`catalog_games\`, \`game_plugin_versions\`, and \`game_plugin_artifact_origins\` |
+| Browser plugin registry access | Client roles cannot write plugin state or read trusted artifact-origin approvals |
+| Legacy ranked Tic Tac Toe RPC | Not executable by the authenticated browser role |
+| Deployed Edge Functions | None reported by the connected project tool at last verification |
+| Base project quote at creation | $0/month under the Free plan; current price/quotas must be rechecked before production |
 
-The $0/month quote is the current base quote from the connected Supabase cost tool for a project in the visible Free organization. It is not a promise of production capacity or a blanket guarantee against future plan changes, quotas, external-provider charges or paid add-ons. No project was created because the owner has not explicitly chosen the organization and approved provisioning.
+Project/API links are configuration metadata, not credentials. The browser publishable/anon key can be retrieved from the project dashboard for a local \`.env.local\`; no populated key or password belongs in source control. The service-role/secret key must remain server-side.
 
-Official billing reference: https://supabase.com/docs/guides/platform/billing-on-supabase  
-Current plan reference: https://supabase.com/pricing
+## 1.1 Important operational caveats
 
-### Recommended first project
+- The connected migration history contains 13 entries and repeats the label \`plugin_registry_hardening\`. Some migration versions were applied through the connected project tool with timestamps different from the filename prefixes. Reconcile local files against the actual remote history before using the Supabase CLI or running \`db push\`; do not blindly replay any migration.
+- The current source tree contains the Edge Function implementations, but the remote project reports zero deployed functions. The functions are not live until explicitly deployed and tested.
+- Auth Site URL/redirects, Google OAuth credentials, SMTP/email delivery, a real frontend hosting domain, CSP headers, two-user Auth/JWT browser testing and the separate game-artifact host are not all configured or verified complete.
+- The platform release gate is intentionally closed. No game is enabled or launchable.
+- The development project had a $0/month base quote at creation. Free-plan pause/usage limitations and all current prices must be reviewed again before any production decision.
 
-- Name: `playora-dev`
-- Organization: the visible Free organization, only after the owner explicitly confirms that organization.
-- Suggested region: `eu-central-1` (EU Central / Frankfurt) for an initial EU-based development environment, subject to the owner's data-residency decision.
-- Purpose: disposable development/staging only; do not use real member data.
-- Production: a separate project later, after feature scope, data residency, operating costs, backup requirements and deployment choices have been reviewed.
-
-Supabase Free projects can pause after a period of low activity; the official billing documentation currently describes two active Free projects across eligible organizations. The Free project should therefore be treated as development/staging, not as a promise of always-on production availability. Review the live pricing/billing pages again before production.
+Official references:
+- Billing: https://supabase.com/docs/guides/platform/billing-on-supabase
+- Pricing: https://supabase.com/pricing
 
 ## 2. Important upcoming Data API behavior
 
@@ -145,7 +150,7 @@ The development project has now been provisioned with owner approval and is acce
 - The platform-only migrations have been applied and the latest trusted-origin/state-guard migration is present in the live migration history.
 - The approved artifact-origin allowlist is empty, no plugin records exist, and all catalog games remain disabled.
 
-No password, OAuth secret, service-role key, or other credential should be pasted into chat or committed. Remaining work is configuration and verification rather than project creation: review the three Security Advisor warnings for the authenticated SECURITY DEFINER social RPCs; configure and test Auth redirects/providers; deploy only reviewed Edge Functions with server-only secrets; test the live Data API with two real members; review logs/advisors; and verify backup/recovery and hosting headers. Do not enable payments, deposits, paid entry or prize-bearing competitions.
+No password, OAuth secret, service-role key, or other credential should be pasted into chat or committed. Remaining work is configuration and verification rather than project creation: review the three Security Advisor warnings for authenticated SECURITY DEFINER social RPCs; configure and test Auth redirects/providers; deploy only reviewed Edge Functions with server-only secrets (none are currently deployed); test the live Data API with two real members; review logs/advisors; reconcile migration history; and verify backup/recovery and hosting headers. Do not enable payments, deposits, paid entry or prize-bearing competitions.
 
 ## 6. Completion definition for Supabase
 

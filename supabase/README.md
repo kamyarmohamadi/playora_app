@@ -2,13 +2,13 @@
 
 The development Supabase project has been provisioned and the listed development migrations have been applied and tested in CI. This document is not evidence of a production deployment; production remains a separate gated task.
 
-## 1. Create a development project first
+## 1. Reconnect to the existing development project
 
-1. Create separate Supabase projects for development and production. Never test destructive workflows against production data.
+1. The development project already exists: `playora-dev`, project ref `nnowvfewtrfurnluhflt`, region `eu-central-1`. Use https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt to open it. Create a separate production project only after a cost/data-residency/backup review.
 2. In Auth, enable email confirmation and configure secure redirect URLs. Configure Google OAuth credentials in Supabase Auth before enabling the Google button.
 3. Copy .env.example to .env.local and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. These are browser configuration values, not service-role credentials.
 4. Keep SUPABASE_SERVICE_ROLE_KEY exclusively in server-side Edge Function secrets. Never prefix it with VITE_, expose it in browser code or commit it.
-5. Apply migrations in order to a fresh or reviewed compatible project:
+5. For a **new empty project only**, review and apply source migrations in order. For the existing `playora-dev`, do not blindly replay migrations: the connected migration history has duplicate `plugin_registry_hardening` labels and connector-applied versions that do not map one-to-one to filename prefixes. Reconcile local and remote migration history before using the CLI or running any push. Current source files to review include:
    - supabase/migrations/20261020000000_secure_member_data.sql
    - supabase/migrations/20261020010000_private_rooms.sql
    - supabase/migrations/20261020020000_social_and_leaderboard.sql
@@ -22,8 +22,7 @@ The development Supabase project has been provisioned and the listed development
    - supabase/migrations/20261024000000_catalog_art_key.sql
    - supabase/migrations/20261025000000_plugin_capability_grants.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
-7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
-8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.
+7. Function source is tracked in `supabase/functions/`, but the live project currently reports zero deployed Edge Functions. Deploy `member-self` only after Auth/JWT, origin, secret and endpoint reviews pass, then verify it against the live project. Do not deploy `delete-account` until its full disposable-account end-to-end test and cleanup verification pass.
 9. Configure PLAYORA_ALLOWED_ORIGINS as a comma-separated allowlist of exact frontend origins (for example, the production HTTPS origin and localhost during development). Do not use a wildcard. Check that the Edge Function has SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY available as server-side secrets; never paste them in frontend environment variables or the repository.
 10. Test email signup/confirmation, sign-in, password recovery and OAuth redirects against this exact project.
 
@@ -75,3 +74,10 @@ The trusted artifact-origin allowlist is empty by default. A server-only workflo
 ## Explicit plugin capability grants
 
 The plugin manifest lists requested capabilities, but requested capabilities are not automatically granted. The trusted registry stores a separate granted_capabilities array. Database constraints restrict grants to capabilities that were requested and to the platform allowlist. Grants are frozen after the record reaches approved state, and browser roles can read the grant list only for enabled registry records but cannot change it. The host receives only this explicit grant list; backend endpoints must still enforce authorization independently.
+
+
+## Current verified external state (2026-10-22)
+
+The project is active/healthy and the source migrations are tracked. The live catalogue has 8 visible metadata rows, no enabled games, no plugin versions, and no approved artifact origins. RLS is enabled on the catalog and plugin registry tables. Browser roles cannot write plugin registry state or read the trusted artifact-origin allowlist. The connected project tool reports zero deployed Edge Functions at this checkpoint; local function source is not the same as a deployed endpoint.
+
+For a complete device/session recovery procedure, current CI link, private-repository branch, exact project links, secret boundary and remaining setup work, read [docs/RECOVERY_AND_CONTINUATION.md](../docs/RECOVERY_AND_CONTINUATION.md). Do not store populated keys or passwords in this file or in GitHub commits.
