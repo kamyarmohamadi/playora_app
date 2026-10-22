@@ -143,3 +143,30 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Supabase migration history still has duplicate `plugin_registry_hardening` labels; do not run migration replay/push until the remote/source history is reconciled.
 - Three Security Advisor warnings remain for authenticated social `SECURITY DEFINER` RPCs and are a production blocker pending security review.
 - Next task: add real-browser Playwright tests for iframe navigation/message isolation, teardown and mobile/RTL, then reconcile migration history without reapplying migrations. Do not add a game, enable a plugin, deploy the admin panel, enable payments or merge PR #7.
+
+
+## Session continuation checkpoint — 2026-10-22 (Chromium E2E, RTL and reproducible browser checks)
+
+### Verified source and quality gate
+- Active branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`.
+- Verified code/config head before this checkpoint update: `1759950a7d14a4bf2bb446903c7dee8ef7eb9dc5`.
+- Successful CI run: https://github.com/kamyarmohamadi/playora_app/actions/runs/39699517781
+- All three jobs passed: 106 Vitest tests across 16 files, platform/game import-boundary guard, app TypeScript, production Vite build, dedicated Playwright TypeScript check, six Chromium E2E tests, PostgreSQL RLS/wallet/plugin registry tests, and Deno Edge Function checks.
+- Browser tooling is pinned: `@playwright/test` / `playwright` / `playwright-core` `1.64.1`; `@types/node` `22.20.2`; `undici-types` `6.21.0`. Run `npm ci`, `npm run typecheck:e2e`, and `npm run test:e2e` to reproduce. CI installs the pinned Playwright Chromium browser.
+
+### Browser-covered behaviors
+- Empty plugin registry: the catalogue remains visible as metadata, but no playable iframe is created.
+- Isolated plugin: iframe uses `sandbox="allow-scripts"`, `referrerPolicy="no-referrer"`; fixture code cannot read `parent.document` and receives only explicit public presentation grants, not a profile alias or tokens.
+- Hostile capabilities: an ungranted `wallet:write` request does not invoke a platform callback.
+- Session identity: changing a versioned artifact rotates the session nonce; stale `plugin:ready` messages are rejected.
+- Unexpected navigation and malformed messages stop the iframe and preserve the host's recovery/return path.
+- At 390 px, Persian changes document language/direction to `fa`/`rtl`; navigation begins collapsed, opens/closes correctly, and page/header/main content has no horizontal overflow.
+- A mobile regression test found 433 px of topbar content at 390 px; responsive spacing/search minimum width was fixed rather than weakening the test.
+
+### Verified release boundaries and blockers
+- No games are launchable: live Supabase dev state is still 8 catalogue metadata rows, 0 enabled games, 0 registered plugin versions, and 0 approved artifact origins.
+- Browser E2E uses a Playwright-intercepted non-production fixture for `games.playora.example`; this does not mean a real game/artifact host or public Playora website exists.
+- No Supabase Edge Functions are deployed. Real Auth/JWT two-account cross-member E2E, Auth redirect/provider configuration, hosting/domain/CSP, SMTP and the trusted artifact release pipeline are still outstanding.
+- Supabase migration history has repeated `plugin_registry_hardening` labels. Reconcile source/remote history before any migration push/replay.
+- Three Security Advisor warnings remain for authenticated social `SECURITY DEFINER` functions; production is blocked pending review.
+- PR #7 remains open/draft and unmerged. Do not enable a game, payment/deposit/prize feature or admin panel as part of this milestone.
