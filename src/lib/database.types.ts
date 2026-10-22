@@ -1,5 +1,5 @@
 // Generated from Supabase project playora-dev (nnowvfewtrfurnluhflt), EU Central.
-// Snapshot date: 2026-10-22. Regenerate after database migrations.
+// Snapshot date: 2026-10-23. Regenerate after any database migration.
 // Do not hand-edit generated schema types; review schema changes in migrations first.
 
 export type Json =
@@ -697,6 +697,54 @@ export type Database = {
           created_at?: string
           event_type?: string
           id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_reports: {
+        Row: {
+          app_version: string
+          category: string
+          created_at: string
+          description: string
+          diagnostics: Json
+          id: string
+          idempotency_key: string
+          locale: string
+          route_key: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_version: string
+          category: string
+          created_at?: string
+          description: string
+          diagnostics: Json
+          id?: string
+          idempotency_key: string
+          locale: string
+          route_key: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          app_version?: string
+          category?: string
+          created_at?: string
+          description?: string
+          diagnostics?: Json
+          id?: string
+          idempotency_key?: string
+          locale?: string
+          route_key?: string
+          status?: string
+          title?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
