@@ -2,8 +2,8 @@
 
 - Audit date: 2026-10-22
 - Status: post-provisioning audit. The development project exists and is active/healthy; production readiness has **not** been established.
-- Repository: \`kamyarmohamadi/playora_app\`
-- Active branch: \`feature/playora-platform-game-plugin-architecture-2026-10-22\`
+- Repository: `kamyarmohamadi/playora_app`
+- Active branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
 - Recovery guide: [RECOVERY_AND_CONTINUATION.md](../RECOVERY_AND_CONTINUATION.md)
 
 ## 1. Verified current account and project status
@@ -11,24 +11,24 @@
 | Item | Finding |
 |---|---|
 | Supabase organization | The connected owner's Free organization |
-| Project | \`playora-dev\` |
-| Project reference | \`nnowvfewtrfurnluhflt\` |
-| Region | EU Central (\`eu-central-1\`) |
+| Project | `playora-dev` |
+| Project reference | `nnowvfewtrfurnluhflt` |
+| Region | EU Central (`eu-central-1`) |
 | Dashboard | https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt |
 | Project API URL | https://nnowvfewtrfurnluhflt.supabase.co |
-| Project status | \`ACTIVE_HEALTHY\` |
+| Project status | `ACTIVE_HEALTHY` |
 | Current project records | 8 visible catalog metadata rows; 0 enabled catalog games; 0 plugin versions; 0 approved artifact origins |
-| RLS | Enabled for \`catalog_games\`, \`game_plugin_versions\`, and \`game_plugin_artifact_origins\` |
+| RLS | Enabled for `catalog_games`, `game_plugin_versions`, and `game_plugin_artifact_origins` |
 | Browser plugin registry access | Client roles cannot write plugin state or read trusted artifact-origin approvals |
 | Legacy ranked Tic Tac Toe RPC | Not executable by the authenticated browser role |
 | Deployed Edge Functions | None reported by the connected project tool at last verification |
 | Base project quote at creation | $0/month under the Free plan; current price/quotas must be rechecked before production |
 
-Project/API links are configuration metadata, not credentials. The browser publishable/anon key can be retrieved from the project dashboard for a local \`.env.local\`; no populated key or password belongs in source control. The service-role/secret key must remain server-side.
+Project/API links are configuration metadata, not credentials. The browser publishable/anon key can be retrieved from the project dashboard for a local `.env.local`; no populated key or password belongs in source control. The service-role/secret key must remain server-side.
 
 ## 1.1 Important operational caveats
 
-- The connected migration history contains 13 entries and repeats the label \`plugin_registry_hardening\`. Some migration versions were applied through the connected project tool with timestamps different from the filename prefixes. Reconcile local files against the actual remote history before using the Supabase CLI or running \`db push\`; do not blindly replay any migration.
+- The connected migration history contains 13 entries and repeats the label `plugin_registry_hardening`. Some migration versions were applied through the connected project tool with timestamps different from the filename prefixes. Reconcile local files against the actual remote history before using the Supabase CLI or running `db push`; do not blindly replay any migration.
 - The current source tree contains the Edge Function implementations, but the remote project reports zero deployed functions. The functions are not live until explicitly deployed and tested.
 - Auth Site URL/redirects, Google OAuth credentials, SMTP/email delivery, a real frontend hosting domain, CSP headers, two-user Auth/JWT browser testing and the separate game-artifact host are not all configured or verified complete.
 - The platform release gate is intentionally closed. No game is enabled or launchable.
