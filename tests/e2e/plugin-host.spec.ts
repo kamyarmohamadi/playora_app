@@ -85,6 +85,43 @@ test("a second document load inside one session is stopped", async ({ page }) =>
   await expect(page.locator("iframe[title='chess isolated game']")).toHaveCount(0);
 });
 
+test("mobile Persian UI preserves RTL direction, a collapsed drawer, and horizontal fit", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  const drawer = page.locator("#playora-navigation-drawer");
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
+  await expect(drawer).not.toHaveClass(/sidebar-open/);
+
+  await page.getByRole("button", { name: "Switch language to Persian" }).click();
+  const shell = page.locator(".app-shell");
+  await expect(shell).toHaveAttribute("lang", "fa");
+  await expect(shell).toHaveAttribute("dir", "rtl");
+
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+    topbarClient: document.querySelector(".topbar")?.clientWidth ?? 0,
+    topbarScroll: document.querySelector(".topbar")?.scrollWidth ?? 0,
+    mainClient: document.querySelector(".main-content")?.clientWidth ?? 0,
+    mainScroll: document.querySelector(".main-content")?.scrollWidth ?? 0,
+  }));
+  expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+  expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport + 1);
+  expect(dimensions.topbarScroll).toBeLessThanOrEqual(dimensions.topbarClient + 1);
+  expect(dimensions.mainScroll).toBeLessThanOrEqual(dimensions.mainClient + 1);
+
+  await page.getByRole("button", { name: "باز کردن منو" }).click();
+  await expect(drawer).toHaveClass(/sidebar-open/);
+  await expect(drawer).toHaveAttribute("aria-hidden", "false");
+  await expect(drawer).toBeVisible();
+
+  await page.getByRole("button", { name: "بستن منو" }).click();
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
+  await expect(drawer).not.toHaveClass(/sidebar-open/);
+});
+
 test("malformed plugin messages fail closed and keep the platform host recoverable", async ({ page }) => {
   await page.goto("/tests/e2e/host-harness.html?scenario=invalid");
   await expect(page.locator(".playora-plugin-host__status")).toHaveText("The game sent an invalid message and was stopped.");
