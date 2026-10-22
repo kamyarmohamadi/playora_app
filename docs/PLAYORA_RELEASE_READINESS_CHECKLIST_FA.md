@@ -54,7 +54,7 @@
 - [x] آزمون‌های نشست stale، handshake، sandbox، capability و cleanup موجودند
 - [x] محدودسازی اندازه iframe و پایان idempotent نشست با آزمون CI
 - [ ] بررسی کامل تمام پیام‌های postMessage: schema، اندازه payload، نرخ پیام و ترتیب وضعیت‌ها
-- [ ] محدودسازی نرخ telemetry و سقف اندازه داده‌های telemetry
+- [x] محدودسازی نرخ telemetry: حداکثر ۳۰ رویداد در هر نشست طی ۶۰ ثانیه + تست رگرسیون؛ CI موفق روی کامیت `744ab5e5c420bc23baaf0179caaf208cccfe4c55` ([run #747](https://github.com/kamyarmohamadi/playora_app/actions/runs/39870919757)). سقف اندازه payload مستقل همچنان نیازمند بررسی است.
 - [ ] سیاست timeout و لغو درخواست‌ها در همه مسیرهای async
 - [ ] چرخه کامل نصب/فعال‌سازی/غیرفعال‌سازی/rollback نسخه افزونه با ثبت audit
 - [ ] تأیید artifact بر اساس SHA-256 مورد اعتماد و اتصال digest به انتشار تأییدشده
