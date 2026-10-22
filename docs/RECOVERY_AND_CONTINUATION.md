@@ -1,6 +1,6 @@
 # Playora — Recovery and Continuation Guide
 
-**Last verified:** 2026-10-22  
+**Recovery guide maintained:** 2026-10-23; use the exact active branch head and latest CI run below before resuming  
 **Purpose:** Recover the repository and resume development after a lost session, device change, connector outage, or interrupted task. This file is the first place to read when resuming work.
 
 ## 1. Source of truth and safe recovery points
@@ -176,3 +176,12 @@ Next steps, in order:
 - The support feature flag defaults off in `.env.example`. No public frontend URL/domain or production Auth redirect has been configured; do not enable the feature just because the SQL table exists.
 - CI run [39855320009](https://github.com/kamyarmohamadi/playora_app/actions/runs/39855320009) has passed unit tests, platform/game import boundary, type-check, production build, E2E type-check and PostgreSQL security tests; Chromium installation/E2E is still in progress at this checkpoint. Recheck the run before describing the current head as fully green.
 - Live database security advisor still reports three authenticated `SECURITY DEFINER` social functions; they remain a documented release blocker. Performance advisor unused-index notices are informational on this empty development database.
+
+
+## 11. Platform shell refactor — 2026-10-23
+
+- Moved the full bilingual `copy` dictionary and shared `Locale` type out of `src/App.tsx` into `src/i18n/copy.ts`; translation text was transferred unchanged.
+- Added `src/i18n/copy.test.ts` to check that English and Persian keys remain identical and every translation is non-empty.
+- The pre-commit parity check found 295 keys in each locale and no missing keys. This is a source-level check only; rely on the new GitHub Actions run for TypeScript/build/test verification.
+- No playable game is enabled. Continue separating platform-owned UI/services from game engines and keep the game-plugin launch gate closed.
+- Current source change: see the latest commit and Actions run on [the active architecture branch](https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22). Do not mark this refactor fully verified until all CI jobs complete successfully.

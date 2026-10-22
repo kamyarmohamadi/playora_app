@@ -202,3 +202,9 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - The `VITE_SUPPORT_REPORTS_ENABLED` feature flag is intentionally false by default. No real sign-in/confirmation/recovery browser E2E has been completed using configured Supabase Auth and real test identities.
 - CI run [39855320009](https://github.com/kamyarmohamadi/playora_app/actions/runs/39855320009): unit tests, import-boundary guard, type-check, production build, E2E type-check and PostgreSQL/RLS security tests are green; Playwright Chromium installation/browser E2E is in progress at the moment of writing. Recheck the live run and update this checkpoint before resting.
 - Current hard blockers for release remain: three authenticated social `SECURITY DEFINER` Advisor warnings, no deployed Edge Functions, no real Auth/JWT two-account browser tests, no selected production domain/hosting/CSP/SMTP, and no external artifact host. No game/plugin is enabled.
+
+## 2026-10-23 continuation — platform-shell modularization
+- Extracted the complete bilingual English/Persian UI dictionary from `src/App.tsx` into `src/i18n/copy.ts`, exporting the shared `Locale` type. The English and Persian dictionaries were checked for key parity before this refactor (295 keys per locale).
+- Added `src/i18n/copy.test.ts` to guard locale key parity and prevent empty translation values.
+- This is a behavior-preserving refactor: no game engine, launch permission, route behavior, or Supabase policy was changed. CI must pass before treating this commit as verified.
+- The work remains on the architecture branch and draft PR #7; `main` is untouched.
