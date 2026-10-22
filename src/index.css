@@ -338,3 +338,6 @@
 .plugin-launch-backdrop{position:fixed;z-index:85;inset:0;display:grid;place-items:center;overflow-y:auto;padding:clamp(12px,3vw,32px);background:rgba(1,4,13,.86);backdrop-filter:blur(16px)}
 .plugin-launch-dialog{width:min(1040px,100%);max-height:calc(100vh - 32px);overflow:auto;border:1px solid rgba(87,145,219,.3);border-radius:18px;background:#070d1d;box-shadow:0 28px 100px rgba(0,0,0,.55)}
 @media(max-width:560px){.plugin-launch-backdrop{align-items:start;padding:8px}.plugin-launch-dialog{max-height:calc(100vh - 16px);border-radius:12px}}
+
+/* Mobile fit: let the search field yield space to persistent navigation controls. */
+@media(max-width:700px){.topbar{gap:5px;padding-inline:8px}.global-search{min-width:60px;padding-inline:6px}.global-search input{min-width:0}.topbar-actions{gap:4px}}
