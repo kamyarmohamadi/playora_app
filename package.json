@@ -10,7 +10,8 @@
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",
     "check:platform-boundary": "node scripts/check-platform-boundary.mjs",
-    "verify:plugin-artifact": "node scripts/verify-plugin-artifact.mjs"
+    "verify:plugin-artifact": "node scripts/verify-plugin-artifact.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
@@ -28,7 +29,8 @@
     "jsdom": "^26.1.0",
     "typescript": "~5.9.3",
     "vite": "^7.3.7",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "@playwright/test": "1.64.1"
   },
   "workspaces": [
     "packages/*"

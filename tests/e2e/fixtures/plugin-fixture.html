@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Playora isolated E2E artifact fixture</title>
+  </head>
+  <body>
+    <main>Non-production plugin fixture</main>
+    <script>
+      (() => {
+        const scenario = window.location.pathname.split("/").pop().replace(/\.html$/, "");
+        try {
+          void parent.document.documentElement;
+          window.__playoraParentReadable = true;
+        } catch {
+          window.__playoraParentReadable = false;
+        }
+
+        window.addEventListener("message", event => {
+          if (event.source !== parent || event.data?.type !== "host:init") return;
+          const init = event.data;
+          window.__playoraInitMessage = init;
+          if (scenario === "silent") return;
+
+          const ready = {
+            protocolVersion: 1,
+            sessionId: init.sessionId,
+            type: "plugin:ready",
+            payload: { sdkVersion: "1.0.0" }
+          };
+          if (scenario === "invalid") {
+            ready.unexpectedField = "must be rejected";
+            parent.postMessage(ready, "*");
+            return;
+          }
+
+          parent.postMessage(ready, "*");
+          parent.postMessage({
+            protocolVersion: 1,
+            sessionId: init.sessionId,
+            type: "plugin:capability-request",
+            payload: { capability: "wallet:write", action: "credit" }
+          }, "*");
+
+          if (scenario === "navigate") {
+            window.setTimeout(() => {
+              window.location.href = "https://evil.example/navigated.html";
+            }, 350);
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
