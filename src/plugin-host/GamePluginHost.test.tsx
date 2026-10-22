@@ -415,4 +415,40 @@ describe("GamePluginHost", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/session has ended/i);
   });
 
+
+  it("limits telemetry forwarding to 30 events per session minute", () => {
+    const onTelemetry = vi.fn();
+    render(
+      <GamePluginHost
+        descriptor={descriptor}
+        policy={policy}
+        locale="en"
+        onExit={vi.fn()}
+        onTelemetry={onTelemetry}
+      />,
+    );
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    const send = (type: string, payload: Record<string, unknown>) => window.dispatchEvent(new MessageEvent("message", {
+      origin: "null",
+      source: frame.contentWindow,
+      data: {
+        protocolVersion: 1,
+        sessionId: "a".repeat(64),
+        type,
+        payload,
+      },
+    }));
+    act(() => { send("plugin:ready", { sdkVersion: "1.0.0" }); });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+
+    act(() => {
+      for (let index = 0; index < 35; index += 1) {
+        send("plugin:telemetry", { event: "heartbeat", fields: { index } });
+      }
+    });
+
+    expect(onTelemetry).toHaveBeenCalledTimes(30);
+  });
+
 });
