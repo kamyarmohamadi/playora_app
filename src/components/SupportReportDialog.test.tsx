@@ -28,6 +28,7 @@ const translations: Record<string, string> = {
   supportReportSessionChanged: "Your session changed. Please try again.",
   supportSecureContextRequired: "Secure browser context is required to submit a report.",
   supportReportFailed: "Your report could not be submitted. Please retry.",
+  supportBackendUnavailable: "Support submissions are not connected yet. Please try again after the service is enabled.",
   loading: "Loading…",
 };
 const t = (key: string) => translations[key] ?? key;
