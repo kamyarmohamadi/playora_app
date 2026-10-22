@@ -22,6 +22,8 @@ export interface GamePluginHostProps {
 }
 
 const MAX_MESSAGE_BYTES = 16_384;
+const MAX_TELEMETRY_EVENTS_PER_WINDOW = 30;
+const TELEMETRY_WINDOW_MS = 60_000;
 const DEFAULT_HANDSHAKE_TIMEOUT_MS = 8_000;
 const EMPTY_CAPABILITIES: readonly PluginCapability[] = [];
 
@@ -42,6 +44,7 @@ export function GamePluginHost({
   const sessionIdRef = useRef<string | null>(null);
   const frameLoadHandledRef = useRef(false);
   const exitNotifiedRef = useRef(false);
+  const telemetryWindowRef = useRef({ startedAt: 0, count: 0 });
   const statusRef = useRef<PluginHostStatus>("loading");
   const callbacksRef = useRef({ onExit, onError, onCapabilityRequest, onTelemetry });
   callbacksRef.current = { onExit, onError, onCapabilityRequest, onTelemetry };
@@ -81,6 +84,7 @@ export function GamePluginHost({
   useEffect(() => {
     frameLoadHandledRef.current = false;
     exitNotifiedRef.current = false;
+    telemetryWindowRef.current = { startedAt: Date.now(), count: 0 };
     setError(null);
     setFrameHeight(560);
     if (!decision.allowed) {
@@ -147,6 +151,14 @@ export function GamePluginHost({
       } else if (message.type === "plugin:capability-request") {
         callbacksRef.current.onCapabilityRequest?.(message.payload.capability as PluginCapability, message.payload.action);
       } else if (message.type === "plugin:telemetry") {
+        const now = Date.now();
+        const windowState = telemetryWindowRef.current;
+        if (now - windowState.startedAt >= TELEMETRY_WINDOW_MS) {
+          telemetryWindowRef.current = { startedAt: now, count: 0 };
+        }
+        const currentWindow = telemetryWindowRef.current;
+        if (currentWindow.count >= MAX_TELEMETRY_EVENTS_PER_WINDOW) return;
+        currentWindow.count += 1;
         callbacksRef.current.onTelemetry?.(message.payload.event, message.payload.fields);
       }
     };
