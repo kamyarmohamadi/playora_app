@@ -5,7 +5,7 @@ import { createPluginSessionId, validatePluginMessage } from "./validatePluginMe
 import "./pluginHost.css";
 
 export type PluginHostStatus = "loading" | "handshaking" | "ready" | "failed" | "exited";
-export type PluginHostError = "policy_denied" | "secure_random_unavailable" | "frame_unavailable" | "handshake_timeout" | "incompatible_runtime" | "invalid_message";
+export type PluginHostError = "policy_denied" | "secure_random_unavailable" | "frame_unavailable" | "unexpected_navigation" | "handshake_timeout" | "incompatible_runtime" | "invalid_message";
 
 export interface GamePluginHostProps {
   descriptor: ApprovedPluginDescriptor;
@@ -40,6 +40,7 @@ export function GamePluginHost({
 }: GamePluginHostProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const frameLoadHandledRef = useRef(false);
   const statusRef = useRef<PluginHostStatus>("loading");
   const callbacksRef = useRef({ onExit, onError, onCapabilityRequest, onTelemetry });
   callbacksRef.current = { onExit, onError, onCapabilityRequest, onTelemetry };
@@ -69,12 +70,15 @@ export function GamePluginHost({
 
   const fail = useCallback((reason: PluginHostError) => {
     clearHandshakeTimeout();
+    sessionIdRef.current = null;
+    frameLoadHandledRef.current = true;
     setError(reason);
     updateStatus("failed");
     callbacksRef.current.onError?.(reason);
   }, [clearHandshakeTimeout, updateStatus]);
 
   useEffect(() => {
+    frameLoadHandledRef.current = false;
     setError(null);
     setFrameHeight(560);
     if (!decision.allowed) {
@@ -100,7 +104,7 @@ export function GamePluginHost({
 
     const onMessage = (event: MessageEvent<unknown>) => {
       const frameWindow = iframeRef.current?.contentWindow;
-      if (!frameWindow) return;
+      if (!frameWindow || statusRef.current === "failed" || statusRef.current === "exited") return;
       const result = validatePluginMessage(event.data, {
         expectedSource: frameWindow,
         receivedSource: event.source as WindowProxy,
@@ -148,7 +152,23 @@ export function GamePluginHost({
       clearHandshakeTimeout();
       sessionIdRef.current = null;
     };
-  }, [decision.allowed, descriptor.sdkVersion, granted, clearHandshakeTimeout, fail, updateStatus]);
+  }, [
+    decision.allowed,
+    descriptor.gameId,
+    descriptor.version,
+    descriptor.entrypointUrl,
+    descriptor.artifactSha256,
+    descriptor.sdkVersion,
+    descriptor.capabilities,
+    policy.hostOrigin,
+    policy.allowedArtifactOrigins,
+    policy.supportedSdkVersion,
+    policy.allowedCapabilities,
+    granted,
+    clearHandshakeTimeout,
+    fail,
+    updateStatus,
+  ]);
 
   useEffect(() => () => clearHandshakeTimeout(), [clearHandshakeTimeout]);
 
@@ -159,6 +179,11 @@ export function GamePluginHost({
       fail("frame_unavailable");
       return;
     }
+    if (frameLoadHandledRef.current) {
+      fail("unexpected_navigation");
+      return;
+    }
+    frameLoadHandledRef.current = true;
     updateStatus("handshaking");
     const payload: Extract<PluginHostMessageV1, { type: "host:init" }>["payload"] = {
       locale,
@@ -189,6 +214,7 @@ export function GamePluginHost({
   if (error === "incompatible_runtime") statusText = "This game uses an incompatible runtime version.";
   if (error === "invalid_message") statusText = "The game sent an invalid message and was stopped.";
   if (error === "frame_unavailable") statusText = "The game frame could not be initialized.";
+  if (error === "unexpected_navigation") statusText = "The game navigated unexpectedly and was stopped."; 
 
   return (
     <section className="playora-plugin-host" aria-label="Isolated game session" dir={locale === "fa" ? "rtl" : "ltr"}>
