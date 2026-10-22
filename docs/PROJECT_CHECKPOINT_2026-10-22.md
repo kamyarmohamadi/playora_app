@@ -115,3 +115,7 @@ This section and [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.m
 - The three authenticated social SECURITY DEFINER warnings remain a documented production blocker. Auth redirects/provider setup, two-user live browser verification, hosting/domain, CSP, SMTP, artifact host and independent security review are not complete.
 - Recovery/keys/connection instructions are in [docs/RECOVERY_AND_CONTINUATION.md](RECOVERY_AND_CONTINUATION.md). Do not store secrets in GitHub files or chat.
 - The GitHub Actions run verifies code/SQL/Deno checks; it does not claim a hosted website or production-ready backend.
+
+
+## Fixed recovery snapshot
+A separate snapshot branch preserves the complete code/docs/migration tree recorded in the recovery guide: https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22. Use the active architecture branch for ongoing work; use the snapshot branch only to recover the exact saved state if a later change breaks the working tree.

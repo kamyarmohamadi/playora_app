@@ -7,6 +7,7 @@
 
 - **Private GitHub repository:** https://github.com/kamyarmohamadi/playora_app
 - **Active development branch:** https://github.com/kamyarmohamadi/playora_app/tree/feature/playora-platform-game-plugin-architecture-2026-10-22
+- **Fixed recovery snapshot branch:** https://github.com/kamyarmohamadi/playora_app/tree/checkpoint/playora-recovery-2026-10-22 (fallback snapshot; do not do active development on this branch)
 - **Active development commit at the time of this audit:** \`d0ad10dcfb0049ecf97c955ae46afd75bfcf41da\`
 - **Open draft PR:** https://github.com/kamyarmohamadi/playora_app/pull/7
 - **Current project checkpoint:** https://github.com/kamyarmohamadi/playora_app/blob/feature/playora-platform-game-plugin-architecture-2026-10-22/docs/PROJECT_CHECKPOINT_2026-10-22.md
