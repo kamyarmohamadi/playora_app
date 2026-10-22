@@ -277,3 +277,10 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - It requires only the staging publishable/anon key and never a service-role key. Do not run against production or shared environments without an approved window and cost review.
 - This is only the first read-only workload. It does not validate authenticated member flows, game rooms, realtime fan-out, writes, or 100,000 concurrent users. The harness has not yet been executed on staging, so no capacity claim is made.
 - Related plan: `docs/SCALABILITY_AND_LOAD_TEST_PLAN_FA.md`. Main remains untouched; no live Supabase configuration or enabled games were changed.
+
+
+## Database capacity hardening — 2026-10-23
+- Added `supabase/migrations/20261027000000_capacity_query_indexes.sql` with targeted indexes for sender-side social relationship lookups and open-room expiry/host queries.
+- Added `supabase/tests/capacity_indexes.sql` and updated `.github/workflows/ci.yml` to apply the migration and verify the new indexes are valid/ready in disposable PostgreSQL CI. Updated `supabase/README.md` with the migration/test references.
+- Initial GitHub Actions runs for the new commits failed in all three jobs before any step was reported (zero steps/runner ID); this is not enough evidence to diagnose a code failure or pass. The new migration/index test remains unverified until a run actually executes steps successfully.
+- The capacity checklist explicitly leaves this item unchecked. No live Supabase migration was run, no games were enabled, and `main` remains untouched.
