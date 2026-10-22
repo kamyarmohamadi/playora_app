@@ -104,10 +104,14 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261024000000_catalog_art_key.sql
       - name: Add trusted plugin capability grants
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025000000_plugin_capability_grants.sql
+      - name: Add member-owned support report intake
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026000000_support_reports.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Test visible catalog and trusted plugin registry boundaries
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/game_plugin_registry.sql
+      - name: Test member-owned support reports, idempotency and rate limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/support_reports.sql
       - name: Test wallet ledger idempotency and overdraft protections
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
       - name: Test isolation between two authenticated members

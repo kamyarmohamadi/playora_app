@@ -10,7 +10,7 @@ BEGIN
     'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
     'tournament_entries','deposit_requests','security_audit_events','social_action_events',
-    'game_plugin_artifact_origins','game_plugin_versions'
+    'game_plugin_artifact_origins','game_plugin_versions', 'support_reports'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
@@ -173,6 +173,13 @@ BEGIN
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
+  END IF;
+
+  IF has_table_privilege('anon','public.support_reports','SELECT')
+     OR has_table_privilege('anon','public.support_reports','INSERT')
+     OR has_table_privilege('authenticated','public.support_reports','UPDATE')
+     OR has_table_privilege('authenticated','public.support_reports','DELETE') THEN
+    RAISE EXCEPTION 'Support reports must be private and immutable to browser clients';
   END IF;
 
   IF EXISTS (SELECT 1 FROM public.catalog_games WHERE is_enabled = true) THEN
