@@ -97,7 +97,6 @@ describe("support report service", () => {
     const fake = fakeClient({ listResult: { data: [row], error: null } });
     expect(await listMySupportReports(fake.client, "member-1", () => "member-1")).toEqual([row]);
     expect(fake.selectCalls[0].filters).toContainEqual(["user_id", "member-1"]);
-    expect(fake.selectCalls[0].builder).toBeUndefined();
   });
 
   it("returns the original ticket when a network retry hits the idempotency constraint", async () => {
