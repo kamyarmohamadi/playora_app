@@ -305,4 +305,110 @@ describe("GamePluginHost", () => {
       vi.useRealTimers();
     }
   });
+
+  it("clamps valid resize requests to the host's safe iframe height range", () => {
+    render(<GamePluginHost descriptor={descriptor} policy={policy} locale="en" onExit={vi.fn()} />);
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    const send = (height: number) => window.dispatchEvent(new MessageEvent("message", {
+      origin: "null",
+      source: frame.contentWindow,
+      data: {
+        protocolVersion: 1,
+        sessionId: "a".repeat(64),
+        type: "plugin:ready",
+        payload: { sdkVersion: "1.0.0" },
+      },
+    }));
+    act(() => { send(600); });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:resize",
+          payload: { width: 1200, height: 4096 },
+        },
+      }));
+    });
+    expect(frame.style.height).toBe("900px");
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:resize",
+          payload: { width: 1200, height: 1 },
+        },
+      }));
+    });
+    expect(frame.style.height).toBe("320px");
+  });
+
+  it("ignores replayed exit and telemetry messages after the host session has ended", () => {
+    const onExit = vi.fn();
+    const onTelemetry = vi.fn();
+    render(
+      <GamePluginHost
+        descriptor={descriptor}
+        policy={policy}
+        locale="en"
+        onExit={onExit}
+        onTelemetry={onTelemetry}
+      />,
+    );
+    const frame = screen.getByTitle("chess isolated game") as HTMLIFrameElement;
+    fireEvent.load(frame);
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:ready",
+          payload: { sdkVersion: "1.0.0" },
+        },
+      }));
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(/game connected/i);
+
+    fireEvent.click(screen.getByRole("button", { name: "Exit game" }));
+    expect(onExit).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:exit",
+          payload: { reason: "completed" },
+        },
+      }));
+      window.dispatchEvent(new MessageEvent("message", {
+        origin: "null",
+        source: frame.contentWindow,
+        data: {
+          protocolVersion: 1,
+          sessionId: "a".repeat(64),
+          type: "plugin:telemetry",
+          payload: { event: "late-event", fields: { safe: true } },
+        },
+      }));
+    });
+
+    expect(onExit).toHaveBeenCalledTimes(1);
+    expect(onTelemetry).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent(/session has ended/i);
+  });
+
 });
