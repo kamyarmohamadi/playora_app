@@ -170,3 +170,14 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Supabase migration history has repeated `plugin_registry_hardening` labels. Reconcile source/remote history before any migration push/replay.
 - Three Security Advisor warnings remain for authenticated social `SECURITY DEFINER` functions; production is blocked pending review.
 - PR #7 remains open/draft and unmerged. Do not enable a game, payment/deposit/prize feature or admin panel as part of this milestone.
+
+
+## Incremental security and support-intake checkpoint — 2026-10-23
+
+- Latest code checkpoint before this documentation update: `058c1afb50402f1d2a8b91f4f2c854fd397bbea2`.
+- Plugin-host tests now cover withholding display aliases unless `profile:read` is explicitly granted, plus listener/timer cleanup on unmount.
+- Added the member-owned `support_reports` schema and disposable PostgreSQL test. Coverage includes column-scoped grants, own-row RLS for two members, immutable workflow fields from the client, safe diagnostics shape/size, idempotent submissions, and the five-per-hour rate limit.
+- Current verification run: [39853259272](https://github.com/kamyarmohamadi/playora_app/actions/runs/39853259272). At the last check, unit tests, PostgreSQL security tests (including support reports), and Deno checks had passed; the Chromium install/browser E2E step was still running. This checkpoint does not claim all CI is green.
+- A test-only permission assertion was corrected after CI showed the migration intentionally uses column-level grants rather than table-wide SELECT/INSERT. Do not broaden client grants to satisfy a table-level assertion.
+- Keep the development Supabase migration unapplied until the known remote migration-history mismatch has been reconciled. No playable games are enabled; the trusted plugin-origin allowlist remains empty.
+- Next: confirm full CI completion, then continue browser-runtime lifecycle coverage and Auth/JWT integration planning.

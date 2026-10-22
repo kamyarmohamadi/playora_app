@@ -21,6 +21,7 @@ The development Supabase project has been provisioned and the listed development
    - supabase/migrations/20261023000200_registry_origin_actor_index.sql
    - supabase/migrations/20261024000000_catalog_art_key.sql
    - supabase/migrations/20261025000000_plugin_capability_grants.sql
+   - supabase/migrations/20261026000000_support_reports.sql
 6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
 7. Function source is tracked in `supabase/functions/`, but the live project currently reports zero deployed Edge Functions. Deploy `member-self` only after Auth/JWT, origin, secret and endpoint reviews pass, then verify it against the live project. Do not deploy `delete-account` until its full disposable-account end-to-end test and cleanup verification pass.
 9. Configure PLAYORA_ALLOWED_ORIGINS as a comma-separated allowlist of exact frontend origins (for example, the production HTTPS origin and localhost during development). Do not use a wildcard. Check that the Edge Function has SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY available as server-side secrets; never paste them in frontend environment variables or the repository.
@@ -48,6 +49,7 @@ The GitHub Actions workflow applies all migrations and runs these SQL tests agai
 - supabase/tests/private_rooms.sql
 - supabase/tests/social_leaderboard.sql
 - supabase/tests/account_deletion.sql
+- supabase/tests/support_reports.sql
 
 The bootstrap is a test-only minimal Auth schema shim. It does not replace integration tests against real Supabase Auth/JWTs. In the real project, use at least two distinct authenticated test accounts and attempt cross-member reads/writes by substituting UUIDs. Verify all cross-member access is denied.
 
@@ -81,3 +83,10 @@ The plugin manifest lists requested capabilities, but requested capabilities are
 The project is active/healthy and the source migrations are tracked. The live catalogue has 8 visible metadata rows, no enabled games, no plugin versions, and no approved artifact origins. RLS is enabled on the catalog and plugin registry tables. Browser roles cannot write plugin registry state or read the trusted artifact-origin allowlist. The connected project tool reports zero deployed Edge Functions at this checkpoint; local function source is not the same as a deployed endpoint.
 
 For a complete device/session recovery procedure, current CI link, private-repository branch, exact project links, secret boundary and remaining setup work, read [docs/RECOVERY_AND_CONTINUATION.md](../docs/RECOVERY_AND_CONTINUATION.md). Do not store populated keys or passwords in this file or in GitHub commits.
+
+
+## 6. Member-owned support reports
+
+The `support_reports` migration provides a separate ticket per submission. Authenticated members can insert approved report fields and read only their own tickets; client update/delete and workflow-field edits are denied. Diagnostics are limited to a small allowlisted shape and the database enforces idempotency and a five-report-per-member-per-hour rate limit. Duplicate-ticket grouping and root-cause incident aggregation are future privileged triage workflows, not a reason to merge or discard individual reports.
+
+The source migration is committed, but **do not apply it to the existing `playora-dev` project yet**. First reconcile the project's existing migration history with the source files and inspect the actual remote schema. CI tests use a disposable PostgreSQL database and do not mean the support workflow is live in Supabase.

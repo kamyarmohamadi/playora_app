@@ -136,3 +136,21 @@ Next steps, in order:
 - Prefer small, test-first milestones and commit each verified change. If a test fails, save the failure details and fix the cause—do not weaken the test just to get a green run.
 - Update the checkpoint with changed files, exact commit, test links, live service state, blockers and the next task.
 - Never claim "zero bugs" or "production-ready" without the full relevant verification and release review.
+
+
+## 8. Incremental checkpoint — plugin-host privacy and support intake
+
+- Current code checkpoint before this documentation update: `058c1afb50402f1d2a8b91f4f2c854fd397bbea2` on the active architecture branch.
+- Plugin host: added tests confirming the display alias is omitted from `host:init` unless `profile:read` is explicitly granted, and that unmounting clears the handshake timer and removes the message listener. The test was corrected to expect an empty capability list when the caller grants none; production code was not weakened.
+- Support intake: added `supabase/migrations/20261026000000_support_reports.sql` and `supabase/tests/support_reports.sql`. The database schema enforces member ownership, column-scoped grants, own-row RLS, safe bounded diagnostics, idempotency keys and a maximum of five reports per member per hour. Tickets remain distinct; duplicate/root-cause grouping is intentionally a future privileged triage workflow.
+- The first support-report SQL test caught an incorrect assertion that expected table-wide SELECT/INSERT privileges. The migration deliberately grants column-level access, so the test now verifies the intended column grants. The migration was not broadened to table-wide client permissions.
+- Verification run for the current head: https://github.com/kamyarmohamadi/playora_app/actions/runs/39853259272 . At the last check, the Edge Function type checks, unit tests, and PostgreSQL security suite (including support-report tests) passed; Playwright Chromium installation/browser E2E was still in progress. Do not call the current head fully verified until every CI job completes successfully.
+- Previously fully green baseline: https://github.com/kamyarmohamadi/playora_app/actions/runs/39699821911 for commit `ee525074840ef53bc8827a05060c2952524ecdd8`.
+
+## 9. Resume after interruption
+
+1. Fetch the latest branch head and CI status before editing; the branch may advance as new small commits land.
+2. Read this guide and `docs/PROJECT_CHECKPOINT_2026-10-22.md`.
+3. Keep `support_reports` member-owned: do not grant authenticated users update/delete or table-wide privileges, and never let client input choose owner/status/timestamps.
+4. Do not apply the new support-report migration to the live development Supabase project until its migration-history ordering is reconciled and the migration is reviewed against the actual remote schema.
+5. Continue with browser E2E completion, update the checkpoint, and commit each verified milestone.
