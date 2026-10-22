@@ -269,3 +269,11 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added capacity gates to `docs/PLAYORA_RELEASE_READINESS_CHECKLIST_FA.md`. Only the plan/documentation item is checked; no load-test evidence exists yet, so 100,000 concurrent sessions are **not yet verified**.
 - Architecture priorities: stateless/scalable API, protected pooled database connections, query/index profiling, idempotency, layered rate limits, backpressure, controlled async queues, realtime channel authorization/fan-out testing, and security/RLS verification under load.
 - Keep game catalog disabled and do not change `main` or live Supabase as part of this documentation step.
+
+
+## Load-test harness added — 2026-10-23
+- Added `load-tests/catalog-read.js` and `load-tests/README.md` on the active development branch.
+- The k6 script exercises the same public `catalog_games` read query used by the frontend provider, with staged ramp-up, latency/error thresholds, and a safety guard requiring `LOAD_TEST_CONFIRM=staging`.
+- It requires only the staging publishable/anon key and never a service-role key. Do not run against production or shared environments without an approved window and cost review.
+- This is only the first read-only workload. It does not validate authenticated member flows, game rooms, realtime fan-out, writes, or 100,000 concurrent users. The harness has not yet been executed on staging, so no capacity claim is made.
+- Related plan: `docs/SCALABILITY_AND_LOAD_TEST_PLAN_FA.md`. Main remains untouched; no live Supabase configuration or enabled games were changed.
