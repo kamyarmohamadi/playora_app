@@ -349,3 +349,18 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Queried the active Supabase development database for the three planned capacity index names. The query returned zero rows, confirming none of those indexes currently exist in the live dev schema.
 - This is expected because the migration has not been applied; it must remain unapplied until migration history is reconciled and the disposable PostgreSQL migration/test suite runs successfully.
 - No DDL was executed by this inspection. The query only read PostgreSQL catalog metadata.
+
+
+## ادامهٔ کار — 2026-10-23: وضعیت CI و حفاظت شاخه
+
+- بررسی دوبارهٔ اجرای push [39877323279](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877323279) و اجرای PR [39877327734](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877327734): هر سه job در هر دو اجرا با `runner_id: 0`، runner name خالی و فهرست steps خالی شکست خورده‌اند. علت ریشه‌ای هنوز معلوم نیست؛ این اجراها **نتیجهٔ تست‌های کد نیستند** چون stepی اجرا نشده است.
+- بررسی branch metadata نشان داد شاخهٔ توسعه در زمان بررسی protected نیست و required status checks خاموش‌اند. یافته و دستورالعمل اقدام مالک در `docs/GITHUB_ACTIONS_RUNNER_RECOVERY_FA.md` ثبت شد. اتصال GitHub فعلی امکان تغییر تنظیمات حفاظت شاخه را ندارد.
+- تأیید شد که workflow در CI ابتدا migration ظرفیت `20261027000000_capacity_query_indexes.sql` را روی PostgreSQL موقت اعمال می‌کند و سپس `supabase/tests/capacity_indexes.sql` را اجرا می‌کند. این فقط تأیید ترتیب تعریف‌شده در workflow است، نه اثبات اجرای موفق تست.
+- آخرین تغییر مستنداتی در commit `0d1400bef82278a33e813fcc970bcfc5ce4166bd` ذخیره شد. شاخهٔ `main` دست‌نخورده است.
+
+### اقدامات باز و ترتیب امن
+1. مالک مخزن از Settings → Actions وضعیت runner/سیاست اجرا و محدودیت‌های حساب را بررسی کند؛ علت دقیق را بدون لاگ runner حدس نزنیم.
+2. پس از بازگشت runner، اجرای کامل CI روی HEAD فعلی را سبز کنیم و هر خطای واقعی تست را جداگانه اصلاح کنیم.
+3. سپس از Settings → Branches، پس از مشاهدهٔ نام واقعی checkها، حفاظت شاخه و required checks را تنظیم کنیم.
+4. پیش از اجرای migration ظرفیت روی Supabase زنده، migration history محلی و remote را reconcile کنیم و تست‌های دیتابیس را در محیط disposable اجرا کنیم.
+5. PR #7 تا پایان این gates ادغام نشود؛ بازی‌ها، پرداخت، پاداش نقدی و قابلیت‌های رمزارزی همچنان غیرفعال بمانند.
