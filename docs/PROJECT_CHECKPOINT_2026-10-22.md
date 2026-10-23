@@ -294,3 +294,13 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Updated k6 pilot profile to default to 100 VUs and reject more than 500 VUs; documentation recommends starting with 10–50 and increasing in stages against isolated staging only. This still tests catalog reads only.
 - CI for recent commits is still failing before job steps are executed. No claim of passing CI, verified capacity, completed deployment, or ready-for-money operations is made.
 - No live Supabase migration was run, no game was enabled, and `main` remains untouched.
+
+
+## CI recovery attempt — 2026-10-23 (latest status)
+- Inspected the latest run for commit `350f5d551d1d77b26ec6c00d170bc82f7278b9fe`: [GitHub Actions run 39876630159](https://github.com/kamyarmohamadi/playora_app/actions/runs/39876630159).
+- All three jobs were marked failed with `steps: null` and `logs_url: null`; no workflow command output was available. This does **not** establish that the source code or SQL tests failed, and it does not establish that they passed.
+- Triggered GitHub's supported "re-run failed jobs" operation. Attempt 2 was accepted, but the jobs again transitioned to failure without step summaries or logs. The runner/infrastructure/account-side cause remains undiagnosed from the available evidence.
+- The workflow YAML was inspected: jobs use `ubuntu-latest`; the workflow-level token permission is `contents: read`. No obvious source-code test error can be inferred from the missing job steps.
+- The capacity index migration and `supabase/tests/capacity_indexes.sql` were inspected in the repository. They have **not** been validated by a successful CI run or applied to live Supabase.
+- Next action: resolve GitHub Actions job-start/log availability (including checking repository Actions settings/runner availability in the GitHub UI if connector access cannot reveal it), then run the full quality gate. Do not disable tests, mark checklist items complete, or push the migration to live Supabase to bypass this blocker.
+- No code migration was applied to live Supabase, no games/payments were enabled, PR #7 remains draft, and `main` remains untouched.
