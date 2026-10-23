@@ -23,6 +23,15 @@ describe("Playora global app shell", () => {
     expect(screen.getByRole("button", { name: "Explore games" })).toBeInTheDocument();
   });
 
+  it("closes the collapsed navigation drawer with Escape", () => {
+    render(<App />);
+    const menu = screen.getByRole("button", { name: "Open menu" });
+    fireEvent.click(menu);
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("opens the games catalogue and labels games as not ready", () => {
     render(<App />);
     openNavigation("Games");
@@ -80,6 +89,14 @@ describe("Playora global app shell", () => {
     expect(screen.getByText(/Account services are not connected yet/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
     expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
+  });
+
+  it("closes the account dialog with Escape without changing authentication state", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Welcome to Playora" })).not.toBeInTheDocument();
   });
 
   it("does not launch games when no approved plugin is installed", async () => {
