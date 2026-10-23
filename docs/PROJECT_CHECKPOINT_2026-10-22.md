@@ -336,3 +336,10 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Final test-script commit: [6f53354](https://github.com/kamyarmohamadi/playora_app/commit/6f533546b53208ae900b8a700aa5bb1e74cf838b).
 - Latest workflow for that exact commit: [39877220483](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877220483) — still failed before steps, consistent with `runner_id: 0` pattern on earlier runs. The test script itself remains unexecuted/unverified.
 - This is test-quality work only. It does not prove the live functions are secure and does not change live database state. All games and money features remain disabled.
+
+
+## Capacity-index regression test strengthened — 2026-10-23
+- Strengthened `supabase/tests/capacity_indexes.sql`: it now checks not only index presence/validity/readiness, but also the intended target table, key-column order/definition fragment, and whether each index is partial as expected.
+- Saved in [60a2d18](https://github.com/kamyarmohamadi/playora_app/commit/60a2d18681203b1812e15df23ea2b1ae9b759014).
+- Latest run for the immediately preceding index-test revision [39877263120](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877263120) again shows all three jobs failed with `runner_id: 0`, no runner name, and zero steps. Therefore neither the SQL test nor migration is verified yet.
+- No live migration was applied. Next verification must run the migration and test in disposable PostgreSQL after GitHub runner allocation is restored, then inspect `EXPLAIN` plans against realistic staging data before deciding whether indexes are beneficial.
