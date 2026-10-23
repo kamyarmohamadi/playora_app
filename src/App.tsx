@@ -817,6 +817,7 @@ export default function App() {
 
   return (
     <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"} ${!session ? "auth-gated" : ""}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
+      {session && <>
       <header className="topbar">
         <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close menu" : "Open menu") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن منو" : "باز کردن منو")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
@@ -1090,6 +1091,7 @@ export default function App() {
           </form>
         </section>
       </div>}
+      </>}
       {(authOpen || !session) && <div className={`auth-backdrop ${authMode === "welcome" ? "auth-welcome-backdrop" : ""}`} role="presentation" onMouseDown={event => { if (session && event.target === event.currentTarget) setAuthOpen(false); }}>
         <section className={`auth-modal ${authMode === "welcome" ? "auth-welcome" : ""}`} role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
           {authMode === "welcome" ? (
