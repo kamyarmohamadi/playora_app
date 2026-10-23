@@ -497,3 +497,19 @@
    dialog is its parent, not a descendant). */
 .auth-form-panel h2{position:relative;color:#f5f8ff;font-size:27px;letter-spacing:-.65px}
 .auth-form-panel #auth-modal-title{margin:0}
+
+
+/* First-launch authentication gate: unauthenticated visitors must not see or
+   interact with the dashboard before signing in. */
+.app-shell.auth-gated{min-height:100dvh;background:#040916}
+.app-shell.auth-gated>:not(.auth-backdrop){display:none!important}
+.app-shell.auth-gated .auth-backdrop{z-index:999;min-height:100dvh;background:radial-gradient(ellipse at 18% 18%,#173c7a38,transparent 43%),radial-gradient(ellipse at 84% 78%,#5c23772b,transparent 38%),#040916;backdrop-filter:none}
+.app-shell.auth-gated .auth-modal{box-shadow:0 36px 130px #000e,0 0 110px #245cff20}
+.app-shell.auth-gated .auth-form-panel{background:radial-gradient(ellipse at 90% 0%,#253d8033,transparent 45%),linear-gradient(145deg,#0b1730,#070d1a 80%)}
+.brand-mark{clip-path:none;background:none;overflow:visible;filter:drop-shadow(0 0 8px #38dfff30)}
+.brand-mark path{transition:filter .2s}
+.brand-lockup:hover .brand-mark,.auth-visual-brand:hover .brand-mark{filter:drop-shadow(0 0 13px #4adfff88)}
+@media(max-width:640px){
+  .app-shell.auth-gated .auth-backdrop{padding:8px}
+  .app-shell.auth-gated .auth-modal{max-height:calc(100dvh - 16px)}
+}
