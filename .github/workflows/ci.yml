@@ -3,6 +3,7 @@ name: Playora quality gate
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # CI jobs only need to read source; do not grant write access to GITHUB_TOKEN.
 permissions:
