@@ -91,6 +91,15 @@ describe("Playora global app shell", () => {
     expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
   });
 
+  it("shows a safe message when Google OAuth returns an error", () => {
+    window.history.replaceState({}, "", "/?error=access_denied&error_description=provider%20details");
+    render(<App />);
+    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+    expect(screen.getByText("We couldn’t complete that request. Check your details or try again.")).toBeInTheDocument();
+    expect(window.location.search).not.toContain("error_description");
+    window.history.replaceState({}, "", "/");
+  });
+
   it("closes the account dialog with Escape without changing authentication state", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
