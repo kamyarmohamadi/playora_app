@@ -3,6 +3,11 @@ name: Playora quality gate
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+# CI jobs only need to read source; do not grant write access to GITHUB_TOKEN.
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -10,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -22,10 +27,34 @@ jobs:
         run: npm audit --audit-level=moderate
       - name: Run unit tests
         run: npm test
+      - name: Enforce platform/game import boundary
+        run: npm run check:platform-boundary
       - name: Type-check
         run: npm run typecheck
       - name: Build production bundle
         run: npm run build
+      - name: Type-check browser end-to-end tests
+        run: npm run typecheck:e2e
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser end-to-end tests
+        run: npm run test:e2e
+      - name: Upload production web build for manual preview/review
+        if: success() && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playora-web-build-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
 
   database-security:
@@ -52,7 +81,7 @@ jobs:
       PGDATABASE: playora_test
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install PostgreSQL client
         run: |
           sudo apt-get update
@@ -74,8 +103,32 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
       - name: Apply account deletion cleanup migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020040000_account_deletion.sql
+      - name: Apply platform-only game RPC lockdown migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
+      - name: Apply public catalog and trusted plugin registry migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261022000000_platform_game_plugin_registry.sql
+      - name: Apply plugin registry hardening migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
+      - name: Enforce approved artifact origins and plugin publication states
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000100_plugin_origin_state_guards.sql
+      - name: Index artifact-origin creator reference
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000200_registry_origin_actor_index.sql
+      - name: Store catalog art as metadata
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261024000000_catalog_art_key.sql
+      - name: Add trusted plugin capability grants
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025000000_plugin_capability_grants.sql
+      - name: Add member-owned support report intake
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026000000_support_reports.sql
+      - name: Add capacity-oriented query indexes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261027000000_capacity_query_indexes.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+      - name: Verify capacity query indexes are valid
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/capacity_indexes.sql
+      - name: Test visible catalog and trusted plugin registry boundaries
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/game_plugin_registry.sql
+      - name: Test member-owned support reports, idempotency and rate limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/support_reports.sql
       - name: Test wallet ledger idempotency and overdraft protections
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
       - name: Test isolation between two authenticated members
@@ -95,9 +148,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Deno
-        uses: denoland/setup-deno@v2
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
       - name: Type-check member self endpoint

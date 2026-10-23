@@ -7,7 +7,11 @@ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
   ('00000000-0000-4000-8000-000000000002','two@example.test','{"display_name":"Member Two","locale":"fa"}')
 ON CONFLICT (id) DO NOTHING;
 
+-- This fixture intentionally re-enables legacy game RPCs only inside disposable CI PostgreSQL.
 UPDATE public.catalog_games SET is_enabled = true WHERE id = 'tictactoe';
+GRANT EXECUTE ON FUNCTION public.queue_for_random_match(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.cancel_random_match_queue(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_tictactoe_move(uuid,integer) TO authenticated;
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.role','authenticated',false);

@@ -9,7 +9,8 @@ BEGIN
     'member_profiles','member_preferences','coin_wallets','coin_ledger','catalog_games',
     'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
-    'tournament_entries','deposit_requests','security_audit_events','social_action_events'
+    'tournament_entries','deposit_requests','security_audit_events','social_action_events',
+    'game_plugin_artifact_origins','game_plugin_versions', 'support_reports'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
@@ -34,14 +35,12 @@ BEGIN
   END IF;
 
   IF has_function_privilege('anon','public.queue_for_random_match(text)','EXECUTE')
-     OR has_function_privilege('anon','public.submit_tictactoe_move(uuid,integer)','EXECUTE') THEN
-    RAISE EXCEPTION 'Anonymous role must not invoke online matchmaking or move RPCs';
-  END IF;
-
-  IF NOT has_function_privilege('authenticated','public.queue_for_random_match(text)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.cancel_random_match_queue(text)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.submit_tictactoe_move(uuid,integer)','EXECUTE') THEN
-    RAISE EXCEPTION 'Authenticated member must have execute permission for approved own-session RPCs';
+     OR has_function_privilege('anon','public.cancel_random_match_queue(text)','EXECUTE')
+     OR has_function_privilege('anon','public.submit_tictactoe_move(uuid,integer)','EXECUTE')
+     OR has_function_privilege('authenticated','public.queue_for_random_match(text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.cancel_random_match_queue(text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.submit_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Ranked game RPCs must remain disabled for client roles before a game plugin is approved';
   END IF;
 
   IF has_table_privilege('authenticated','public.coin_wallets','INSERT')
@@ -121,15 +120,12 @@ BEGIN
   IF has_function_privilege('anon','public.create_private_room(text,integer)','EXECUTE')
      OR has_function_privilege('anon','public.join_private_room(text)','EXECUTE')
      OR has_function_privilege('anon','public.leave_private_room(uuid)','EXECUTE')
-     OR has_function_privilege('anon','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
-    RAISE EXCEPTION 'Anonymous clients must not invoke private-room RPCs';
-  END IF;
-
-  IF NOT has_function_privilege('authenticated','public.create_private_room(text,integer)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.join_private_room(text)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.leave_private_room(uuid)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
-    RAISE EXCEPTION 'Authenticated members must be able to invoke approved private-room RPCs';
+     OR has_function_privilege('anon','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE')
+     OR has_function_privilege('authenticated','public.create_private_room(text,integer)','EXECUTE')
+     OR has_function_privilege('authenticated','public.join_private_room(text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.leave_private_room(uuid)','EXECUTE')
+     OR has_function_privilege('authenticated','public.submit_private_tictactoe_move(uuid,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Private-room game RPCs must remain disabled for client roles until an approved game plugin ships';
   END IF;
 
   IF has_table_privilege('authenticated','public.friend_requests','SELECT') THEN
@@ -158,9 +154,12 @@ BEGIN
 
   IF NOT has_function_privilege('authenticated','public.list_social_relationships()','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.send_friend_request(text)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.respond_friend_request(uuid,text)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.get_game_leaderboard(text,integer)','EXECUTE') THEN
-    RAISE EXCEPTION 'Authenticated members must be able to use approved social/leaderboard RPCs';
+     OR NOT has_function_privilege('authenticated','public.respond_friend_request(uuid,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Authenticated members must be able to use approved scoped social RPCs';
+  END IF;
+
+  IF has_function_privilege('authenticated','public.get_game_leaderboard(text,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Game leaderboard RPC must remain disabled until a game plugin is approved';
   END IF;
 
   IF has_function_privilege('authenticated','public.prepare_account_deletion(uuid)','EXECUTE')
@@ -174,6 +173,17 @@ BEGIN
   IF has_column_privilege('authenticated','public.member_profiles','username','UPDATE')
      OR has_column_privilege('authenticated','public.member_profiles','user_id','UPDATE') THEN
     RAISE EXCEPTION 'Member must not edit profile identity fields';
+  END IF;
+
+  IF has_table_privilege('anon','public.support_reports','SELECT')
+     OR has_table_privilege('anon','public.support_reports','INSERT')
+     OR has_table_privilege('authenticated','public.support_reports','UPDATE')
+     OR has_table_privilege('authenticated','public.support_reports','DELETE') THEN
+    RAISE EXCEPTION 'Support reports must be private and immutable to browser clients';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.catalog_games WHERE is_enabled = true) THEN
+    RAISE EXCEPTION 'No game may be launchable in the platform-only staging migration baseline';
   END IF;
 END
 $playora_security$;

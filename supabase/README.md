@@ -1,22 +1,30 @@
 # Supabase setup — Playora
 
-This folder documents the backend foundation. It is not evidence that a live Supabase service has been provisioned or deployed.
+The development Supabase project has been provisioned and the listed development migrations have been applied and tested in CI. This document is not evidence of a production deployment; production remains a separate gated task.
 
-## 1. Create a development project first
+## 1. Reconnect to the existing development project
 
-1. Create separate Supabase projects for development and production. Never test destructive workflows against production data.
+1. The development project already exists: `playora-dev`, project ref `nnowvfewtrfurnluhflt`, region `eu-central-1`. Use https://supabase.com/dashboard/project/nnowvfewtrfurnluhflt to open it. Create a separate production project only after a cost/data-residency/backup review.
 2. In Auth, enable email confirmation and configure secure redirect URLs. Configure Google OAuth credentials in Supabase Auth before enabling the Google button.
 3. Copy .env.example to .env.local and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. These are browser configuration values, not service-role credentials.
 4. Keep SUPABASE_SERVICE_ROLE_KEY exclusively in server-side Edge Function secrets. Never prefix it with VITE_, expose it in browser code or commit it.
-5. Apply migrations in order to a fresh or reviewed compatible project:
+5. For a **new empty project only**, review and apply source migrations in order. For the existing `playora-dev`, do not blindly replay migrations: the connected migration history has duplicate `plugin_registry_hardening` labels and connector-applied versions that do not map one-to-one to filename prefixes. Reconcile local and remote migration history before using the CLI or running any push. Current source files to review include:
    - supabase/migrations/20261020000000_secure_member_data.sql
    - supabase/migrations/20261020010000_private_rooms.sql
    - supabase/migrations/20261020020000_social_and_leaderboard.sql
    - supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
    - supabase/migrations/20261020040000_account_deletion.sql
-6. Only Tic Tac Toe is implemented for server-connected play in this iteration. Other catalog games remain disabled. Do not manually enable incomplete games.
-7. Deploy the authenticated self-service endpoint: supabase functions deploy member-self.
-8. Deploy the account-deletion endpoint only after reviewing its source: supabase functions deploy delete-account.
+   - supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
+   - supabase/migrations/20261022000000_platform_game_plugin_registry.sql
+   - supabase/migrations/20261023000000_plugin_registry_hardening.sql
+   - supabase/migrations/20261023000100_plugin_origin_state_guards.sql
+   - supabase/migrations/20261023000200_registry_origin_actor_index.sql
+   - supabase/migrations/20261024000000_catalog_art_key.sql
+   - supabase/migrations/20261025000000_plugin_capability_grants.sql
+   - supabase/migrations/20261026000000_support_reports.sql
+   - supabase/migrations/20261027000000_capacity_query_indexes.sql
+6. During the platform-only phase, all catalog games remain disabled and the legacy ranked/private Tic Tac Toe RPCs are revoked from browser roles. Do not re-grant them in a live project. CI's disposable database grants these functions inside test fixtures only to keep legacy SQL invariants covered.
+7. Function source is tracked in `supabase/functions/`, but the live project currently reports zero deployed Edge Functions. Deploy `member-self` only after Auth/JWT, origin, secret and endpoint reviews pass, then verify it against the live project. Do not deploy `delete-account` until its full disposable-account end-to-end test and cleanup verification pass.
 9. Configure PLAYORA_ALLOWED_ORIGINS as a comma-separated allowlist of exact frontend origins (for example, the production HTTPS origin and localhost during development). Do not use a wildcard. Check that the Edge Function has SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY available as server-side secrets; never paste them in frontend environment variables or the repository.
 10. Test email signup/confirmation, sign-in, password recovery and OAuth redirects against this exact project.
 
@@ -35,12 +43,15 @@ The UI feature flag stays off by default. Keep VITE_ACCOUNT_DELETION_ENABLED=fal
 The GitHub Actions workflow applies all migrations and runs these SQL tests against a disposable PostgreSQL 16 database:
 
 - supabase/tests/security_invariants.sql
+- supabase/tests/capacity_indexes.sql
+- supabase/tests/game_plugin_registry.sql
 - supabase/tests/wallet_ledger.sql
 - supabase/tests/rls_member_isolation.sql
 - supabase/tests/ranked_tictactoe.sql
 - supabase/tests/private_rooms.sql
 - supabase/tests/social_leaderboard.sql
 - supabase/tests/account_deletion.sql
+- supabase/tests/support_reports.sql
 
 The bootstrap is a test-only minimal Auth schema shim. It does not replace integration tests against real Supabase Auth/JWTs. In the real project, use at least two distinct authenticated test accounts and attempt cross-member reads/writes by substituting UUIDs. Verify all cross-member access is denied.
 
@@ -57,3 +68,34 @@ Private-room invite codes are high-entropy random values; only a SHA-256 hash is
 Before production, complete real Supabase RLS integration tests, session/verification settings, rate limits and abuse controls, monitoring/logging without secrets, backups/recovery, data retention/deletion workflows, dependency/security scans, actual hosting security headers, a real-time service capacity plan, and an independent threat-model review.
 
 public/_headers is a template for compatible static hosts only. It is not automatically enforced on every hosting provider; configure equivalent headers on the selected host and test the effective CSP against the actual Supabase URL.
+
+
+## 6. Plugin registry safety gate
+
+The trusted artifact-origin allowlist is empty by default. A server-only workflow must explicitly approve an HTTPS origin before registering any artifact. Plugin records begin in `draft` and must pass review before enablement; artifact identity is immutable, and revoking an origin revokes its associated plugin versions. Public clients can read only enabled plugin metadata whose catalog entry is visible and enabled. These controls do not themselves make an unreviewed plugin safe to execute: the isolated runtime, sandbox headers, artifact digest verification and a reviewed capability broker remain mandatory before any game is enabled.
+
+
+## Explicit plugin capability grants
+
+The plugin manifest lists requested capabilities, but requested capabilities are not automatically granted. The trusted registry stores a separate granted_capabilities array. Database constraints restrict grants to capabilities that were requested and to the platform allowlist. Grants are frozen after the record reaches approved state, and browser roles can read the grant list only for enabled registry records but cannot change it. The host receives only this explicit grant list; backend endpoints must still enforce authorization independently.
+
+
+## Current verified external state (2026-10-22)
+
+The project is active/healthy and the source migrations are tracked. The live catalogue has 8 visible metadata rows, no enabled games, no plugin versions, and no approved artifact origins. RLS is enabled on the catalog and plugin registry tables. Browser roles cannot write plugin registry state or read the trusted artifact-origin allowlist. The connected project tool reports zero deployed Edge Functions at this checkpoint; local function source is not the same as a deployed endpoint.
+
+For a complete device/session recovery procedure, current CI link, private-repository branch, exact project links, secret boundary and remaining setup work, read [docs/RECOVERY_AND_CONTINUATION.md](../docs/RECOVERY_AND_CONTINUATION.md). Do not store populated keys or passwords in this file or in GitHub commits.
+
+
+## 6. Member-owned support reports
+
+The `support_reports` migration provides a separate ticket per submission. Authenticated members can insert approved report fields and read only their own tickets; client update/delete and workflow-field edits are denied. Diagnostics are limited to a small allowlisted shape and the database enforces idempotency and a five-report-per-member-per-hour rate limit. Duplicate-ticket grouping and root-cause incident aggregation are future privileged triage workflows, not a reason to merge or discard individual reports.
+
+The support migration was applied directly to `playora-dev` through the Supabase connector on 2026-10-22. The remote migration history records version `20261022210510` under the name `20261026000000_support_reports`. A live transaction smoke test used two synthetic Auth identities and verified that each identity could read only its own report; the transaction was rolled back and the table was left with **zero tickets**. This is a database/RLS smoke test, not a substitute for real Supabase sign-in and browser end-to-end tests.
+
+Do **not** run a bulk Supabase CLI migration push/replay yet. The remote history has duplicate `plugin_registry_hardening` labels and connector-applied versions that do not map one-to-one to source filename prefixes. Reconcile that history separately before using the CLI. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until browser configuration, real Auth/JWT two-account verification, and the current-head Playwright tests have passed.
+
+
+## 7. Support UI rollout gate
+
+The member-facing support dialog is connected to the platform shell and the source-level service adapter. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until the `support_reports` migration is safely applied to the development project, generated database types are refreshed from the actual schema, and the live RLS/API behavior is verified with two separate Auth members. The dialog remains visible but reports that the backend is not connected while the flag is false. CI uses a disposable PostgreSQL schema; it is not proof that the live Supabase table exists.
