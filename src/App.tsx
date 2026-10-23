@@ -15,7 +15,7 @@ import { listMySupportReports, submitMySupportReport } from "./platform/supportR
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
-  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
+  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Menu, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { copy, type Locale } from "./i18n/copy";
 import "./index.css";
@@ -174,7 +174,7 @@ export default function App() {
   const [activePlugin, setActivePlugin] = useState<ApprovedPluginDescriptor | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(228);
   const sidebarResizeStart = useRef<{ startX: number; startWidth: number } | null>(null);
   const isMobileNavigation = () => typeof window !== "undefined" && (window.matchMedia?.("(max-width: 820px)").matches ?? window.innerWidth <= 820);
@@ -749,7 +749,7 @@ export default function App() {
   return (
     <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <header className="topbar">
-        <button className="mobile-menu-btn" aria-label={locale === "en" ? (mobileNavOpen ? "Close menu" : "Open menu") : (mobileNavOpen ? "بستن منو" : "باز کردن منو")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Menu size={20} />}</button>
+        <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close navigation panel" : "Open navigation panel") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن پنل ناوبری" : "باز کردن پنل ناوبری")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : isMobileNavigation() ? <Menu size={20} /> : <Ellipsis size={22} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
           <BrandMark /><span className="brand-word">PLAYORA<span>.</span></span>
         </button>
@@ -1023,6 +1023,21 @@ export default function App() {
       </div>}
       {authOpen && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
         <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+          <div className="auth-visual-panel" aria-hidden="true">
+            <div className="auth-visual-top"><span className="auth-visual-brand"><span className="auth-visual-mark"><BrandMark /></span><b>PLAYORA<span>.</span></b></span><span className="auth-visual-online"><i /> GLOBAL GAME NETWORK</span></div>
+            <div className="auth-visual-scene">
+              <div className="auth-scene-halo halo-one" /><div className="auth-scene-halo halo-two" />
+              <div className="auth-scene-orbit orbit-one" /><div className="auth-scene-orbit orbit-two" /><div className="auth-scene-orbit orbit-three" />
+              <div className="auth-scene-emblem"><BrandMark /><span>PLAYORA</span><small>PLAY · CONNECT · COMPETE</small></div>
+              <span className="auth-floating-token token-chess"><Crown size={24} /><b>STRATEGY</b></span>
+              <span className="auth-floating-token token-cards"><span>♠</span><span>♥</span><span>♦</span></span>
+              <span className="auth-floating-token token-trophy"><Trophy size={18} /><b>YOUR NEXT VICTORY</b></span>
+              <i className="auth-spark spark-a">✦</i><i className="auth-spark spark-b">✧</i><i className="auth-spark spark-c">✦</i>
+            </div>
+            <div className="auth-visual-copy"><span className="auth-visual-kicker">ONE ACCOUNT. EVERY GAME.</span><h2>Make your next move<br /><em>legendary.</em></h2><p>Meet your people, discover new games, and build your place in the Playora community.</p><div className="auth-visual-benefits"><span><ShieldCheck size={15} /> Privacy-first account</span><span><Sparkles size={15} /> A growing world of games</span></div></div>
+            <div className="auth-visual-footer"><span>PLAY ANYWHERE. COMPETE WITH PURPOSE.</span><span>EN · FA</span></div>
+          </div>
+          <div className="auth-form-panel">
           <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span><button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button></div>
           <span className="auth-eyebrow">PLAYORA ACCOUNT</span>
           <h2 id="auth-modal-title">{authMode === "signup" ? t("signUp") : authMode === "reset" ? (recoveryReady ? t("setNewPassword") : t("resetPassword")) : t("authTitle")}</h2>
@@ -1042,6 +1057,8 @@ export default function App() {
             {authMode === "reset" ? <button type="button" onClick={() => { setAuthMode("signin"); setAuthMessage(""); }}>{t("backToSignIn")}</button> : authMode === "signup" ? <><span>{t("existingAccountPrompt")}</span><button type="button" onClick={() => { setAuthMode("signin"); setAuthMessage(""); }}>{t("signIn")}</button></> : <><span>{t("createAccountPrompt")}</span><button type="button" onClick={() => { setAuthMode("signup"); setAuthMessage(""); }}>{t("signUp")}</button></>}
           </div>
           <p className="auth-legal-note"><LockKeyhole size={12} />{t("secureNote")}</p>
+
+          </div>
         </section>
       </div>}
     </div>
