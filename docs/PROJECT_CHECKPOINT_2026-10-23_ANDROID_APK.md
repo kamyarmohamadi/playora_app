@@ -34,3 +34,11 @@
 3. Configure and test Google OAuth, including Android deep-link return.
 4. Install the resulting APK on a real Android device and record the result before calling it a usable test release.
 5. For each future code change, build and attach a new APK only after successful artifact generation.
+
+
+## Follow-up — repository visibility and retry (2026-10-23)
+- The owner changed repository visibility to `public`; verified through GitHub repository metadata.
+- Retried the Android APK workflow (`40009780847`) and quality-gate workflow (`40009789129`) after the visibility change.
+- Both retries again failed in the initial `Set up job` step. GitHub reports no runner logs (`logs_url=null`) and no subsequent build steps. Android run has no artifacts.
+- This is still an Actions runner/job startup failure, not a verified application compilation failure. APK remains unbuilt/unverified.
+- Next: get a new workflow run to start on a runner; only then address any dependency, TypeScript, Vite or Gradle errors shown by actual logs.
