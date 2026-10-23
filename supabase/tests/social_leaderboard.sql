@@ -29,6 +29,7 @@ DECLARE
   v_gamma_username text := 'player_' || substr(md5('00000000-0000-4000-8000-000000000013'),1,16);
   v_request_id uuid;
   v_beta_gamma_request_id uuid;
+  v_cross_member_request_id uuid;
   v_status text;
   v_relationship_type text;
   v_top_username text;
@@ -97,7 +98,7 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
   SELECT relationship_status INTO v_status
-  FROM public.respond_friend_request(v_beta_gamma_request_id,'blocked');
+  FROM public.respond_friend_request(v_cross_member_request_id,'blocked');
   IF v_status <> 'blocked' THEN
     RAISE EXCEPTION 'Recipient should be able to block a pending request';
   END IF;
@@ -116,7 +117,7 @@ BEGIN
   -- A third member cannot inspect or answer a relationship between two other members.
   -- Gamma sends Alpha a request; Beta must neither see it nor respond to it.
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
-  SELECT request_id,relationship_status INTO v_beta_gamma_request_id,v_status
+  SELECT request_id,relationship_status INTO v_cross_member_request_id,v_status
   FROM public.send_friend_request(v_alpha_username);
   IF v_status <> 'pending' THEN
     RAISE EXCEPTION 'Gamma-to-Alpha request should start pending';
@@ -125,14 +126,14 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
   IF EXISTS (
     SELECT 1 FROM public.list_social_relationships()
-    WHERE request_id=v_beta_gamma_request_id
+    WHERE request_id=v_cross_member_request_id
   ) THEN
     RAISE EXCEPTION 'A third member must not see a relationship between two other members';
   END IF;
 
   v_blocked := false;
   BEGIN
-    PERFORM public.respond_friend_request(v_beta_gamma_request_id,'accepted');
+    PERFORM public.respond_friend_request(v_cross_member_request_id,'accepted');
   EXCEPTION WHEN SQLSTATE 'P0002' THEN
     v_blocked := true;
   END;
@@ -144,12 +145,12 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
   SELECT relationship_type INTO v_relationship_type
   FROM public.list_social_relationships()
-  WHERE request_id=v_beta_gamma_request_id;
+  WHERE request_id=v_cross_member_request_id;
   IF v_relationship_type <> 'incoming' THEN
     RAISE EXCEPTION 'Only the intended recipient should see this request as incoming';
   END IF;
   SELECT relationship_status INTO v_status
-  FROM public.respond_friend_request(v_beta_gamma_request_id,'declined');
+  FROM public.respond_friend_request(v_cross_member_request_id,'declined');
   IF v_status <> 'declined' THEN
     RAISE EXCEPTION 'The intended recipient should be able to decline their own request';
   END IF;
