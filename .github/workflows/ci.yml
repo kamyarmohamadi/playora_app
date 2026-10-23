@@ -39,6 +39,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run browser end-to-end tests
         run: npm run test:e2e
+      - name: Upload production web build for manual preview/review
+        if: success() && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playora-web-build-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload Playwright diagnostics on failure
         if: failure()
         uses: actions/upload-artifact@v4
