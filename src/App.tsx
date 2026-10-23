@@ -749,7 +749,7 @@ export default function App() {
   return (
     <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <header className="topbar">
-        <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close navigation panel" : "Open navigation panel") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن پنل ناوبری" : "باز کردن پنل ناوبری")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
+        <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close menu" : "Open menu") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن پنل ناوبری" : "باز کردن پنل ناوبری")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
           <BrandMark /><span className="brand-word">PLAYORA<span>.</span></span>
         </button>
@@ -762,7 +762,7 @@ export default function App() {
             <button className="top-icon-btn" aria-label={t("notifications")} onClick={() => setNoticeOpen(!noticeOpen)}><Bell size={18} /><i /></button>
             {noticeOpen && <div className="notice-popover"><div className="popover-heading"><b>{t("notifications")}</b><span>0</span></div><p>{t("noAlerts")}</p></div>}
           </div>
-          <button className="user-chip" aria-busy={authLoading} onClick={() => session ? go("profile") : openAuth("signin")} aria-label={session ? t("profileMenu") : t("signIn")}><span className="user-avatar">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><span className="user-chip-label">{currentName}</span><ChevronDown size={13} /></button>
+          <button className="user-chip" aria-busy={authLoading} onClick={() => session ? go("profile") : openAuth("signin")} aria-label={session ? t("profileMenu") : t("signIn")}><span className="user-avatar">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : <LogIn size={16} />}</span><span className="user-chip-label">{session ? currentName : t("signIn")}</span>{session && <ChevronDown size={13} />}</button>
         </div>
       </header>
 
