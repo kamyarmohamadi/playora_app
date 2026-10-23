@@ -119,7 +119,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
   SELECT request_id,relationship_status INTO v_cross_member_request_id,v_status
   FROM public.send_friend_request(v_alpha_username);
-  IF v_status <> 'pending' THEN
+  IF v_status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'Gamma-to-Alpha request should start pending';
   END IF;
 
@@ -146,12 +146,12 @@ BEGIN
   SELECT relationship_type INTO v_relationship_type
   FROM public.list_social_relationships()
   WHERE request_id=v_cross_member_request_id;
-  IF v_relationship_type <> 'incoming' THEN
+  IF v_relationship_type IS DISTINCT FROM 'incoming' THEN
     RAISE EXCEPTION 'Only the intended recipient should see this request as incoming';
   END IF;
   SELECT relationship_status INTO v_status
   FROM public.respond_friend_request(v_cross_member_request_id,'declined');
-  IF v_status <> 'declined' THEN
+  IF v_status IS DISTINCT FROM 'declined' THEN
     RAISE EXCEPTION 'The intended recipient should be able to decline their own request';
   END IF;
 
