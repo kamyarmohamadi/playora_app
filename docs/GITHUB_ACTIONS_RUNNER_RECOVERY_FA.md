@@ -30,3 +30,13 @@
 - نتیجهٔ موفق به commit دقیق مربوط باشد؛ اجرای سبز قدیمی جایگزین اجرای سبز commit جدید نیست.
 
 تا آن زمان، migration ظرفیت روی Supabase زنده اجرا نشود، هیچ تستی از workflow حذف نشود و PR #7 merge نشود.
+
+## یافتهٔ تکمیلی از بررسی metadata مخزن
+
+- شاخهٔ توسعه در پاسخ GitHub Branch API در زمان بررسی `protected: false` و `required_status_checks.enforcement_level: off` گزارش شده است. بنابراین فعلاً تضمینی در سطح branch protection وجود ندارد که PR فقط با CI موفق ادغام شود.
+- این وضعیت را در این مرحله فقط ثبت کرده‌ایم؛ ابزار اتصال فعلی امکان تغییر تنظیمات branch protection را در اختیار نمی‌گذارد. مالک مخزن باید از **Settings → Branches** برای شاخهٔ هدف، rule/ ruleset مناسب بسازد و پس از رفع مشکل runner، jobهای لازم را به‌عنوان required checks انتخاب کند.
+- تا وقتی checkها به‌درستی اجرا نشده‌اند، صرفاً required کردن نام‌های check بدون آزمودنشان ممکن است فرایند ادغام را قفل کند؛ ابتدا Actions را به وضعیت قابل اجرا برگردانید، سپس protection را با checkهای واقعی تنظیم کنید.
+
+## آخرین تأیید اجرای خراب
+
+در 2026-10-23، اجرای push [39877323279](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877323279) و اجرای مرتبط PR [39877327734](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877327734) هر دو با سه job شکست‌خورده برگشتند. هر شش job `runner_id: 0`، `runner_name: ""` و `steps: []` داشتند. این وضعیت همچنان خطای تخصیص/شروع runner را محتمل‌تر از خطای تست می‌کند، اما علت ریشه‌ای هنوز تأیید نشده است.
