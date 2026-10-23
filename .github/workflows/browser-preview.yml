@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/playora-dashboard-polish-2026-10-19
+      - feature/playora-platform-game-plugin-architecture-2026-10-22
   workflow_dispatch:
 
 permissions:
