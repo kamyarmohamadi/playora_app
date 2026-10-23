@@ -242,6 +242,30 @@ export default function App() {
   const activeUserIdRef = useRef<string | null>(null);
 
   const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
+  useEffect(() => {
+    // Surface OAuth callback failures in the sign-in dialog instead of leaving
+    // a blank dashboard with provider error details stranded in the URL.
+    const currentUrl = new URL(window.location.href);
+    const queryError = currentUrl.searchParams.get("error");
+    const hashParams = new URLSearchParams(currentUrl.hash.replace(/^#/, ""));
+    const callbackError = queryError || hashParams.get("error");
+    if (!callbackError) return;
+
+    setAuthMode("signin");
+    setAuthMessage(t("authFailure"));
+    setAuthOpen(true);
+    currentUrl.searchParams.delete("error");
+    currentUrl.searchParams.delete("error_description");
+    currentUrl.searchParams.delete("error_code");
+    if (hashParams.has("error")) {
+      hashParams.delete("error");
+      hashParams.delete("error_description");
+      hashParams.delete("error_code");
+      currentUrl.hash = hashParams.toString();
+    }
+    window.history.replaceState(window.history.state, "", `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+  }, []);
+
   const [catalogGames, setCatalogGames] = useState<Game[]>(localCatalogPreview);
 
   useEffect(() => {
