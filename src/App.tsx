@@ -190,17 +190,17 @@ export default function App() {
   };
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [authOpen, setAuthOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(true);
   useEffect(() => {
     if (!authOpen) return;
     const handleDialogEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || !session) return;
       setAuthOpen(false);
       setAuthMessage("");
     };
     window.addEventListener("keydown", handleDialogEscape);
     return () => window.removeEventListener("keydown", handleDialogEscape);
-  }, [authOpen]);
+  }, [authOpen, session]);
 
   useEffect(() => {
     if (!mobileNavOpen && !desktopSidebarOpen) return;
@@ -793,7 +793,7 @@ export default function App() {
   };
 
   return (
-    <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
+    <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"} ${!session ? "auth-gated" : ""}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <header className="topbar">
         <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close menu" : "Open menu") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن منو" : "باز کردن منو")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
@@ -1067,7 +1067,7 @@ export default function App() {
           </form>
         </section>
       </div>}
-      {authOpen && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setAuthOpen(false); }}>
+      {(authOpen || !session) && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (session && event.target === event.currentTarget) setAuthOpen(false); }}>
         <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
           <div className="auth-visual-panel" aria-hidden="true">
             <div className="auth-visual-top"><span className="auth-visual-brand"><span className="auth-visual-mark"><BrandMark /></span><b>PLAYORA<span>.</span></b></span><span className="auth-visual-online"><i /> {locale === "fa" ? "شبکه جهانی بازی" : "GLOBAL GAME NETWORK"}</span></div>
@@ -1084,7 +1084,7 @@ export default function App() {
             <div className="auth-visual-footer"><span>{locale === "fa" ? "هرجا بازی کن. هدفمند رقابت کن." : "PLAY ANYWHERE. COMPETE WITH PURPOSE."}</span><span>EN · FA</span></div>
           </div>
           <div className="auth-form-panel">
-          <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span><button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button></div>
+          <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span>{session && <button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button>}</div>
           <span className="auth-eyebrow">PLAYORA ACCOUNT</span>
           <h2 id="auth-modal-title">{authMode === "signup" ? t("signUp") : authMode === "reset" ? (recoveryReady ? t("setNewPassword") : t("resetPassword")) : t("authTitle")}</h2>
           <p>{t("authSubtitle")}</p>
