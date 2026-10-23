@@ -284,3 +284,13 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added `supabase/tests/capacity_indexes.sql` and updated `.github/workflows/ci.yml` to apply the migration and verify the new indexes are valid/ready in disposable PostgreSQL CI. Updated `supabase/README.md` with the migration/test references.
 - Initial GitHub Actions runs for the new commits failed in all three jobs before any step was reported (zero steps/runner ID); this is not enough evidence to diagnose a code failure or pass. The new migration/index test remains unverified until a run actually executes steps successfully.
 - The capacity checklist explicitly leaves this item unchecked. No live Supabase migration was run, no games were enabled, and `main` remains untouched.
+
+
+## Free-first product scope and master checklist — 2026-10-23
+- Added `docs/PLAYORA_PRODUCT_REQUIREMENTS_AND_MASTER_CHECKLIST_FA.md` as the source for product decisions and end-to-end delivery gates across product/design, frontend, backend/database, API, authentication, realtime games, crypto/wallet, security/privacy, QA, deployment/cost, and future admin panel.
+- Recorded the first-stage target as a few hundred registered accounts on free tiers where feasible; this is not a concurrency guarantee. Any provider quota, sleep/inactivity behavior, data retention, realtime limit, or upgrade trigger must be checked before inviting members.
+- Recorded Google OAuth, English/Persian, module isolation, future upgrade path, private owner identity in public UI, proposed 100 coins per USD calculation, and configurable future crypto/network choices.
+- Real-money betting, purchasable/redeemable coin wagering, crypto withdrawals and fee collection remain disabled pending jurisdiction/legal review, provider eligibility, KYC/AML/sanctions review, secure ledger, reconciliation, and explicit owner approval. Self-declared age 18+ alone is not sufficient.
+- Updated k6 pilot profile to default to 100 VUs and reject more than 500 VUs; documentation recommends starting with 10–50 and increasing in stages against isolated staging only. This still tests catalog reads only.
+- CI for recent commits is still failing before job steps are executed. No claim of passing CI, verified capacity, completed deployment, or ready-for-money operations is made.
+- No live Supabase migration was run, no game was enabled, and `main` remains untouched.
