@@ -74,3 +74,7 @@ The latest verified CI run for the source head recorded in the recovery guide is
 ## Release process
 
 Use [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) and [docs/RECOVERY_AND_CONTINUATION.md](docs/RECOVERY_AND_CONTINUATION.md) as release and recovery gates. No game should be implemented/ported until the platform-only acceptance gate is passed. The existing admin preview remains deferred and separate in PR #6.
+
+## Android install build
+
+The repeatable debug APK workflow is documented in [the Persian Android build/install guide](docs/ANDROID_APK_BUILD_FA.md). Run **Actions → Playora Android APK → Run workflow**, then download the APK artifact from a successful run. The artifact is only available if GitHub Actions runners execute the workflow successfully. A debug APK is for testing, not Play Store release. Google OAuth on Android must be tested separately after provider and native callback configuration.
