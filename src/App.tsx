@@ -47,6 +47,7 @@ type Page = "home" | "games" | "online" | "tournaments" | "friends" | "rooms" | 
 type Category = "all" | "strategy" | "board" | "cards" | "puzzle";
 type MemberProfile = { user_id: string; username: string; display_name: string; avatar_key: string | null; locale: Locale; created_at: string };
 type MemberWallet = { user_id: string; free_coins: number | string; purchased_coins: number | string; reward_coins: number | string; updated_at: string };
+type MemberStats = { matchesPlayed: number; wins: number; rating: number; xp: number };
 type SocialRelationship = { request_id: string; other_username: string; other_display_name: string; relationship_type: "friend" | "incoming" | "outgoing" | "blocked"; request_status: "pending" | "accepted" | "declined" | "blocked"; created_at: string };
 const categories: { id: Category; key: string }[] = [
   { id: "all", key: "categoryAll" }, { id: "strategy", key: "categoryStrategy" },
@@ -257,6 +258,7 @@ export default function App() {
   const [supportReportsUnavailable, setSupportReportsUnavailable] = useState(false);
   const [supportRefresh, setSupportRefresh] = useState(0);
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
+  const [memberStats, setMemberStats] = useState<MemberStats | null>(null);
   const [socialRows, setSocialRows] = useState<SocialRelationship[]>([]);
   const [socialQuery, setSocialQuery] = useState("");
   const [socialBusy, setSocialBusy] = useState(false);
@@ -322,6 +324,7 @@ export default function App() {
       setProfileSaveBusy(false);
       setProfileMessage("");
       setMemberWallet(null);
+      setMemberStats(null);
       setFavorites(nextUserId ? [] : ["chess", "pool"]);
       setFavoritesOnly(false);
 
@@ -398,6 +401,7 @@ export default function App() {
       setProfileNameDraft("");
       setProfileMessage("");
       setMemberWallet(null);
+      setMemberStats(null);
       setFavorites(session ? [] : ["chess", "pool"]);
       return;
     }
@@ -405,6 +409,7 @@ export default function App() {
     let active = true;
     setMemberProfile(null);
     setMemberWallet(null);
+    setMemberStats(null);
     setFavorites([]);
     void Promise.all([
       db.from("member_profiles")
@@ -414,13 +419,23 @@ export default function App() {
         .select("user_id, free_coins, purchased_coins, reward_coins, updated_at")
         .eq("user_id", userId).maybeSingle(),
       db.from("member_favorites").select("game_id").eq("user_id", userId),
-      db.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle()
-    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult]) => {
+      db.from("member_preferences").select("locale").eq("user_id", userId).maybeSingle(),
+      db.from("member_game_stats").select("xp,competitive_rating,matches_played,wins").eq("user_id", userId)
+    ]).then(([profileResult, walletResult, favoriteResult, preferencesResult, statsResult]) => {
       if (!active || activeUserIdRef.current !== userId) return;
       const loadedProfile = !profileResult.error ? profileResult.data as MemberProfile | null : null;
       setMemberProfile(loadedProfile);
       setProfileNameDraft(loadedProfile?.display_name ?? "");
       setMemberWallet(!walletResult.error ? walletResult.data as MemberWallet | null : null);
+      const statsRows = !statsResult.error && Array.isArray(statsResult.data)
+        ? statsResult.data as Array<{ xp: number | string; competitive_rating: number; matches_played: number; wins: number }>
+        : null;
+      setMemberStats(statsRows ? {
+        matchesPlayed: statsRows.reduce((sum, row) => sum + Number(row.matches_played || 0), 0),
+        wins: statsRows.reduce((sum, row) => sum + Number(row.wins || 0), 0),
+        rating: statsRows.length ? Math.round(statsRows.reduce((sum, row) => sum + Number(row.competitive_rating || 1000), 0) / statsRows.length) : 1000,
+        xp: statsRows.reduce((sum, row) => sum + Number(row.xp || 0), 0),
+      } : null);
       setFavorites(!favoriteResult.error && favoriteResult.data
         ? favoriteResult.data.map(row => row.game_id)
         : []);
@@ -432,6 +447,7 @@ export default function App() {
       if (active && activeUserIdRef.current === userId) {
         setMemberProfile(null);
         setMemberWallet(null);
+        setMemberStats(null);
         setFavorites([]);
       }
     });
@@ -1028,10 +1044,10 @@ export default function App() {
                 <div className="profile-edit-controls"><input id="profile-display-name" name="profileDisplayName" value={profileNameDraft} onChange={event => setProfileNameDraft(event.target.value)} minLength={1} maxLength={32} required autoComplete="nickname" /><button className="btn-gradient" type="submit" disabled={profileSaveBusy || profileNameDraft.trim() === memberProfile.display_name}>{profileSaveBusy ? t("loading") : t("saveProfile")}<Check size={14} /></button></div>
                 {profileMessage && <p className={"profile-edit-message " + (profileMessage === t("profileUpdated") ? "is-success" : "is-error")} role="status">{profileMessage}</p>}
               </form>}<div className="profile-stats">
-                <div><b>—</b><span>{t("statMatches")}</span></div>
-                <div><b>—</b><span>{t("statWins")}</span></div>
-                <div><b>—</b><span>{t("statRating")}</span></div>
-                <div><b>—</b><span>{t("profileXp")}</span></div>
+                <div><b>{memberStats ? memberStats.matchesPlayed.toLocaleString(locale) : "—"}</b><span>{t("statMatches")}</span></div>
+                <div><b>{memberStats ? memberStats.wins.toLocaleString(locale) : "—"}</b><span>{t("statWins")}</span></div>
+                <div><b>{memberStats ? memberStats.rating.toLocaleString(locale) : "—"}</b><span>{t("statRating")}</span></div>
+                <div><b>{memberStats ? memberStats.xp.toLocaleString(locale) : "—"}</b><span>{t("profileXp")}</span></div>
               </div>
               {session && <section className="profile-history"><p className="profile-history-empty">{t("rankedUnavailable")}</p></section>}
               {session ? <div className="profile-auth-footer"><p>{t("securityLiveNote")}</p><button className="btn-outline" onClick={() => void handleSignOut()}><LogIn size={14} />{t("signOut")}</button></div> : <div className="profile-auth-footer"><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}</div></section>}
