@@ -364,3 +364,12 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 3. سپس از Settings → Branches، پس از مشاهدهٔ نام واقعی checkها، حفاظت شاخه و required checks را تنظیم کنیم.
 4. پیش از اجرای migration ظرفیت روی Supabase زنده، migration history محلی و remote را reconcile کنیم و تست‌های دیتابیس را در محیط disposable اجرا کنیم.
 5. PR #7 تا پایان این gates ادغام نشود؛ بازی‌ها، پرداخت، پاداش نقدی و قابلیت‌های رمزارزی همچنان غیرفعال بمانند.
+
+
+## مسیر تحویل build وب — 2026-10-23
+
+- workflow `.github/workflows/ci.yml` به‌روزرسانی شد تا در اجرای دستی `workflow_dispatch`، پس از موفقیت کامل تست‌های فرانت‌اند، `dist/` را به‌صورت artifact با نام `playora-web-build-<commit SHA>` بارگذاری کند (نگهداری 14 روز).
+- commit تنظیم workflow: `0537f163570a1f7eb72b1dcbbd970f093a5c9244`.
+- مستند آمادگی انتشار نیز مسیر دریافت artifact را ثبت کرد؛ commit آن `00597d851444e6e2837a5c85eb6128d104253ac7` است.
+- artifact هنوز ساخته نشده، چون مانع تخصیص GitHub-hosted runner پابرجاست. این تغییر pipeline را آماده می‌کند اما جایگزین build موفق یا انتشار عمومی نیست.
+- وضعیت این بخش تا تولید واقعی artifact: **آماده‌سازی انجام شده؛ تحویل build تأیید نشده**.
