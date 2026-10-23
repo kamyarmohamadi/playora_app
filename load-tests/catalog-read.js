@@ -3,13 +3,14 @@ import { check, sleep } from "k6";
 import { Rate, Trend } from "k6/metrics";
 
 // Read-only load test for the exact public catalog query used by
-// src/catalog/supabaseCatalogProvider.ts. Run against an isolated staging project only.
+// src/catalog/supabaseCatalogProvider.ts. Free-tier pilot profile: max 500 VUs.
+// Run against an isolated staging project only; VUs are not the same as members.
 const errorRate = new Rate("catalog_request_errors");
 const catalogLatency = new Trend("catalog_latency_ms", true);
 
 const supabaseUrl = (__ENV.SUPABASE_URL || "").replace(/\/$/, "");
 const anonKey = __ENV.SUPABASE_ANON_KEY || "";
-const targetVus = Number.parseInt(__ENV.K6_TARGET_VUS || "500", 10);
+const targetVus = Number.parseInt(__ENV.K6_TARGET_VUS || "100", 10);
 const duration = __ENV.K6_HOLD_DURATION || "5m";
 const rampDuration = __ENV.K6_RAMP_DURATION || "2m";
 const confirmStaging = __ENV.LOAD_TEST_CONFIRM || "";
@@ -20,8 +21,8 @@ if (!supabaseUrl || !anonKey) {
 if (confirmStaging !== "staging") {
   throw new Error("Refusing to run unless LOAD_TEST_CONFIRM=staging is explicitly set.");
 }
-if (!Number.isSafeInteger(targetVus) || targetVus < 1 || targetVus > 100000) {
-  throw new Error("K6_TARGET_VUS must be an integer from 1 to 100000.");
+if (!Number.isSafeInteger(targetVus) || targetVus < 1 || targetVus > 500) {
+  throw new Error("K6_TARGET_VUS must be an integer from 1 to 500 for this free-tier pilot profile.");
 }
 if (!/^https:\/\//i.test(supabaseUrl)) {
   throw new Error("SUPABASE_URL must use HTTPS.");
