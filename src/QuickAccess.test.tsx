@@ -2,8 +2,10 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 const { mockSupabase } = vi.hoisted(() => {
-  const makeQuery = () => {
-    const result = { data: [] as unknown[], error: null };
+  const makeQuery = (table: string) => {
+    const result = table === "catalog_games"
+      ? { data: null as unknown[] | null, error: new Error("Use local catalogue fallback in this test") }
+      : { data: [] as unknown[], error: null };
     const query: Record<string, any> = {};
     for (const method of ["select", "eq", "order", "limit", "insert", "update", "delete", "upsert"]) {
       query[method] = () => query;
@@ -37,7 +39,7 @@ const { mockSupabase } = vi.hoisted(() => {
         onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
         signOut: vi.fn(() => Promise.resolve({ error: null })),
       },
-      from: vi.fn(() => makeQuery()),
+      from: vi.fn((table: string) => makeQuery(table)),
       functions: { invoke: vi.fn(() => Promise.resolve({ data: null, error: null })) },
     },
   };
