@@ -34,10 +34,14 @@ jobs:
         run: npm test
       - name: Type-check
         run: npm run typecheck
+      - name: Check platform/game boundary
+        run: npm run check:platform-boundary
       - name: Build browser preview
         run: npm run build -- --base=/playora_app/
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
       - name: Upload only the built static site
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
@@ -45,6 +49,9 @@ jobs:
     name: Deploy browser preview
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
