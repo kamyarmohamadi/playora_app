@@ -113,6 +113,47 @@ BEGIN
     RAISE EXCEPTION 'A blocked relationship must prevent new friend requests';
   END IF;
 
+  -- A third member cannot inspect or answer a relationship between two other members.
+  -- Gamma sends Alpha a request; Beta must neither see it nor respond to it.
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
+  SELECT request_id,relationship_status INTO v_beta_gamma_request_id,v_status
+  FROM public.send_friend_request(v_alpha_username);
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'Gamma-to-Alpha request should start pending';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
+  IF EXISTS (
+    SELECT 1 FROM public.list_social_relationships()
+    WHERE request_id=v_beta_gamma_request_id
+  ) THEN
+    RAISE EXCEPTION 'A third member must not see a relationship between two other members';
+  END IF;
+
+  v_blocked := false;
+  BEGIN
+    PERFORM public.respond_friend_request(v_beta_gamma_request_id,'accepted');
+  EXCEPTION WHEN SQLSTATE 'P0002' THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'A third member must not respond to a request addressed to someone else';
+  END IF;
+
+  -- The intended recipient can still see and decline their own incoming request.
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
+  SELECT relationship_type INTO v_relationship_type
+  FROM public.list_social_relationships()
+  WHERE request_id=v_beta_gamma_request_id;
+  IF v_relationship_type <> 'incoming' THEN
+    RAISE EXCEPTION 'Only the intended recipient should see this request as incoming';
+  END IF;
+  SELECT relationship_status INTO v_status
+  FROM public.respond_friend_request(v_beta_gamma_request_id,'declined');
+  IF v_status <> 'declined' THEN
+    RAISE EXCEPTION 'The intended recipient should be able to decline their own request';
+  END IF;
+
   -- Public-facing leaderboard is limited to enabled games and server-authored stats.
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
   SELECT username,rank_position INTO v_top_username,v_rank
