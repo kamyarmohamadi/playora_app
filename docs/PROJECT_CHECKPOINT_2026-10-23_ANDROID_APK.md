@@ -42,3 +42,13 @@
 - Both retries again failed in the initial `Set up job` step. GitHub reports no runner logs (`logs_url=null`) and no subsequent build steps. Android run has no artifacts.
 - This is still an Actions runner/job startup failure, not a verified application compilation failure. APK remains unbuilt/unverified.
 - Next: get a new workflow run to start on a runner; only then address any dependency, TypeScript, Vite or Gradle errors shown by actual logs.
+
+
+## Follow-up — pinned actions, build fixes and APK produced (2026-10-23)
+- GitHub Actions policy was confirmed from runner logs: every action must be pinned to a full-length commit SHA. Pinned actions in `.github/workflows/android-apk.yml`, `.github/workflows/ci.yml`, and `.github/workflows/browser-preview.yml` to verified upstream commit SHAs.
+- Fixed TypeScript build error by removing unused `Menu` import from `src/App.tsx`.
+- Fixed a unit-test selector to use the responsive menu close button, and aligned the Persian accessible menu label with the Playwright mobile test.
+- Android APK workflow succeeded on commit `8d95df351da0fd3871d8c2ac3c3355f1fb6689d4`. Artifact: `playora-android-debug-8d95df351da0fd3871d8c2ac3c3355f1fb6689d4` (3,922,257 bytes), SHA-256 `1af0bc27d7fa865cc09eac0c606f5864ee838e8ecf48e51a6d3434ac51e119bd`. Download via https://github.com/kamyarmohamadi/playora_app/actions/runs/40014049451
+- Latest pull-request quality-gate run `40014055338` succeeded: unit tests, type-check/build, Playwright browser tests, PostgreSQL security tests and Deno checks all passed.
+- Push-triggered quality-gate run `40014049357` was still completing its Playwright browser step at the time of this checkpoint; inspect the run before claiming the push run is green.
+- APK is a debug/testing build, not a signed production release. It has not yet been installed and verified on a physical Android device. Game catalogue entries remain unavailable until approved game plugins are installed.
