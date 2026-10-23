@@ -98,7 +98,7 @@ BEGIN
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
   SELECT relationship_status INTO v_status
-  FROM public.respond_friend_request(v_cross_member_request_id,'blocked');
+  FROM public.respond_friend_request(v_beta_gamma_request_id,'blocked');
   IF v_status <> 'blocked' THEN
     RAISE EXCEPTION 'Recipient should be able to block a pending request';
   END IF;
