@@ -314,3 +314,11 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added [docs/SECURITY_REVIEW_SOCIAL_RPCS_FA.md](SECURITY_REVIEW_SOCIAL_RPCS_FA.md), recording evidence, function-specific risks, safe remediation options, and release gates. This is a review document, not a claim that the warnings are fixed.
 - Next: obtain owner-visible GitHub Actions settings/runner or billing/usage diagnostics, then restore actual CI execution. After that, test migration + capacity indexes in disposable PostgreSQL, reconcile migration history without replaying live migrations, and create real two-user staging Auth/JWT tests.
 - No live schema or auth configuration changed; no game, crypto, payments or withdrawal feature enabled; PR #7 remains draft/unmerged and `main` remains untouched.
+
+
+## CI recovery continuation — manual trigger and owner diagnostics (2026-10-23)
+- Added `workflow_dispatch` to `.github/workflows/ci.yml` so the quality gate can be manually triggered after the repository/runner issue is corrected. Commit: [6bc3c32](https://github.com/kamyarmohamadi/playora_app/commit/6bc3c32171c33c47c9feae2cb9f48fdb0d9fb09a).
+- The new push run [39877067881](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877067881) failed in the same pre-step pattern. The jobs API still reports no steps/logs and runner ID 0. The manual trigger is an operational convenience, not a fix for runner allocation.
+- Added [docs/GITHUB_ACTIONS_RUNNER_RECOVERY_FA.md](GITHUB_ACTIONS_RUNNER_RECOVERY_FA.md) with the exact observed evidence and owner-visible UI checks for Actions policy, runner availability, account usage/limits and a repeatable post-fix validation.
+- This is the point at which the connected GitHub interface reaches its limit: the available actions cannot read the repository's Actions settings/usage pages or dispatch a workflow manually. Owner-visible settings/support investigation is required to identify the underlying reason. Do not infer billing exhaustion or a GitHub outage without evidence.
+- No source tests were removed or weakened; no permissions were broadened. No live Supabase DDL, OAuth/Auth settings, games, payments, or withdrawals changed. PR #7 remains draft/unmerged and `main` remains untouched.
