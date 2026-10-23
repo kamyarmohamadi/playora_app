@@ -227,7 +227,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleNavigationEscape);
   }, [mobileNavOpen, desktopSidebarOpen]);
 
-  const [authMode, setAuthMode] = useState<"signin" | "signup" | "reset">("signin");
+  const [authMode, setAuthMode] = useState<"welcome" | "signin" | "signup" | "reset">("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -1081,8 +1081,44 @@ export default function App() {
           </form>
         </section>
       </div>}
-      {(authOpen || !session) && <div className="auth-backdrop" role="presentation" onMouseDown={event => { if (session && event.target === event.currentTarget) setAuthOpen(false); }}>
-        <section className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      {(authOpen || !session) && <div className={`auth-backdrop ${authMode === "welcome" ? "auth-welcome-backdrop" : ""}`} role="presentation" onMouseDown={event => { if (session && event.target === event.currentTarget) setAuthOpen(false); }}>
+        <section className={`auth-modal ${authMode === "welcome" ? "auth-welcome" : ""}`} role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+          {authMode === "welcome" ? (
+            <div className="auth-welcome-screen">
+              <div className="welcome-sky" aria-hidden="true" />
+              <div className="welcome-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
+              <div className="welcome-cityscape" aria-hidden="true">
+                <span className="welcome-building building-one" /><span className="welcome-building building-two" />
+                <span className="welcome-building building-three" /><span className="welcome-building building-four" />
+                <span className="welcome-building building-five" /><span className="welcome-building building-six" />
+                <span className="welcome-building building-seven" /><span className="welcome-building building-eight" />
+                <div className="welcome-street-glow" />
+              </div>
+              <div className="welcome-character" aria-hidden="true">
+                <span className="character-head" /><span className="character-neck" /><span className="character-body" />
+                <span className="character-arm character-arm-left" /><span className="character-arm character-arm-right" />
+                <span className="character-leg character-leg-left" /><span className="character-leg character-leg-right" />
+                <span className="character-pack" />
+              </div>
+              <header className="welcome-topbar">
+                <span className="welcome-brand"><BrandMark /><b>PLAYORA</b></span>
+                <button type="button" className="welcome-language" aria-label={locale === "en" ? "Switch language to Persian" : "Switch language to English"} onClick={() => setLocale(current => current === "en" ? "fa" : "en")}>{locale === "en" ? "EN　 FA" : "FA　 EN"}</button>
+              </header>
+              <div className="welcome-center">
+                <div className="welcome-emblem"><BrandMark /></div>
+                <h1 id="auth-modal-title">PLAYORA</h1>
+                <p>{locale === "fa" ? "فراتر از یک بازی" : "More Than a Game"}</p>
+              </div>
+              <div className="welcome-bottom">
+                <div className="welcome-actions">
+                  <button type="button" className="btn-gradient welcome-get-started" onClick={() => { setAuthMode("signup"); setAuthMessage(""); }}>{locale === "fa" ? "شروع کنید" : "Get Started"}<ArrowRight size={17} /></button>
+                  <button type="button" className="btn-ghost welcome-login" onClick={() => { setAuthMode("signin"); setAuthMessage(""); }}>{locale === "fa" ? "ورود" : "Log In"}</button>
+                </div>
+                <p>{locale === "fa" ? "با دوستانت بازی کن  ·  در جهان رقابت کن" : "Play with friends　·　Compete worldwide"}</p>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="auth-visual-panel" aria-hidden="true">
             <div className="auth-visual-top"><span className="auth-visual-brand"><span className="auth-visual-mark"><BrandMark /></span><b>PLAYORA<span>.</span></b></span><span className="auth-visual-online"><i /> {locale === "fa" ? "شبکه جهانی بازی" : "GLOBAL GAME NETWORK"}</span></div>
             <div className="auth-visual-scene">
@@ -1119,6 +1155,8 @@ export default function App() {
           <p className="auth-legal-note"><LockKeyhole size={12} />{t("secureNote")}</p>
 
           </div>
+          </>
+          )}
         </section>
       </div>}
     </div>

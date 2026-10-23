@@ -513,3 +513,47 @@
   .app-shell.auth-gated .auth-backdrop{padding:8px}
   .app-shell.auth-gated .auth-modal{max-height:calc(100dvh - 16px)}
 }
+
+
+/* Cinematic first-launch splash inspired by the Playora mobile concept. */
+.auth-backdrop.auth-welcome-backdrop{padding:0;background:#030817;backdrop-filter:none}
+.auth-modal.auth-welcome{display:block;width:100%;height:100dvh;max-height:100dvh;max-width:none;overflow:hidden;padding:0;border:0;border-radius:0;background:#030817;box-shadow:none}
+.auth-modal.auth-welcome:before{display:none}
+.auth-welcome-screen{position:relative;isolation:isolate;display:flex;width:100%;height:100%;min-height:560px;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse at 50% 37%,#1625a8 0%,#0a1244 31%,#040a20 66%,#020612 100%);color:#f7faff}
+.welcome-sky{position:absolute;z-index:-4;inset:0;background:radial-gradient(ellipse at 50% 38%,#603bff35,transparent 42%),radial-gradient(ellipse at 14% 56%,#007bff25,transparent 35%),radial-gradient(ellipse at 85% 61%,#e52aff1b,transparent 34%)}
+.welcome-sky:before{position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 46px,#4a7dff0a 47px 48px);content:""}
+.welcome-stars{position:absolute;z-index:-2;inset:0;pointer-events:none}
+.welcome-stars i{position:absolute;width:3px;height:3px;border-radius:50%;background:#d6f6ff;box-shadow:0 0 12px 3px #4b9eff8a}
+.welcome-stars i:nth-child(1){left:12%;top:17%}.welcome-stars i:nth-child(2){left:78%;top:13%;width:2px;height:2px}.welcome-stars i:nth-child(3){left:24%;top:34%}.welcome-stars i:nth-child(4){left:88%;top:37%}.welcome-stars i:nth-child(5){left:65%;top:24%}.welcome-stars i:nth-child(6){left:8%;top:47%}.welcome-stars i:nth-child(7){left:92%;top:51%}.welcome-stars i:nth-child(8){left:44%;top:12%;width:2px;height:2px}
+.welcome-cityscape{position:absolute;z-index:-1;right:0;bottom:0;left:0;height:53%;overflow:hidden;opacity:.94;background:linear-gradient(180deg,transparent,#06102b 30%,#050b1c 100%)}
+.welcome-building{position:absolute;bottom:0;display:block;border:1px solid #2453a7a6;background:linear-gradient(90deg,#07162d,#10275a 48%,#061128);box-shadow:inset 0 0 22px #236bff16}
+.welcome-building:after{position:absolute;inset:12px 7px;background:repeating-linear-gradient(0deg,transparent 0 14px,#28d5ff55 15px 16px),repeating-linear-gradient(90deg,transparent 0 13px,#517cff44 14px 15px);content:"";opacity:.65}
+.building-one{left:-2%;width:13%;height:63%}.building-two{left:11%;width:12%;height:43%}.building-three{left:24%;width:11%;height:72%}.building-four{left:34%;width:12%;height:52%}.building-five{right:32%;width:12%;height:62%}.building-six{right:20%;width:11%;height:79%}.building-seven{right:9%;width:13%;height:48%}.building-eight{right:-2%;width:12%;height:66%}
+.welcome-street-glow{position:absolute;right:-15%;bottom:-12%;left:-15%;height:35%;border-radius:50%;background:radial-gradient(ellipse,#1b4cff82 0%,#5e2bff2b 34%,transparent 69%);filter:blur(15px)}
+.welcome-character{position:absolute;z-index:1;bottom:10%;left:50%;width:140px;height:310px;transform:translateX(-50%);filter:drop-shadow(0 0 22px #0d8aff3d)}
+.welcome-character span{position:absolute;display:block}
+.character-head{top:8px;left:52px;width:36px;height:44px;border:2px solid #294d88;border-radius:45% 45% 40% 40%;background:linear-gradient(90deg,#111d39,#080f22 70%);box-shadow:0 0 14px #16b9ff27}
+.character-neck{top:44px;left:62px;width:17px;height:24px;background:#0b1630}
+.character-body{top:61px;left:28px;width:86px;height:126px;clip-path:polygon(28% 0,72% 0,100% 22%,86% 100%,14% 100%,0 22%);border:1px solid #2451a3;background:linear-gradient(105deg,#102349,#071126 58%,#14214a);box-shadow:inset 0 0 0 3px #1c3a71}
+.character-arm{top:76px;width:27px;height:112px;border-radius:14px;background:linear-gradient(90deg,#10254a,#060d20);border:1px solid #183a76}
+.character-arm-left{left:10px;transform:rotate(10deg)}.character-arm-right{right:10px;transform:rotate(-10deg)}
+.character-leg{top:174px;width:35px;height:125px;border:1px solid #1c3970;border-radius:8px 8px 3px 3px;background:linear-gradient(90deg,#111d3b,#060b19 75%)}
+.character-leg-left{left:35px;transform:rotate(3deg)}.character-leg-right{right:35px;transform:rotate(-3deg)}
+.character-pack{top:76px;left:38px;width:64px;height:76px;border:1px solid #2861aa;border-radius:13px 13px 18px 18px;background:linear-gradient(140deg,#17376b,#09152c);box-shadow:inset 0 0 0 4px #10234a}
+.welcome-topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:clamp(18px,4vh,38px) clamp(20px,5vw,64px)}
+.welcome-brand{display:flex;align-items:center;gap:10px;color:#f7fbff;font-size:clamp(17px,2vw,25px);font-weight:900;letter-spacing:1.1px}
+.welcome-brand .brand-mark{width:34px;height:34px}
+.welcome-language{padding:8px 13px;border:1px solid #2b79c9;border-radius:999px;background:#08162ccf;color:#9beaff;font-size:10px;font-weight:800;letter-spacing:.5px}
+.welcome-center{position:relative;z-index:3;display:flex;align-items:center;flex-direction:column;margin-top:clamp(22px,6vh,70px);text-align:center}
+.welcome-emblem{display:grid;place-items:center;width:clamp(86px,12vh,126px);height:clamp(86px,12vh,126px);margin-bottom:17px;border:1px solid #59a5ff55;border-radius:28px;background:radial-gradient(circle at 50% 25%,#2c48ac,#0b153b 75%);box-shadow:0 0 55px #284fff52,inset 0 0 28px #48bfff22;transform:rotate(-4deg)}
+.welcome-emblem .brand-mark{width:66%;height:66%;filter:drop-shadow(0 0 17px #22cfff91)}
+.welcome-center h1{margin:0;color:#f7fbff;font-size:clamp(31px,5vw,48px);font-weight:900;letter-spacing:2.8px;text-shadow:0 5px 35px #4e8bff5e}
+.welcome-center p{margin:8px 0 0;color:#c6d5ff;font-size:clamp(12px,1.5vw,16px);font-weight:600;letter-spacing:.7px}
+.welcome-bottom{position:relative;z-index:5;display:flex;align-items:center;flex-direction:column;margin-top:auto;padding:20px 22px max(24px,env(safe-area-inset-bottom))}
+.welcome-actions{display:grid;width:min(100%,330px);gap:10px}
+.welcome-get-started,.welcome-login{min-height:49px;border-radius:999px;font-size:13px;letter-spacing:.15px}
+.welcome-get-started{justify-content:center;background:linear-gradient(100deg,#13d7ff 0%,#426bff 52%,#e33bff 100%);box-shadow:0 8px 32px #4e4bff55}
+.welcome-login{border:1px solid #27c7ff;background:#030a1dcc;color:#f0f7ff}
+.welcome-bottom>p{margin:21px 0 2px;color:#a6b8e1;font-size:10px;letter-spacing:.15px;text-align:center}
+@media(min-width:700px){.welcome-center{margin-top:2vh}.welcome-character{width:180px;height:370px;bottom:12%;transform:translateX(-50%) scale(1.08)}.welcome-bottom{padding-bottom:30px}.welcome-actions{width:300px}}
+@media(max-height:700px){.welcome-center{margin-top:8px}.welcome-emblem{width:70px;height:70px;margin-bottom:8px;border-radius:19px}.welcome-emblem .brand-mark{width:62%;height:62%}.welcome-center h1{font-size:30px}.welcome-center p{margin-top:4px}.welcome-character{bottom:9%;transform:translateX(-50%) scale(.76);transform-origin:bottom center}.welcome-bottom{padding-top:8px;padding-bottom:max(12px,env(safe-area-inset-bottom))}.welcome-bottom>p{margin-top:12px}}

@@ -3,40 +3,38 @@ import { describe, expect, it } from "vitest";
 import App from "./App";
 
 describe("Playora first-launch authentication", () => {
-  it("opens directly on the sign-in screen and gates the dashboard", () => {
+  it("opens on the Playora splash screen and gates the dashboard", () => {
     render(<App />);
-    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
-    expect(screen.getByText("ONE ACCOUNT. EVERY GAME.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "PLAYORA" })).toBeInTheDocument();
+    expect(screen.getByText("More Than a Game")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Get Started" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Log In" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Your skills\./ })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Main navigation" })).not.toBeInTheDocument();
   });
 
-  it("keeps the sign-in screen open until authentication succeeds", () => {
+  it("moves from splash to signup and exposes Google registration", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Get Started" }));
+    expect(screen.getByRole("dialog", { name: "Create account" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Display name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeInTheDocument();
+  });
+
+  it("allows switching from account creation to existing-account sign-in", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Get Started" }));
+    const signInButtons = screen.getAllByRole("button", { name: "Sign in" });
+    fireEvent.click(signInButtons[signInButtons.length - 1]);
+    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+  });
+
+  it("does not let an unauthenticated visitor dismiss the launch screen", () => {
     render(<App />);
     fireEvent.keyDown(window, { key: "Escape" });
     fireEvent.mouseDown(screen.getByRole("presentation"));
-    expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "PLAYORA" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Close sign in" })).not.toBeInTheDocument();
-  });
-
-  it("switches between sign-in and account creation", () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
-    expect(screen.getByRole("heading", { name: "Create account" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Display name" })).toBeInTheDocument();
-    const signInButtons = screen.getAllByRole("button", { name: "Sign in" });
-    fireEvent.click(signInButtons[signInButtons.length - 1]);
-    expect(screen.getByRole("heading", { name: "Welcome to Playora" })).toBeInTheDocument();
-  });
-
-  it("shows the Google option and reports missing auth configuration safely", () => {
-    render(<App />);
-    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeInTheDocument();
-    const warning = screen.queryByText(/Account services are not connected yet/);
-    if (warning) {
-      expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
-    }
   });
 
   it("shows a safe message when Google OAuth returns an error", () => {
