@@ -322,3 +322,10 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Added [docs/GITHUB_ACTIONS_RUNNER_RECOVERY_FA.md](GITHUB_ACTIONS_RUNNER_RECOVERY_FA.md) with the exact observed evidence and owner-visible UI checks for Actions policy, runner availability, account usage/limits and a repeatable post-fix validation.
 - This is the point at which the connected GitHub interface reaches its limit: the available actions cannot read the repository's Actions settings/usage pages or dispatch a workflow manually. Owner-visible settings/support investigation is required to identify the underlying reason. Do not infer billing exhaustion or a GitHub outage without evidence.
 - No source tests were removed or weakened; no permissions were broadened. No live Supabase DDL, OAuth/Auth settings, games, payments, or withdrawals changed. PR #7 remains draft/unmerged and `main` remains untouched.
+
+
+## Social RPC cross-member regression coverage added — 2026-10-23
+- Extended `supabase/tests/social_leaderboard.sql` to exercise a third member attempting to inspect or respond to a relationship between two other members. The scenario verifies the unrelated member sees no row, cannot accept the request, and the intended recipient can still see and decline their own incoming request.
+- Saved as commits [161a247](https://github.com/kamyarmohamadi/playora_app/commit/161a24780319322c40bea80d709731221ee0bcfe), [a25e135](https://github.com/kamyarmohamadi/playora_app/commit/a25e135bd4e318742b532e5a0655bd156b32045c), and [e4783d7](https://github.com/kamyarmohamadi/playora_app/commit/e4783d7ddf77922a5ea23554977cc77c4128a6e2) (the latter also fixes the fixture reference after renaming).
+- These are test additions only; they have not run successfully in CI because GitHub Actions jobs still fail before runner allocation. Treat as pending verification, not as a passing security result.
+- No live database/schema/auth changes were made. No game or payment feature was enabled.
