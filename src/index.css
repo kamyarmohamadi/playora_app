@@ -378,3 +378,20 @@
 .support-report-status.status-resolved,.support-report-status.status-closed{border-color:#28604f;background:#0d2c27;color:#84e2c1}
 .support-report-status.status-in_progress{border-color:#41528a;background:#182449;color:#b4c6ff}
 @media(max-width:520px){.support-modal{width:calc(100% - 18px);max-height:calc(100dvh - 20px);padding:17px 15px 20px}.support-dialog-heading h2{font-size:20px}.support-report-list-item{align-items:flex-start;flex-direction:column}.support-report-status{align-self:flex-start}}
+
+
+/* Resizable, openable navigation panel — Playora UI enhancement */
+.mobile-menu-btn{display:grid}
+.app-body{grid-template-columns:var(--sidebar-width,228px) minmax(0,1fr)}
+.sidebar{width:var(--sidebar-width,228px);box-sizing:border-box;transition:width .2s ease,transform .2s ease,opacity .2s ease}
+.sidebar-resize-handle{position:absolute;z-index:8;top:0;inset-inline-end:-5px;width:10px;height:100%;cursor:ew-resize;touch-action:none;user-select:none}
+.sidebar-resize-handle:after{content:"";position:absolute;top:42%;bottom:42%;inset-inline-start:4px;width:2px;border-radius:2px;background:rgba(117,223,255,.25);transition:background .15s,box-shadow .15s}
+.sidebar-resize-handle:hover:after,.sidebar-resize-handle:active:after{background:var(--cyan);box-shadow:0 0 12px rgba(117,223,255,.55)}
+@media(min-width:821px){
+  .app-shell.sidebar-collapsed .app-body{grid-template-columns:0 minmax(0,1fr)}
+  .app-shell.sidebar-collapsed .sidebar{width:0;min-width:0;padding-inline:0;overflow:hidden;border:0;opacity:0;pointer-events:none}
+}
+@media(max-width:820px){
+  .sidebar{width:min(var(--sidebar-width,264px),calc(100vw - 16px))}
+  .sidebar-resize-handle{inset-inline-end:-4px;width:12px}
+}
