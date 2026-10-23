@@ -191,6 +191,28 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
+  useEffect(() => {
+    if (!authOpen) return;
+    const handleDialogEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setAuthOpen(false);
+      setAuthMessage("");
+    };
+    window.addEventListener("keydown", handleDialogEscape);
+    return () => window.removeEventListener("keydown", handleDialogEscape);
+  }, [authOpen]);
+
+  useEffect(() => {
+    if (!mobileNavOpen && !desktopSidebarOpen) return;
+    const handleNavigationEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMobileNavOpen(false);
+      setDesktopSidebarOpen(false);
+    };
+    window.addEventListener("keydown", handleNavigationEscape);
+    return () => window.removeEventListener("keydown", handleNavigationEscape);
+  }, [mobileNavOpen, desktopSidebarOpen]);
+
   const [authMode, setAuthMode] = useState<"signin" | "signup" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
