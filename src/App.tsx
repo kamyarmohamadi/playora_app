@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
@@ -174,6 +174,19 @@ export default function App() {
   const [activePlugin, setActivePlugin] = useState<ApprovedPluginDescriptor | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(228);
+  const sidebarResizeStart = useRef<{ startX: number; startWidth: number } | null>(null);
+  const toggleNavigationDrawer = () => {
+    if (window.matchMedia("(max-width: 820px)").matches) setMobileNavOpen(open => !open);
+    else setDesktopSidebarOpen(open => !open);
+  };
+  const resizeSidebar = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = sidebarResizeStart.current;
+    if (!start) return;
+    const delta = direction === "rtl" ? start.startX - event.clientX : event.clientX - start.startX;
+    setSidebarWidth(Math.max(190, Math.min(360, start.startWidth + delta)));
+  };
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
@@ -733,9 +746,9 @@ export default function App() {
   };
 
   return (
-    <div className={`app-shell locale-${locale}`} dir={direction} lang={locale}>
+    <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <header className="topbar">
-        <button className="mobile-menu-btn" aria-label={locale === "en" ? (mobileNavOpen ? "Close menu" : "Open menu") : (mobileNavOpen ? "بستن منو" : "باز کردن منو")} aria-expanded={mobileNavOpen} aria-controls="playora-navigation-drawer" onClick={() => setMobileNavOpen(!mobileNavOpen)}>{mobileNavOpen ? <X size={20} /> : <Menu size={20} />}</button>
+        <button className="mobile-menu-btn" aria-label={locale === "en" ? (mobileNavOpen ? "Close menu" : "Open menu") : (mobileNavOpen ? "بستن منو" : "باز کردن منو")} aria-expanded={mobileNavOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{mobileNavOpen || !desktopSidebarOpen ? <X size={20} /> : <Menu size={20} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
           <BrandMark /><span className="brand-word">PLAYORA<span>.</span></span>
         </button>
@@ -753,8 +766,13 @@ export default function App() {
       </header>
 
       <div className="app-body">
-        <aside id="playora-navigation-drawer" className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`} aria-hidden={!mobileNavOpen} inert={!mobileNavOpen}>
+        <aside id="playora-navigation-drawer" className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`} aria-hidden={typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches ? !mobileNavOpen : !desktopSidebarOpen} inert={typeof window !== "undefined" && window.matchMedia("(max-width: 820px)").matches ? !mobileNavOpen : !desktopSidebarOpen}>
           <div className="sidebar-context"><span className="context-icon"><Gamepad2 size={15} /></span><span>PLAY<span>SPACE</span></span></div>
+          <div className="sidebar-resize-handle" role="separator" aria-orientation="vertical" aria-label={locale === "en" ? "Resize navigation panel" : "تغییر اندازه پنل کناری"}
+            onPointerDown={event => { sidebarResizeStart.current = { startX: event.clientX, startWidth: sidebarWidth }; event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }}
+            onPointerMove={resizeSidebar}
+            onPointerUp={() => { sidebarResizeStart.current = null; }}
+            onPointerCancel={() => { sidebarResizeStart.current = null; }} />
           <p className="sidebar-label">{locale === "en" ? "DISCOVER" : "کشف و بازی"}</p>
           <nav className="sidebar-nav" aria-label={t("nav")}>
             {navigation.map(item => {
