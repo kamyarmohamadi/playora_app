@@ -14,13 +14,13 @@ Install k6 using its official installation instructions, then set environment va
 export SUPABASE_URL="https://YOUR-STAGING-PROJECT.supabase.co"
 export SUPABASE_ANON_KEY="YOUR_STAGING_PUBLISHABLE_OR_ANON_KEY"
 export LOAD_TEST_CONFIRM="staging"
-export K6_TARGET_VUS="100"
+export K6_TARGET_VUS="50"
 export K6_HOLD_DURATION="5m"
 export K6_RAMP_DURATION="2m"
 k6 run load-tests/catalog-read.js
 ```
 
-Start with 10–100 virtual users, inspect staging resource/usage metrics, and increase gradually. Do not jump to 100,000 VUs on a laptop or shared project. A 100,000-session test may require a distributed load generator and a capacity-approved environment; virtual users are not the same as requests per second or active game players.
+For the free-tier pilot, start with 10–50 virtual users, then increase gradually to 100 and at most 500 VUs using this script. The script rejects values above 500 to reduce accidental load on a limited/free project. Inspect usage and resource metrics after every step. Do not jump to 100,000 VUs on a laptop or shared project. A 100,000-session test may require a distributed load generator and a capacity-approved environment; virtual users are not the same as registered members, requests per second, or active game players.
 
 The script's initial thresholds are provisional: catalog p95 <500 ms, p99 <1200 ms and unexpected request failure rate <1%. Calibrate them against agreed SLOs and real workload before treating them as release gates. Record the commit SHA, environment shape/region, test duration, VUs, request rate, p50/p95/p99, failures, DB connection/query metrics, realtime metrics where applicable, and cost.
 
@@ -34,3 +34,7 @@ The script's initial thresholds are provisional: catalog p95 <500 ms, p99 <1200 
 - failure injection for DB/realtime/queue dependencies.
 
 Never include a service-role key in a load-test script. The publishable/anon key is still subject to RLS and must only be paired with staging credentials.
+
+## Free-first pilot target
+
+The first target is a small pilot for a few hundred registered members, not a promise that hundreds can all play realtime matches simultaneously. Keep games disabled until server-authoritative gameplay, member isolation, and reconnect behavior are tested. The catalog-read test is read-only and cannot certify Auth, private rooms, chat, wallets, or gameplay. Do not spend money to chase a number before observing actual traffic; capture the free-tier quota limits, pause/sleep behavior, and any required upgrade trigger for every chosen host before inviting members.
