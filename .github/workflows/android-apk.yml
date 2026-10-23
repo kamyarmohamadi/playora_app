@@ -1,0 +1,58 @@
+name: Playora Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/playora-platform-game-plugin-architecture-2026-10-22
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    name: Build installable Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # These are browser-safe public Supabase values, not server secrets.
+      # Repository variables can override them for a different development project.
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://nnowvfewtrfurnluhflt.supabase.co' }}
+      VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY || 'sb_publishable_YT58dR9CmztM0L5KluXUng_MbYqos7O' }}
+      VITE_ACCOUNT_DELETION_ENABLED: "false"
+      VITE_SUPPORT_REPORTS_ENABLED: "false"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked web dependencies
+        run: npm ci
+      - name: Install pinned Capacitor Android toolchain
+        run: npm install --no-save --package-lock=false @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
+      - name: Type-check and build web application
+        run: npm run build
+      - name: Generate Android project and sync web assets
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Assemble debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: playora-android-debug-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
