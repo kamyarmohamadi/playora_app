@@ -557,3 +557,12 @@
 .welcome-bottom>p{margin:21px 0 2px;color:#a6b8e1;font-size:10px;letter-spacing:.15px;text-align:center}
 @media(min-width:700px){.welcome-center{margin-top:2vh}.welcome-character{width:180px;height:370px;bottom:12%;transform:translateX(-50%) scale(1.08)}.welcome-bottom{padding-bottom:30px}.welcome-actions{width:300px}}
 @media(max-height:700px){.welcome-center{margin-top:8px}.welcome-emblem{width:70px;height:70px;margin-bottom:8px;border-radius:19px}.welcome-emblem .brand-mark{width:62%;height:62%}.welcome-center h1{font-size:30px}.welcome-center p{margin-top:4px}.welcome-character{bottom:9%;transform:translateX(-50%) scale(.76);transform-origin:bottom center}.welcome-bottom{padding-top:8px;padding-bottom:max(12px,env(safe-area-inset-bottom))}.welcome-bottom>p{margin-top:12px}}
+
+
+/* Keep the splash composition close to the supplied mobile reference: one
+   dominant neon A mark, centered wordmark, and only a compact language switch. */
+.auth-welcome-screen .welcome-topbar{justify-content:flex-end}
+.auth-welcome-screen .welcome-emblem{width:clamp(104px,16vh,158px);height:clamp(104px,16vh,158px);margin-bottom:13px;border:0;border-radius:0;background:transparent;box-shadow:none;transform:none}
+.auth-welcome-screen .welcome-emblem .brand-mark{width:92%;height:92%;filter:drop-shadow(0 0 18px #22cfff91)}
+.auth-welcome-screen .welcome-center{margin-top:clamp(30px,7vh,82px)}
+@media(max-height:700px){.auth-welcome-screen .welcome-center{margin-top:14px}.auth-welcome-screen .welcome-emblem{width:82px;height:82px;margin-bottom:6px}}

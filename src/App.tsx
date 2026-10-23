@@ -1128,7 +1128,6 @@ export default function App() {
                 <span className="character-pack" />
               </div>
               <header className="welcome-topbar">
-                <span className="welcome-brand"><BrandMark /><b>PLAYORA</b></span>
                 <button type="button" className="welcome-language" aria-label={locale === "en" ? "Switch language to Persian" : "Switch language to English"} onClick={() => setLocale(current => current === "en" ? "fa" : "en")}>{locale === "en" ? "EN　 FA" : "FA　 EN"}</button>
               </header>
               <div className="welcome-center">
