@@ -343,3 +343,9 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Saved in [60a2d18](https://github.com/kamyarmohamadi/playora_app/commit/60a2d18681203b1812e15df23ea2b1ae9b759014).
 - Latest run for the immediately preceding index-test revision [39877263120](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877263120) again shows all three jobs failed with `runner_id: 0`, no runner name, and zero steps. Therefore neither the SQL test nor migration is verified yet.
 - No live migration was applied. Next verification must run the migration and test in disposable PostgreSQL after GitHub runner allocation is restored, then inspect `EXPLAIN` plans against realistic staging data before deciding whether indexes are beneficial.
+
+
+## Live index state verified read-only — 2026-10-23
+- Queried the active Supabase development database for the three planned capacity index names. The query returned zero rows, confirming none of those indexes currently exist in the live dev schema.
+- This is expected because the migration has not been applied; it must remain unapplied until migration history is reconciled and the disposable PostgreSQL migration/test suite runs successfully.
+- No DDL was executed by this inspection. The query only read PostgreSQL catalog metadata.
