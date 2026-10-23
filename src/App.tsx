@@ -795,7 +795,7 @@ export default function App() {
   return (
     <div className={`app-shell locale-${locale} ${desktopSidebarOpen ? "" : "sidebar-collapsed"}`} dir={direction} lang={locale} style={{ "--sidebar-width": `${sidebarWidth}px` } as CSSProperties}>
       <header className="topbar">
-        <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close menu" : "Open menu") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن پنل ناوبری" : "باز کردن پنل ناوبری")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
+        <button className="mobile-menu-btn" aria-label={locale === "en" ? ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "Close menu" : "Open menu") : ((isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? "بستن منو" : "باز کردن منو")} aria-expanded={isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen} aria-controls="playora-navigation-drawer" onClick={toggleNavigationDrawer}>{(isMobileNavigation() ? mobileNavOpen : desktopSidebarOpen) ? <X size={20} /> : <Ellipsis size={22} />}</button>
         <button className="brand-lockup" onClick={() => go("home")} aria-label="Playora home">
           <BrandMark /><span className="brand-word">PLAYORA<span>.</span></span>
         </button>
