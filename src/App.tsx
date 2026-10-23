@@ -117,16 +117,25 @@ function BrandMark() {
   return (
     <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
       <defs>
-        <linearGradient id="playora-mark-gradient" x1="8" y1="5" x2="56" y2="60" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#55F2FF" />
-          <stop offset=".48" stopColor="#6488FF" />
-          <stop offset="1" stopColor="#D36BFF" />
+        <linearGradient id="playora-left-gradient" x1="4" y1="7" x2="35" y2="58" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FF42DE" />
+          <stop offset=".55" stopColor="#A54BFF" />
+          <stop offset="1" stopColor="#506DFF" />
+        </linearGradient>
+        <linearGradient id="playora-right-gradient" x1="30" y1="5" x2="61" y2="59" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2B78FF" />
+          <stop offset=".54" stopColor="#24D7FF" />
+          <stop offset="1" stopColor="#54F4FF" />
+        </linearGradient>
+        <linearGradient id="playora-crossbar-gradient" x1="15" y1="44" x2="49" y2="54" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#765DFF" />
+          <stop offset="1" stopColor="#2BDFFF" />
         </linearGradient>
       </defs>
-      <path d="M32 4 61 59H46L32 31 18 59H3L32 4Z" fill="url(#playora-mark-gradient)" />
-      <path d="M32 30 40 46H24L32 30Z" fill="#071327" />
-      <path d="M20 49H44L49 58H15L20 49Z" fill="url(#playora-mark-gradient)" opacity=".92" />
-      <path d="M32 4 36 13 32 20 28 13 32 4Z" fill="#E8FDFF" />
+      <path d="M30 4 3 59H17L35 23 30 4Z" fill="url(#playora-left-gradient)" />
+      <path d="M34 4 61 59H47L29 23 34 4Z" fill="url(#playora-right-gradient)" />
+      <path d="M19 43H45L50 53H14L19 43Z" fill="url(#playora-crossbar-gradient)" />
+      <path d="M32 5 36 13 32 20 28 13 32 5Z" fill="#E8FDFF" />
     </svg>
   );
 }
