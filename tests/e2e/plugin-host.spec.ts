@@ -21,10 +21,11 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
-test("the platform catalogue launches no game when the registry is empty", async ({ page }) => {
+test("the unauthenticated launch screen blocks catalogue access and game launch", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Explore games", exact: true }).click();
-  await expect(page.getByText(/All games remain unavailable until an approved plugin is installed/).first()).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "PLAYORA" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Get Started" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Explore games", exact: true })).toHaveCount(0);
   await expect(page.locator("iframe.playora-plugin-host__frame")).toHaveCount(0);
 });
 
@@ -85,41 +86,30 @@ test("a second document load inside one session is stopped", async ({ page }) =>
   await expect(page.locator("iframe[title='chess isolated game']")).toHaveCount(0);
 });
 
-test("mobile Persian UI preserves RTL direction, a collapsed drawer, and horizontal fit", async ({ page }) => {
+test("mobile Persian splash preserves RTL direction and horizontal fit", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  const drawer = page.locator("#playora-navigation-drawer");
-  await expect(drawer).toHaveAttribute("aria-hidden", "true");
-  await expect(drawer).not.toHaveClass(/sidebar-open/);
-
-  await page.getByRole("button", { name: "Switch language to Persian" }).click();
   const shell = page.locator(".app-shell");
+  await page.getByRole("button", { name: "Switch language to Persian" }).click();
   await expect(shell).toHaveAttribute("lang", "fa");
   await expect(shell).toHaveAttribute("dir", "rtl");
+  await expect(page.getByRole("button", { name: "شروع کنید" })).toBeVisible();
 
   const dimensions = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     document: document.documentElement.scrollWidth,
     body: document.body.scrollWidth,
-    topbarClient: document.querySelector(".topbar")?.clientWidth ?? 0,
-    topbarScroll: document.querySelector(".topbar")?.scrollWidth ?? 0,
-    mainClient: document.querySelector(".main-content")?.clientWidth ?? 0,
-    mainScroll: document.querySelector(".main-content")?.scrollWidth ?? 0,
+    screen: document.querySelector(".auth-welcome-screen")?.clientWidth ?? 0,
+    screenScroll: document.querySelector(".auth-welcome-screen")?.scrollWidth ?? 0,
   }));
   expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
   expect(dimensions.body).toBeLessThanOrEqual(dimensions.viewport + 1);
-  expect(dimensions.topbarScroll).toBeLessThanOrEqual(dimensions.topbarClient + 1);
-  expect(dimensions.mainScroll).toBeLessThanOrEqual(dimensions.mainClient + 1);
+  expect(dimensions.screenScroll).toBeLessThanOrEqual(dimensions.screen + 1);
 
-  await page.getByRole("button", { name: "باز کردن منو" }).click();
-  await expect(drawer).toHaveClass(/sidebar-open/);
-  await expect(drawer).toHaveAttribute("aria-hidden", "false");
-  await expect(drawer).toBeVisible();
-
-  await page.getByRole("button", { name: "بستن منو" }).click();
-  await expect(drawer).toHaveAttribute("aria-hidden", "true");
-  await expect(drawer).not.toHaveClass(/sidebar-open/);
+  await page.getByRole("button", { name: "شروع کنید" }).click();
+  await expect(page.getByRole("dialog", { name: "ساخت حساب" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ادامه با گوگل" })).toBeVisible();
 });
 
 test("malformed plugin messages fail closed and keep the platform host recoverable", async ({ page }) => {

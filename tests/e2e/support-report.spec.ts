@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("support intake fails closed when backend configuration is absent", async ({ page }) => {
+test("support controls remain behind the first-launch authentication gate", async ({ page }) => {
   const supportRequests: string[] = [];
   page.on("request", request => {
     if (request.url().includes("/rest/v1/support_reports")) {
@@ -9,19 +9,13 @@ test("support intake fails closed when backend configuration is absent", async (
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Help & support", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "PLAYORA" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Get Started" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Help & support", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Help & support" })).toHaveCount(0);
 
-  const dialog = page.getByRole("dialog", { name: "Help & support" });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("status")).toHaveText(
-    "Support submissions are not connected yet. Please try again after the service is enabled."
-  );
-  await expect(dialog.getByRole("button", { name: "Submit report" })).toHaveCount(0);
-  await expect(dialog.getByRole("textbox", { name: "Title" })).toHaveCount(0);
-
-  // No form and no feature flag means opening/closing support must not write anything.
-  await expect.poll(() => supportRequests.length).toBe(0);
+  // The unauthenticated screen cannot be dismissed to expose the dashboard.
   await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "PLAYORA" })).toBeVisible();
   expect(supportRequests).toEqual([]);
 });
