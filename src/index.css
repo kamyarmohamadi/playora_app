@@ -492,3 +492,8 @@
   .auth-form-panel>p:not(.auth-legal-note){margin:8px 0 17px;font-size:10px}
   .auth-form-panel .auth-legal-note{margin-top:17px}
 }
+
+/* Keep the account form heading styling scoped to the actual panel (the
+   dialog is its parent, not a descendant). */
+.auth-form-panel h2{position:relative;color:#f5f8ff;font-size:27px;letter-spacing:-.65px}
+.auth-form-panel #auth-modal-title{margin:0}
