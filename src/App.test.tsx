@@ -29,6 +29,14 @@ describe("Playora first-launch authentication", () => {
     expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
   });
 
+  it("returns from signup to the launch screen without bypassing authentication", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Get Started" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to Playora" }));
+    expect(screen.getByRole("dialog", { name: "PLAYORA" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your skills." })).not.toBeInTheDocument();
+  });
+
   it("does not let an unauthenticated visitor dismiss the launch screen", () => {
     render(<App />);
     fireEvent.keyDown(window, { key: "Escape" });

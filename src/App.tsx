@@ -15,7 +15,7 @@ import { listMySupportReports, submitMySupportReport } from "./platform/supportR
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
-  Activity, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
+  Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { copy, type Locale } from "./i18n/copy";
 import "./index.css";
@@ -1161,7 +1161,7 @@ export default function App() {
             <div className="auth-visual-footer"><span>{locale === "fa" ? "هرجا بازی کن. هدفمند رقابت کن." : "PLAY ANYWHERE. COMPETE WITH PURPOSE."}</span><span>EN · FA</span></div>
           </div>
           <div className="auth-form-panel">
-          <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span>{session && <button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button>}</div>
+          <div className="auth-modal-top"><span className="auth-modal-mark"><BrandMark /></span>{session ? <button className="auth-close" type="button" aria-label="Close sign in" onClick={() => setAuthOpen(false)}><X size={18} /></button> : <button className="auth-close" type="button" aria-label={locale === "en" ? "Back to Playora" : "بازگشت به پلیورا"} onClick={() => { setAuthMode("welcome"); setAuthMessage(""); }}><ArrowLeft size={18} /></button>}</div>
           <span className="auth-eyebrow">PLAYORA ACCOUNT</span>
           <h2 id="auth-modal-title">{authMode === "signup" ? t("signUp") : authMode === "reset" ? (recoveryReady ? t("setNewPassword") : t("resetPassword")) : t("authTitle")}</h2>
           <p>{t("authSubtitle")}</p>
