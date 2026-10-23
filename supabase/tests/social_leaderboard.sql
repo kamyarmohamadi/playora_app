@@ -41,33 +41,33 @@ DECLARE
 BEGIN
   SELECT request_id,relationship_status INTO v_request_id,v_status
   FROM public.send_friend_request(v_beta_username);
-  IF v_request_id IS NULL OR v_status <> 'pending' THEN
+  IF v_request_id IS NULL OR v_status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'A valid friend request should be created as pending';
   END IF;
 
   SELECT relationship_type INTO v_relationship_type
   FROM public.list_social_relationships() WHERE request_id=v_request_id;
-  IF v_relationship_type <> 'outgoing' THEN
+  IF v_relationship_type IS DISTINCT FROM 'outgoing' THEN
     RAISE EXCEPTION 'Sender should see its own request as outgoing';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
   SELECT relationship_type INTO v_relationship_type
   FROM public.list_social_relationships() WHERE request_id=v_request_id;
-  IF v_relationship_type <> 'incoming' THEN
+  IF v_relationship_type IS DISTINCT FROM 'incoming' THEN
     RAISE EXCEPTION 'Recipient should see an incoming request';
   END IF;
 
   SELECT request_id,relationship_status INTO v_request_id,v_status
   FROM public.respond_friend_request(v_request_id,'accepted');
-  IF v_status <> 'accepted' THEN
+  IF v_status IS DISTINCT FROM 'accepted' THEN
     RAISE EXCEPTION 'Recipient should be able to accept their pending request';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
   SELECT relationship_type INTO v_relationship_type
   FROM public.list_social_relationships() WHERE request_id=v_request_id;
-  IF v_relationship_type <> 'friend' THEN
+  IF v_relationship_type IS DISTINCT FROM 'friend' THEN
     RAISE EXCEPTION 'Both members should see an accepted request as a friend relationship';
   END IF;
 
@@ -75,7 +75,7 @@ BEGIN
   FOR i IN 1..4 LOOP
     SELECT relationship_status INTO v_status
     FROM public.send_friend_request(v_beta_username);
-    IF v_status <> 'accepted' THEN
+    IF v_status IS DISTINCT FROM 'accepted' THEN
       RAISE EXCEPTION 'Repeated request to an existing friend must not create duplicates';
     END IF;
   END LOOP;
@@ -92,14 +92,14 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
   SELECT request_id,relationship_status INTO v_beta_gamma_request_id,v_status
   FROM public.send_friend_request(v_gamma_username);
-  IF v_status <> 'pending' THEN
+  IF v_status IS DISTINCT FROM 'pending' THEN
     RAISE EXCEPTION 'Beta-to-Gamma request should start pending';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000013',false);
   SELECT relationship_status INTO v_status
   FROM public.respond_friend_request(v_beta_gamma_request_id,'blocked');
-  IF v_status <> 'blocked' THEN
+  IF v_status IS DISTINCT FROM 'blocked' THEN
     RAISE EXCEPTION 'Recipient should be able to block a pending request';
   END IF;
 
@@ -160,14 +160,14 @@ BEGIN
   SELECT username,rank_position INTO v_top_username,v_rank
   FROM public.get_game_leaderboard('tictactoe',10)
   WHERE rank_position=1;
-  IF v_top_username <> v_beta_username OR v_rank <> 1 THEN
+  IF v_top_username IS DISTINCT FROM v_beta_username OR v_rank <> 1 THEN
     RAISE EXCEPTION 'Leaderboard rank 1 should be the highest-rated player';
   END IF;
 
   SELECT username,rank_position INTO v_second_username,v_rank
   FROM public.get_game_leaderboard('tictactoe',10)
   WHERE rank_position=2;
-  IF v_second_username <> v_alpha_username OR v_rank <> 2 THEN
+  IF v_second_username IS DISTINCT FROM v_alpha_username OR v_rank <> 2 THEN
     RAISE EXCEPTION 'Leaderboard rank 2 should be the second-highest-rated player';
   END IF;
 
