@@ -338,6 +338,7 @@ export default function App() {
       setDeleteBusy(false);
       setDeleteMessage("");
       setAuthOpen(false);
+      if (nextUserId === null) setAuthMode("welcome");
       setAuthMessage("");
       setPassword("");
       setDisplayName("");
