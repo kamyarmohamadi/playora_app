@@ -22,10 +22,11 @@ describe("Playora first-launch authentication", () => {
 
   it("switches between sign-in and account creation", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
-    expect(screen.getByRole("heading", { name: "Create your account" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(screen.getByRole("heading", { name: "Create account" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Display name" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    const signInButtons = screen.getAllByRole("button", { name: "Sign in" });
+    fireEvent.click(signInButtons[signInButtons.length - 1]);
     expect(screen.getByRole("heading", { name: "Welcome to Playora" })).toBeInTheDocument();
   });
 
