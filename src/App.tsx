@@ -114,7 +114,21 @@ const extraNavigation: { id: Page; key: string; icon: LucideIcon }[] = [
 ];
 
 function BrandMark() {
-  return <span className="brand-mark" aria-hidden="true"><span /><i /><b /></span>;
+  return (
+    <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="playora-mark-gradient" x1="8" y1="5" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#55F2FF" />
+          <stop offset=".48" stopColor="#6488FF" />
+          <stop offset="1" stopColor="#D36BFF" />
+        </linearGradient>
+      </defs>
+      <path d="M32 4 61 59H46L32 31 18 59H3L32 4Z" fill="url(#playora-mark-gradient)" />
+      <path d="M32 30 40 46H24L32 30Z" fill="#071327" />
+      <path d="M20 49H44L49 58H15L20 49Z" fill="url(#playora-mark-gradient)" opacity=".92" />
+      <path d="M32 4 36 13 32 20 28 13 32 4Z" fill="#E8FDFF" />
+    </svg>
+  );
 }
 
 function GoogleGlyph() {
