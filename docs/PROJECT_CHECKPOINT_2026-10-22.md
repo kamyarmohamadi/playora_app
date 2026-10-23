@@ -329,3 +329,10 @@ A separate snapshot branch preserves the complete code/docs/migration tree recor
 - Saved as commits [161a247](https://github.com/kamyarmohamadi/playora_app/commit/161a24780319322c40bea80d709731221ee0bcfe), [a25e135](https://github.com/kamyarmohamadi/playora_app/commit/a25e135bd4e318742b532e5a0655bd156b32045c), and [e4783d7](https://github.com/kamyarmohamadi/playora_app/commit/e4783d7ddf77922a5ea23554977cc77c4128a6e2) (the latter also fixes the fixture reference after renaming).
 - These are test additions only; they have not run successfully in CI because GitHub Actions jobs still fail before runner allocation. Treat as pending verification, not as a passing security result.
 - No live database/schema/auth changes were made. No game or payment feature was enabled.
+
+
+## Social SQL test hardening — null-safe assertions (2026-10-23)
+- Extended the social relationship regression script with the cross-member scenario described above, then hardened its result assertions to use `IS DISTINCT FROM` where a missing row could otherwise produce SQL NULL and accidentally avoid raising a test failure.
+- Final test-script commit: [6f53354](https://github.com/kamyarmohamadi/playora_app/commit/6f533546b53208ae900b8a700aa5bb1e74cf838b).
+- Latest workflow for that exact commit: [39877220483](https://github.com/kamyarmohamadi/playora_app/actions/runs/39877220483) — still failed before steps, consistent with `runner_id: 0` pattern on earlier runs. The test script itself remains unexecuted/unverified.
+- This is test-quality work only. It does not prove the live functions are secure and does not change live database state. All games and money features remain disabled.
