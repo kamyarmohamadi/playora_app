@@ -75,6 +75,8 @@ describe("Playora global app shell", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(screen.getByRole("dialog", { name: "Welcome to Playora" })).toBeInTheDocument();
+    expect(screen.getByText("ONE ACCOUNT. EVERY GAME.")).toBeInTheDocument();
+    expect(screen.getByText("Make your next move")).toBeInTheDocument();
     expect(screen.getByText(/Account services are not connected yet/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
     expect(screen.getAllByRole("button", { name: /^Sign in$/ }).some(button => (button as HTMLButtonElement).disabled)).toBe(true);
