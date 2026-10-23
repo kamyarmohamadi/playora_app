@@ -41,6 +41,10 @@ Core modules include:
 - `supabase/migrations/` and `supabase/tests/` — schema, grants, RLS, registry and regression invariants.
 - `docs/superpowers/` — approved architecture spec and phased implementation plans.
 
+## Account sign-in setup
+
+The sign-in dialog supports email/password, email verification, password recovery and Google OAuth through Supabase Auth. To enable real sign-in, configure the provider and environment variables using [the Persian Google Auth setup guide](docs/GOOGLE_AUTH_SETUP_FA.md). Without those settings, account actions remain safely disabled; never commit client secrets or service-role keys.
+
 ## Supabase development environment
 
 A development project already exists:
