@@ -39,7 +39,7 @@ BEGIN
         AND i.indisvalid
         AND i.indisready
         AND (i.indpred IS NOT NULL) = expected_partial
-        AND pg_catalog.position(expected_keys IN pg_catalog.pg_get_indexdef(idx.oid)) > 0
+        AND pg_catalog.strpos(pg_catalog.pg_get_indexdef(idx.oid), expected_keys) > 0
     ) THEN
       RAISE EXCEPTION
         'Capacity index is missing, invalid, attached to the wrong table, or has unexpected keys/predicate: %',
