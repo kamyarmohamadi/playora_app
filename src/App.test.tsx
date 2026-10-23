@@ -18,7 +18,7 @@ describe("Playora global app shell", () => {
     fireEvent.click(menu);
     expect(screen.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Close navigation" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close menu" }));
     expect(screen.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("button", { name: "Explore games" })).toBeInTheDocument();
   });
