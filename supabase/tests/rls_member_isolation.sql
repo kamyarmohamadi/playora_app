@@ -19,7 +19,7 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_wallets;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % wallets, expected 1', visible_count; END IF;
   SELECT free_coins INTO current_coins FROM public.coin_wallets WHERE user_id = auth.uid();
-  IF current_coins <> 50 THEN RAISE EXCEPTION 'New member demo wallet was not initialized to 50'; END IF;
+  IF current_coins <> 55 THEN RAISE EXCEPTION 'New member welcome wallet was not initialized to 55'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
@@ -68,7 +68,7 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_wallets;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % wallets, expected 1', visible_count; END IF;
   SELECT free_coins INTO current_coins FROM public.coin_wallets WHERE user_id = auth.uid();
-  IF current_coins <> 50 THEN RAISE EXCEPTION 'Member Two wallet has unexpected balance'; END IF;
+  IF current_coins <> 55 THEN RAISE EXCEPTION 'Member Two wallet has unexpected welcome balance'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
