@@ -38,7 +38,7 @@ jobs:
       - name: Generate Android project and sync web assets
         run: |
           npx cap add android
-          node --test scripts/configure-android-oauth.test.mjs
+          node --test scripts/configure-android-oauth.node-test.mjs
           node scripts/configure-android-oauth.mjs android/app/src/main/AndroidManifest.xml
           npx cap sync android
       - name: Set up Java

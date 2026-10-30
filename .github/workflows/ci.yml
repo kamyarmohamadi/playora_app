@@ -24,7 +24,7 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
       - name: Test Android OAuth manifest patcher
-        run: node --test scripts/configure-android-oauth.test.mjs
+        run: node --test scripts/configure-android-oauth.node-test.mjs
       - name: Audit dependency vulnerabilities
         run: npm audit --audit-level=moderate
       - name: Run unit tests
