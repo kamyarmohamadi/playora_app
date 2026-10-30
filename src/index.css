@@ -566,3 +566,21 @@
 .auth-welcome-screen .welcome-emblem .brand-mark{width:92%;height:92%;filter:drop-shadow(0 0 18px #22cfff91)}
 .auth-welcome-screen .welcome-center{margin-top:clamp(30px,7vh,82px)}
 @media(max-height:700px){.auth-welcome-screen .welcome-center{margin-top:14px}.auth-welcome-screen .welcome-emblem{width:82px;height:82px;margin-bottom:6px}}
+
+
+/* Player economy and progression surfaces */
+.wallet-buckets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.wallet-buckets>div{min-width:0;padding:11px 9px;border:1px solid var(--line);border-radius:10px;background:#08152a}
+.wallet-buckets span,.wallet-buckets b{display:block}
+.wallet-buckets span{min-height:25px;color:#8298b9;font-size:8px;line-height:1.5}
+.wallet-buckets b{margin-top:5px;color:#edf5ff;font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.profile-progression{margin:0 20px 18px;padding:16px;border:1px solid #294568;border-radius:12px;background:linear-gradient(135deg,#102541,#0a172c)}
+.profile-progression-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.profile-progression-head h3{margin:4px 0 0;color:#f4f7ff;font-size:18px}
+.league-pill{flex:none;padding:6px 9px;border:1px solid #45617e;border-radius:999px;color:#d3e2f5;font-size:9px;font-weight:700}
+.league-bronze{border-color:#8d6546;color:#e4b58d}.league-silver{border-color:#8497af;color:#d9e5f5}.league-gold{border-color:#a58a40;color:#f2d77e}.league-platinum{border-color:#4b9b9e;color:#a6f0e8}.league-diamond{border-color:#5d83d9;color:#b6ccff}.league-master{border-color:#a66bd2;color:#e2b7ff}
+.progression-track{height:9px;overflow:hidden;border-radius:999px;background:#071124}
+.progression-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4c87ff,#45d6e8);transition:width .25s ease}
+.profile-progression>p{margin:8px 0 0;color:#94a9c8;font-size:9px;font-variant-numeric:tabular-nums}
+.profile-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:620px){.wallet-layout{grid-template-columns:minmax(0,1fr)}.wallet-buckets{gap:6px}.wallet-buckets>div{padding:9px 7px}.wallet-buckets span{font-size:7px}.wallet-buckets b{font-size:12px}.profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-progression-head{align-items:flex-start;flex-direction:column}}

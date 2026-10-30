@@ -14,6 +14,8 @@ DECLARE
   v_wallet public.coin_wallets;
   v_before bigint;
   v_after bigint;
+  v_free_signup bigint;
+  v_signup_rows integer;
   v_ledger_rows integer;
   v_replay_rejected boolean := false;
   v_overdraft_rejected boolean := false;
@@ -23,6 +25,21 @@ BEGIN
   FROM public.coin_wallets
   WHERE user_id='00000000-0000-4000-8000-000000000003';
   IF v_before <> 0 THEN RAISE EXCEPTION 'Wallet test must start with zero purchased coins'; END IF;
+
+  SELECT free_coins INTO v_free_signup
+  FROM public.coin_wallets
+  WHERE user_id='00000000-0000-4000-8000-000000000003';
+  IF v_free_signup <> 55 THEN
+    RAISE EXCEPTION 'New members must receive exactly 55 free signup coins, got %',v_free_signup;
+  END IF;
+  SELECT count(*) INTO v_signup_rows
+  FROM public.coin_ledger
+  WHERE user_id='00000000-0000-4000-8000-000000000003'
+    AND bucket='free' AND event_type='signup_bonus'
+    AND amount=55 AND idempotency_key='signup_bonus:00000000-0000-4000-8000-000000000003';
+  IF v_signup_rows <> 1 THEN
+    RAISE EXCEPTION 'Exactly one 55-coin signup ledger event must be present';
+  END IF;
 
   v_wallet := public.apply_coin_delta(
     '00000000-0000-4000-8000-000000000003'::uuid,

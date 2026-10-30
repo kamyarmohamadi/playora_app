@@ -17,6 +17,7 @@ import { SupportReportDialog, type SupportReportSubmission, type SupportReportSu
 import { listMySupportReports, submitMySupportReport } from "./platform/supportReportService";
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platform/nativeOAuth";
+import { getProgressionSnapshot } from "./platform/progression";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
@@ -812,14 +813,20 @@ export default function App() {
   const currentName = session
     ? (memberProfile?.user_id === session.user.id ? memberProfile.display_name : t("member"))
     : t("account");
-  const coinBalance = session
-    ? (memberWallet?.user_id === session.user.id
-      ? Number(memberWallet.free_coins) + Number(memberWallet.purchased_coins) + Number(memberWallet.reward_coins)
-      : null)
-    : 50;
+  const walletSnapshot = session
+    ? (memberWallet?.user_id === session.user.id ? memberWallet : null)
+    : { free_coins: 55, purchased_coins: 0, reward_coins: 0, user_id: "guest-preview", updated_at: "" };
+  const coinBalance = walletSnapshot
+    ? Number(walletSnapshot.free_coins) + Number(walletSnapshot.purchased_coins) + Number(walletSnapshot.reward_coins)
+    : null;
+  const formatWalletAmount = (amount: number | string | undefined) => amount === undefined
+    ? "—"
+    : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(Number(amount));
   const formattedCoins = coinBalance === null || !Number.isFinite(coinBalance)
     ? t("balanceUnavailable")
-    : new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US", { maximumFractionDigits: 0 }).format(coinBalance);
+    : formatWalletAmount(coinBalance);
+  const progression = getProgressionSnapshot(memberStats?.xp ?? 0, memberStats?.rating ?? 1000);
+  const leagueLabel = t("league" + progression.league.charAt(0).toUpperCase() + progression.league.slice(1));
 
   const openGame = async (game: Game) => {
     try {
@@ -1119,9 +1126,9 @@ export default function App() {
             <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("rankedUnavailable")}</h3></div>
           </section>}
 
-          {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
+          {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><div className="wallet-buckets" aria-label={t("walletBreakdown")}><div><span>{t("freeCoins")}</span><b>{formatWalletAmount(walletSnapshot?.free_coins)}</b></div><div><span>{t("purchasedCoins")}</span><b>{formatWalletAmount(walletSnapshot?.purchased_coins)}</b></div><div><span>{t("rewardCoins")}</span><b>{formatWalletAmount(walletSnapshot?.reward_coins)}</b></div></div><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
 
-          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{t("member")}</span>}</div>
+          {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{memberStats ? `${t("level")} ${progression.level}` : t("member")}</span>}</div>
               {session && memberProfile?.user_id === session.user.id && <form className="profile-edit-form" onSubmit={event => void saveProfile(event)}>
                 <label htmlFor="profile-display-name">{t("displayName")}</label>
                 <div className="profile-edit-controls"><input id="profile-display-name" name="profileDisplayName" value={profileNameDraft} onChange={event => setProfileNameDraft(event.target.value)} minLength={1} maxLength={32} required autoComplete="nickname" /><button className="btn-gradient" type="submit" disabled={profileSaveBusy || profileNameDraft.trim() === memberProfile.display_name}>{profileSaveBusy ? t("loading") : t("saveProfile")}<Check size={14} /></button></div>
@@ -1132,6 +1139,16 @@ export default function App() {
                 <div><b>{memberStats ? memberStats.rating.toLocaleString(locale) : "—"}</b><span>{t("statRating")}</span></div>
                 <div><b>{memberStats ? memberStats.xp.toLocaleString(locale) : "—"}</b><span>{t("profileXp")}</span></div>
               </div>
+              {session && memberStats && <section className="profile-progression" aria-label={t("playerProgress")}>
+                <div className="profile-progression-head">
+                  <div><span className="section-eyebrow">{t("playerProgress")}</span><h3>{t("level")} {progression.level}</h3></div>
+                  <span className={"league-pill league-" + progression.league}>{t("league")}: {leagueLabel}</span>
+                </div>
+                <div className="progression-track" role="progressbar" aria-label={t("xpProgress")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progression.progressPercent}>
+                  <span style={{ width: progression.progressPercent + "%" }} />
+                </div>
+                <p>{formatWalletAmount(progression.xpIntoLevel)} / {formatWalletAmount(progression.xpForNextLevel)} {t("xpProgress")}</p>
+              </section>}
               {session && <section className="profile-history"><p className="profile-history-empty">{t("rankedUnavailable")}</p></section>}
               {session ? <div className="profile-auth-footer"><p>{t("securityLiveNote")}</p><button className="btn-outline" onClick={() => void handleSignOut()}><LogIn size={14} />{t("signOut")}</button></div> : <div className="profile-auth-footer"><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}</div></section>}
 
