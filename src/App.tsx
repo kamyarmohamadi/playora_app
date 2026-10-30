@@ -1123,6 +1123,18 @@ export default function App() {
               <div className="leaderboard-hero-copy"><span className="section-eyebrow">{t("rankTitle")}</span><h2>{t("rankTitle")}</h2><p>{t("rankedUnavailable")}</p></div>
             </div>
             {!session && <div className="social-login-panel"><div className="social-login-icon"><LockKeyhole size={24} /></div><div><h3>{t("signIn")}</h3><p>{t("accountRequired")}</p></div><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}
+            {session && memberStats && <section className="leaderboard-personal-card" aria-label={t("yourLeague")}>
+              <div className="leaderboard-personal-head">
+                <div><span className="section-eyebrow">{t("yourLeague")}</span><h3>{leagueLabel}</h3></div>
+                <span className={"league-pill league-" + progression.league}>{t("level")} {progression.level}</span>
+              </div>
+              <div className="leaderboard-personal-stats">
+                <div><span>{t("statRating")}</span><b>{memberStats.rating.toLocaleString(locale)}</b></div>
+                <div><span>{t("profileXp")}</span><b>{memberStats.xp.toLocaleString(locale)}</b></div>
+                <div><span>{t("statMatches")}</span><b>{memberStats.matchesPlayed.toLocaleString(locale)}</b></div>
+              </div>
+              <p>{t("leaderboardLocked")}</p>
+            </section>}
             <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("rankedUnavailable")}</h3></div>
           </section>}
 
