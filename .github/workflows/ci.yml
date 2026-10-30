@@ -123,6 +123,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026000000_support_reports.sql
       - name: Add capacity-oriented query indexes
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261027000000_capacity_query_indexes.sql
+      - name: Add player progression and 55-coin welcome grant
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000000_player_progression_economy.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Verify capacity query indexes are valid
