@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, PointerEvent as ReactPointerEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
+import { App as NativeApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import type { LucideIcon } from "lucide-react";
 import { supabase, supabaseConfigured, accountDeletionEnabled } from "./lib/supabase";
 import { localCatalogPreview, localCatalogProvider } from "./catalog/localCatalogProvider";
@@ -13,6 +16,7 @@ import { GamePluginHost } from "./plugin-host/GamePluginHost";
 import { SupportReportDialog, type SupportReportSubmission, type SupportReportSummary } from "./components/SupportReportDialog";
 import { listMySupportReports, submitMySupportReport } from "./platform/supportReportService";
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
+import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platform/nativeOAuth";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
@@ -267,6 +271,76 @@ export default function App() {
   const activeUserIdRef = useRef<string | null>(null);
 
   const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
+  useEffect(() => {
+    const authClient = supabase;
+    if (!authClient || Capacitor.getPlatform() !== "android") return;
+
+    let active = true;
+    let appUrlListener: { remove: () => Promise<void> } | undefined;
+    let browserFinishedListener: { remove: () => Promise<void> } | undefined;
+    const exchangedCodes = new Set<string>();
+
+    const finishNativeOAuth = async (url: string) => {
+      const callback = parseNativeOAuthCallback(url);
+      if (!callback) return;
+      const currentLocale = document.documentElement.lang === "fa" ? "fa" : "en";
+
+      if (callback.error) {
+        if (active) {
+          setAuthOpen(true);
+          setAuthMessage(copy[currentLocale].authFailure);
+          setAuthBusy(false);
+        }
+        await Browser.close().catch(() => undefined);
+        return;
+      }
+      if (!callback.code || exchangedCodes.has(callback.code)) return;
+      exchangedCodes.add(callback.code);
+
+      try {
+        const { error } = await authClient.auth.exchangeCodeForSession(callback.code);
+        if (error) throw error;
+        if (!active) return;
+        setAuthMessage("");
+        setAuthBusy(false);
+        setAuthOpen(false);
+        setToast(copy[currentLocale].signInSuccess);
+      } catch {
+        if (active) {
+          setAuthOpen(true);
+          setAuthMessage(copy[currentLocale].authFailure);
+          setAuthBusy(false);
+        }
+      } finally {
+        await Browser.close().catch(() => undefined);
+      }
+    };
+
+    void NativeApp.addListener("appUrlOpen", ({ url }) => {
+      void finishNativeOAuth(url);
+    }).then(listener => {
+      if (active) appUrlListener = listener;
+      else void listener.remove();
+    }).catch(() => undefined);
+
+    void NativeApp.getLaunchUrl().then(launch => {
+      if (active && launch?.url) void finishNativeOAuth(launch.url);
+    }).catch(() => undefined);
+
+    void Browser.addListener("browserFinished", () => {
+      if (active) setAuthBusy(false);
+    }).then(listener => {
+      if (active) browserFinishedListener = listener;
+      else void listener.remove();
+    }).catch(() => undefined);
+
+    return () => {
+      active = false;
+      void appUrlListener?.remove();
+      void browserFinishedListener?.remove();
+    };
+  }, []);
+
   useEffect(() => {
     // Surface OAuth callback failures in the sign-in dialog instead of leaving
     // a blank dashboard with provider error details stranded in the URL.
@@ -618,13 +692,21 @@ export default function App() {
       setAuthMessage(t("authUnavailable"));
       return;
     }
+    const nativeAndroid = Capacitor.getPlatform() === "android";
     setAuthBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin }
+        options: {
+          redirectTo: nativeAndroid ? PLAYORA_NATIVE_OAUTH_REDIRECT : window.location.origin,
+          skipBrowserRedirect: nativeAndroid,
+        }
       });
       if (error) throw error;
+      if (nativeAndroid) {
+        if (!data.url) throw new Error("google_oauth_url_missing");
+        await Browser.open({ url: data.url, toolbarColor: "#101426" });
+      }
     } catch {
       setAuthMessage(t("authFailure"));
       setAuthBusy(false);

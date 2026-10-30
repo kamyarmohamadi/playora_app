@@ -32,12 +32,14 @@ jobs:
       - name: Install locked web dependencies
         run: npm ci
       - name: Install pinned Capacitor Android toolchain
-        run: npm install --no-save --package-lock=false @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
+        run: npm install --no-save --package-lock=false @capacitor/cli@7.4.3 @capacitor/android@7.4.3
       - name: Type-check and build web application
         run: npm run build
       - name: Generate Android project and sync web assets
         run: |
           npx cap add android
+          node --test scripts/configure-android-oauth.test.mjs
+          node scripts/configure-android-oauth.mjs android/app/src/main/AndroidManifest.xml
           npx cap sync android
       - name: Set up Java
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
