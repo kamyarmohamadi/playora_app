@@ -125,6 +125,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261027000000_capacity_query_indexes.sql
       - name: Add player progression and 55-coin welcome grant
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000000_player_progression_economy.sql
+      - name: Set the default free wallet grant to 55 coins
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000100_wallet_default_55.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Verify capacity query indexes are valid

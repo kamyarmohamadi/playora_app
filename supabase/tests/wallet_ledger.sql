@@ -16,6 +16,7 @@ DECLARE
   v_after bigint;
   v_free_signup bigint;
   v_signup_rows integer;
+  v_wallet_default text;
   v_ledger_rows integer;
   v_replay_rejected boolean := false;
   v_overdraft_rejected boolean := false;
@@ -31,6 +32,12 @@ BEGIN
   WHERE user_id='00000000-0000-4000-8000-000000000003';
   IF v_free_signup <> 55 THEN
     RAISE EXCEPTION 'New members must receive exactly 55 free signup coins, got %',v_free_signup;
+  END IF;
+  SELECT column_default INTO v_wallet_default
+  FROM information_schema.columns
+  WHERE table_schema='public' AND table_name='coin_wallets' AND column_name='free_coins';
+  IF v_wallet_default IS NULL OR v_wallet_default NOT LIKE '%55%' THEN
+    RAISE EXCEPTION 'coin_wallets.free_coins default must be 55, got %',v_wallet_default;
   END IF;
   SELECT count(*) INTO v_signup_rows
   FROM public.coin_ledger
