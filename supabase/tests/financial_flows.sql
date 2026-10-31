@@ -11,7 +11,9 @@ GRANT INSERT,SELECT ON finance_test_ids TO authenticated;
 INSERT INTO public.deposit_network_configs(
   asset_code,network_code,deposit_address,usd_per_asset,coins_per_usd,min_amount,is_enabled
 )
-VALUES('USDT','TRC20','T_TEST_DEPOSIT_ADDRESS_123456789',1.0,100,0.1,true)
+VALUES
+ ('USDT','TRC20','T_TEST_DEPOSIT_ADDRESS_123456789',1.0,100,0.1,true),
+ ('USDC','TRC20','T_TEST_DEPOSIT_ADDRESS_123456789',1.0,100,0.1,true)
 ON CONFLICT(asset_code,network_code) DO UPDATE
 SET deposit_address=excluded.deposit_address,usd_per_asset=excluded.usd_per_asset,
     coins_per_usd=excluded.coins_per_usd,min_amount=excluded.min_amount,is_enabled=true;
@@ -37,7 +39,7 @@ BEGIN
   IF v_options<1 THEN RAISE EXCEPTION 'Enabled deposit network was not returned'; END IF;
 
   v_request := public.submit_deposit_claim(
-    'USDT','TRC20',4.5,
+    'USDC','TRC20',4.5,
     '0x1111111111111111111111111111111111111111111111111111111111111111',
     now()-interval '1 minute'
   );
@@ -106,11 +108,11 @@ $approve_first_deposit$;
 
 -- Three completed Paid matches prove the 50-coin signup gift does not count
 -- toward deposit turnover, while 90 coins funded by the deposit do count.
-INSERT INTO public.matches(id,game_id,mode,economy_mode,status)
+INSERT INTO public.matches(id,game_id,mode,economy_mode,status,entry_coins)
 VALUES
- ('00000000-0000-4000-8000-000000000101','chess','ranked','paid','completed'),
- ('00000000-0000-4000-8000-000000000102','chess','ranked','paid','completed'),
- ('00000000-0000-4000-8000-000000000103','chess','ranked','paid','completed');
+ ('00000000-0000-4000-8000-000000000101','chess','ranked','paid','active',50),
+ ('00000000-0000-4000-8000-000000000102','chess','ranked','paid','active',50),
+ ('00000000-0000-4000-8000-000000000103','chess','ranked','paid','active',40);
 INSERT INTO public.match_participants(match_id,user_id,seat,final_result)
 VALUES
  ('00000000-0000-4000-8000-000000000101','00000000-0000-4000-8000-000000000010',1,'win'),
@@ -130,6 +132,7 @@ BEGIN
     '00000000-0000-4000-8000-000000000010','purchased',-50,'match_entry',
     'finance-match-entry-101','00000000-0000-4000-8000-000000000101'
   );
+  UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000101';
   v_counted := public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000101');
   IF v_counted<>0 THEN RAISE EXCEPTION 'Signup gift stake must not count toward deposit turnover'; END IF;
 
@@ -137,6 +140,7 @@ BEGIN
     '00000000-0000-4000-8000-000000000010','purchased',-50,'match_entry',
     'finance-match-entry-102','00000000-0000-4000-8000-000000000102'
   );
+  UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000102';
   v_counted := public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000102');
   IF v_counted<>50 THEN RAISE EXCEPTION 'Deposit-funded 50-coin stake should count 50 turnover, got %',v_counted; END IF;
 
@@ -144,6 +148,7 @@ BEGIN
     '00000000-0000-4000-8000-000000000010','purchased',-40,'match_entry',
     'finance-match-entry-103','00000000-0000-4000-8000-000000000103'
   );
+  UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000103';
   v_counted := public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000103');
   IF v_counted<>40 THEN RAISE EXCEPTION 'Deposit-funded 40-coin stake should count 40 turnover, got %',v_counted; END IF;
 
@@ -158,13 +163,36 @@ $deposit_turnover$;
 
 -- Configure verification only through the privileged server path.
 SELECT public.set_member_gate_verification(
- '00000000-0000-4000-8000-000000000010',true,true,true
+ '00000000-0000-4000-8000-000000000010',true,true,false
 );
 SELECT public.apply_coin_delta(
  '00000000-0000-4000-8000-000000000010','purchased',200,'match_payout',
  'finance-match-payout-010','00000000-0000-4000-8000-000000000103'
 );
 
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000010',false);
+SET ROLE authenticated;
+
+DO $payout_address_submit$
+DECLARE v_id uuid;
+BEGIN
+  v_id:=public.register_member_payout_address('USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_123456789');
+  INSERT INTO finance_test_ids(name,id) VALUES('payout_address_user_10',v_id);
+  BEGIN
+    PERFORM public.request_withdrawal(500,v_id);
+    RAISE EXCEPTION 'Unverified payout address must not be withdrawable';
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    NULL;
+  END;
+END
+$payout_address_submit$;
+
+RESET ROLE;
+SELECT set_config('request.jwt.claim.role','service_role',false);
+SELECT public.review_member_payout_address(
+  (SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'),true,'CI wallet address verification'
+);
 SELECT set_config('request.jwt.claim.role','authenticated',false);
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000010',false);
 SET ROLE authenticated;
@@ -194,7 +222,7 @@ BEGIN
     RAISE EXCEPTION 'Financial summary mismatch: deposits %, turnover remaining %, wallet %',v_deposits,v_remaining,v_wallet;
   END IF;
 
-  v_withdrawal := public.request_withdrawal(500,'USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_123456789');
+  v_withdrawal := public.request_withdrawal(500,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'));
   INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_10',v_withdrawal);
   IF (SELECT status FROM public.withdrawal_requests WHERE id=v_withdrawal)<>'pending' THEN
     RAISE EXCEPTION 'Withdrawal request must enter pending manual review';
@@ -230,7 +258,22 @@ SELECT public.apply_coin_delta(
  'finance-admin-adjustment-011','CI daily withdrawal cap fixture'
 );
 SELECT public.set_member_gate_verification(
- '00000000-0000-4000-8000-000000000011',true,true,true
+ '00000000-0000-4000-8000-000000000011',true,true,false
+);
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
+SET ROLE authenticated;
+DO $member_11_payout_address$
+DECLARE v_id uuid;
+BEGIN
+  v_id:=public.register_member_payout_address('USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_987654321');
+  INSERT INTO finance_test_ids(name,id) VALUES('payout_address_user_11',v_id);
+END
+$member_11_payout_address$;
+RESET ROLE;
+SELECT set_config('request.jwt.claim.role','service_role',false);
+SELECT public.review_member_payout_address(
+  (SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'),true,'CI wallet address verification'
 );
 SELECT set_config('request.jwt.claim.role','authenticated',false);
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
@@ -241,10 +284,10 @@ DECLARE
   v_first uuid;
   v_rejected boolean:=false;
 BEGIN
-  v_first:=public.request_withdrawal(50000,'USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_987654321');
+  v_first:=public.request_withdrawal(50000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'));
   INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_11',v_first);
   BEGIN
-    PERFORM public.request_withdrawal(5000,'USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_987654321');
+    PERFORM public.request_withdrawal(5000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'));
     v_rejected:=false;
   EXCEPTION WHEN SQLSTATE '22023' THEN
     v_rejected:=true;

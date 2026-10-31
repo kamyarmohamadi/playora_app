@@ -11,7 +11,7 @@ BEGIN
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
     'tournament_entries','deposit_requests','security_audit_events','social_action_events',
     'game_plugin_artifact_origins','game_plugin_versions', 'support_reports',
-    'withdrawal_requests','member_gate_verifications','deposit_network_configs','withdrawal_network_configs',
+    'withdrawal_requests','member_gate_verifications','member_payout_addresses','deposit_network_configs','withdrawal_network_configs',
     'deposit_tx_first_claims','deposit_tx_duplicate_attempts','paid_coin_lots','paid_coin_lot_consumptions'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
@@ -55,6 +55,12 @@ BEGIN
      OR has_table_privilege('authenticated','public.coin_ledger','UPDATE')
      OR has_table_privilege('authenticated','public.coin_ledger','DELETE') THEN
     RAISE EXCEPTION 'Authenticated role must not mutate coin_ledger directly';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.member_payout_addresses','INSERT')
+     OR has_table_privilege('authenticated','public.member_payout_addresses','UPDATE')
+     OR has_table_privilege('authenticated','public.member_payout_addresses','DELETE') THEN
+    RAISE EXCEPTION 'Members may only read their own payout addresses, not change verification state';
   END IF;
 
   IF has_table_privilege('authenticated','public.deposit_requests','INSERT')
@@ -209,12 +215,23 @@ BEGIN
   IF has_function_privilege('anon','public.get_deposit_options()','EXECUTE')
      OR has_function_privilege('anon','public.get_withdrawal_options()','EXECUTE')
      OR has_function_privilege('anon','public.submit_deposit_claim(text,text,numeric,text,timestamptz)','EXECUTE')
-     OR has_function_privilege('anon','public.request_withdrawal(bigint,text,text,text)','EXECUTE')
+     OR has_function_privilege('anon','public.request_withdrawal(bigint,uuid)','EXECUTE')
      OR has_function_privilege('authenticated','public.review_deposit_request(uuid,boolean,text)','EXECUTE')
      OR has_function_privilege('authenticated','public.review_withdrawal_request(uuid,text,text,numeric,text)','EXECUTE')
      OR has_function_privilege('authenticated','public.set_member_gate_verification(uuid,boolean,boolean,boolean)','EXECUTE')
      OR has_function_privilege('authenticated','public.complete_paid_match_turnover(uuid)','EXECUTE') THEN
     RAISE EXCEPTION 'Financial review, verification and turnover settlement must remain server-only';
+  END IF;
+
+  IF has_function_privilege('anon','public.register_member_payout_address(text,text,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.review_member_payout_address(uuid,boolean,text)','EXECUTE')
+     OR has_function_privilege('anon','public.review_member_payout_address(uuid,boolean,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Payout address registration is member-scoped and verification is server-only';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated','public.register_member_payout_address(text,text,text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.review_member_payout_address(uuid,boolean,text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Payout address registration/review grants are incorrect';
   END IF;
 
   IF NOT has_function_privilege('authenticated','public.get_deposit_options()','EXECUTE')
