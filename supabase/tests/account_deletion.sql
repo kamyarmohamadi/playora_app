@@ -8,11 +8,11 @@ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE public.catalog_games SET is_enabled=true WHERE id='tictactoe';
-INSERT INTO public.member_game_stats(user_id,game_id)
+INSERT INTO public.member_game_stats(user_id,game_id,economy_mode)
 VALUES
-  ('00000000-0000-4000-8000-000000000021','tictactoe'),
-  ('00000000-0000-4000-8000-000000000022','tictactoe')
-ON CONFLICT (user_id,game_id) DO NOTHING;
+  ('00000000-0000-4000-8000-000000000021','tictactoe','free'),
+  ('00000000-0000-4000-8000-000000000022','tictactoe','free')
+ON CONFLICT (user_id,game_id,economy_mode) DO NOTHING;
 
 -- Create one ranked match and one private match involving the deleting member.
 INSERT INTO public.matches(id,game_id,mode,status,server_state,started_at)
@@ -58,7 +58,7 @@ SELECT p.user_id,
        s.xp,s.competitive_rating,s.matches_played,s.wins,s.losses,s.draws
 FROM public.member_profiles p
 JOIN public.coin_wallets w ON w.user_id=p.user_id
-JOIN public.member_game_stats s ON s.user_id=p.user_id AND s.game_id='tictactoe'
+JOIN public.member_game_stats s ON s.user_id=p.user_id AND s.game_id='tictactoe' AND s.economy_mode='free'
 WHERE p.user_id IN (
   '00000000-0000-4000-8000-000000000021',
   '00000000-0000-4000-8000-000000000022'
@@ -124,7 +124,7 @@ BEGIN
          s.xp,s.competitive_rating,s.matches_played,s.wins,s.losses,s.draws
   INTO v_free,v_purchased,v_reward,v_xp,v_rating,v_played,v_wins,v_losses,v_draws
   FROM public.coin_wallets w
-  JOIN public.member_game_stats s ON s.user_id=w.user_id AND s.game_id='tictactoe'
+  JOIN public.member_game_stats s ON s.user_id=w.user_id AND s.game_id='tictactoe' AND s.economy_mode='free'
   WHERE w.user_id='00000000-0000-4000-8000-000000000021';
 
   IF NOT EXISTS (
