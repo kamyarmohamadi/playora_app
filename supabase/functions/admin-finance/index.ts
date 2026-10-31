@@ -33,7 +33,7 @@ function permissionFor(action: string): AdminAction | null {
   if (action === "configure_deposit_network" || action === "configure_withdrawal_network") return "configure_network";
   if (action === "manage_admin") return "manage_admin";
   if (action === "list_admins") return "list_admins";
-  if (action === "dashboard") return "dashboard";
+  if (action === "dashboard" || action === "check_access") return "dashboard";
   if (action === "review_deposit") return "review_deposit";
   if (action === "review_payout_address") return "review_payout_address";
   if (action === "review_withdrawal") return "review_withdrawal";
@@ -118,6 +118,10 @@ Deno.serve(async (request: Request) => {
 
   try {
     switch (action) {
+      case "check_access": {
+        result = { role };
+        break;
+      }
       case "dashboard": {
         if (role === "support_admin") {
           const { data, error } = await service.from("member_gate_verifications")
