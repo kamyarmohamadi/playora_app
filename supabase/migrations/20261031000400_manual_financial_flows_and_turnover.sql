@@ -60,7 +60,7 @@ create table if not exists public.deposit_tx_first_claims (
   first_request_id uuid not null references public.deposit_requests(id) on delete cascade,
   first_user_id uuid not null references auth.users(id) on delete cascade,
   first_claimed_at timestamptz not null default now(),
-  primary key(asset_code,network_code,tx_hash_key)
+  primary key(network_code,tx_hash_key)
 );
 
 create table if not exists public.deposit_tx_duplicate_attempts (
@@ -179,6 +179,10 @@ alter table public.coin_ledger
     ])
   );
 
+alter table public.matches add column if not exists entry_coins bigint not null default 0;
+alter table public.matches drop constraint if exists matches_entry_coins_check;
+alter table public.matches add constraint matches_entry_coins_check check(entry_coins>=0);
+
 create or replace function public.sync_paid_coin_lots_from_ledger()
 returns trigger
 language plpgsql
@@ -191,6 +195,7 @@ declare
   v_lot public.paid_coin_lots;
   v_take bigint;
   v_match_id uuid;
+  v_match public.matches%rowtype;
 begin
   if new.bucket <> 'purchased' then
     return new;
@@ -229,6 +234,14 @@ begin
         raise exception 'paid_match_entry_requires_match_reference' using errcode='22023';
       end if;
       v_match_id := new.reference_id::uuid;
+      select * into v_match from public.matches m
+      where m.id=v_match_id and m.economy_mode='paid' and m.status='active'
+      for update;
+      if not found then raise exception 'paid_match_entry_requires_active_paid_match' using errcode='22023'; end if;
+      if not exists(select 1 from public.match_participants p where p.match_id=v_match_id and p.user_id=new.user_id) then
+        raise exception 'paid_match_entry_requires_real_participant' using errcode='42501';
+      end if;
+      if v_match.entry_coins <> -new.amount then raise exception 'paid_match_entry_amount_mismatch' using errcode='22023'; end if;
     else
       v_match_id := null;
     end if;
@@ -471,12 +484,12 @@ begin
 
   v_hash_key := case when v_config.hash_case_insensitive then lower(btrim(p_tx_hash)) else btrim(p_tx_hash) end;
   perform pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(p_asset_code||':'||p_network_code||':'||v_hash_key,0)
+    pg_catalog.hashtextextended(p_network_code||':'||v_hash_key,0)
   );
 
   select * into v_existing
   from public.deposit_tx_first_claims
-  where asset_code=p_asset_code and network_code=p_network_code and tx_hash_key=v_hash_key
+  where network_code=p_network_code and tx_hash_key=v_hash_key
   for update;
 
   if found then
@@ -568,6 +581,906 @@ end;
 $$;
 revoke all on function public.review_deposit_request(uuid,boolean,text) from public,anon,authenticated;
 grant execute on function public.review_deposit_request(uuid,boolean,text) to service_role;
+
+
+
+-- Withdrawals can only target a member-owned wallet address verified by staff.
+create table if not exists public.member_payout_addresses (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  asset_code text not null check (asset_code ~ '^[A-Z0-9]{2,10}
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  requested_coins bigint not null check (requested_coins>=500 and requested_coins<=50000),
+  asset_code text not null check (asset_code ~ '^[A-Z0-9]{2,10}$'),
+  network_code text not null check (network_code ~ '^[A-Z0-9_-]{2,24}$'),
+  destination_address text not null check (char_length(btrim(destination_address)) between 20 and 256),
+  usd_per_asset_snapshot numeric(30,12) not null check (usd_per_asset_snapshot>0),
+  coins_per_usd_snapshot integer not null default 100 check (coins_per_usd_snapshot=100),
+  gross_asset_amount numeric(30,12) not null check (gross_asset_amount>0),
+  network_fee_asset_amount numeric(30,12) not null check (network_fee_asset_amount>=0),
+  net_asset_amount numeric(30,12) not null check (net_asset_amount>0),
+  status text not null default 'pending' check (status in ('pending','approved','paid','rejected')),
+  reserve_ledger_id uuid references public.coin_ledger(id) on delete set null,
+  payout_tx_hash text,
+  actual_asset_amount numeric(30,12) check (actual_asset_amount is null or actual_asset_amount>0),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  paid_at timestamptz,
+  review_note text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists withdrawal_requests_user_created_idx
+  on public.withdrawal_requests(user_id,created_at desc);
+create index if not exists withdrawal_requests_queue_idx
+  on public.withdrawal_requests(status,created_at)
+  where status in ('pending','approved');
+create unique index if not exists withdrawal_payout_tx_unique
+  on public.withdrawal_requests(asset_code,network_code,lower(payout_tx_hash))
+  where payout_tx_hash is not null;
+
+alter table public.withdrawal_requests enable row level security;
+revoke all on public.withdrawal_requests from anon,authenticated;
+grant select on public.withdrawal_requests to authenticated;
+drop policy if exists "members see own withdrawal requests" on public.withdrawal_requests;
+create policy "members see own withdrawal requests"
+on public.withdrawal_requests for select
+to authenticated
+using ((select auth.uid())=user_id);
+
+alter table public.member_gate_verifications enable row level security;
+revoke all on public.member_gate_verifications from anon,authenticated;
+grant select on public.member_gate_verifications to authenticated;
+drop policy if exists "members see own gate verification" on public.member_gate_verifications;
+create policy "members see own gate verification"
+on public.member_gate_verifications for select
+to authenticated
+using ((select auth.uid())=user_id);
+
+alter table public.deposit_network_configs enable row level security;
+alter table public.withdrawal_network_configs enable row level security;
+alter table public.deposit_tx_first_claims enable row level security;
+alter table public.deposit_tx_duplicate_attempts enable row level security;
+alter table public.paid_coin_lots enable row level security;
+alter table public.paid_coin_lot_consumptions enable row level security;
+
+revoke all on public.deposit_network_configs from public,anon,authenticated;
+revoke all on public.withdrawal_network_configs from public,anon,authenticated;
+revoke all on public.deposit_tx_first_claims from public,anon,authenticated;
+revoke all on public.deposit_tx_duplicate_attempts from public,anon,authenticated;
+revoke all on public.paid_coin_lots from public,anon,authenticated;
+revoke all on public.paid_coin_lot_consumptions from public,anon,authenticated;
+
+create or replace function public.request_withdrawal(
+  p_requested_coins bigint,p_payout_address_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_flags public.member_gate_verifications;
+  v_config public.withdrawal_network_configs;
+  v_payout_address public.member_payout_addresses%rowtype;
+  v_daily bigint;
+  v_weekly bigint;
+  v_turnover_remaining bigint;
+  v_usd numeric(30,12);
+  v_gross numeric(30,12);
+  v_net numeric(30,12);
+  v_request_id uuid := gen_random_uuid();
+  v_ledger_id uuid;
+  v_wallet public.coin_wallets;
+  v_idempotency text;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if p_requested_coins is null or p_requested_coins<500 or p_requested_coins>50000
+     or p_payout_address_id is null
+  then
+    raise exception 'invalid_withdrawal_request' using errcode='22023';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('withdrawal-limits:'||v_user_id::text,0)
+  );
+
+  select * into v_flags from public.member_gate_verifications where user_id=v_user_id;
+  if not found or not v_flags.telegram_verified or not v_flags.phone_verified or not v_flags.wallet_verified then
+    raise exception 'member_verification_incomplete' using errcode='42501';
+  end if;
+
+  select * into v_payout_address
+  from public.member_payout_addresses a
+  where a.id=p_payout_address_id and a.user_id=v_user_id and a.verification_status='verified';
+  if not found then raise exception 'verified_payout_address_required' using errcode='42501'; end if;
+  select * into v_config
+  from public.withdrawal_network_configs
+  where asset_code=v_payout_address.asset_code and network_code=v_payout_address.network_code and is_enabled=true;
+  if not found then raise exception 'withdrawal_network_not_available' using errcode='22023'; end if;
+  if exists(select 1 from public.withdrawal_requests w where w.user_id=v_user_id and w.status in ('pending','approved')) then
+    raise exception 'pending_withdrawal_already_exists' using errcode='22023';
+  end if;
+
+  select coalesce(sum(l.turnover_required-l.turnover_completed),0)
+  into v_turnover_remaining
+  from public.paid_coin_lots l
+  where l.user_id=v_user_id and l.source_type='deposit';
+  if v_turnover_remaining>0 then
+    raise exception 'deposit_turnover_incomplete' using errcode='22023';
+  end if;
+
+  select coalesce(sum(w.requested_coins),0) into v_daily
+  from public.withdrawal_requests w
+  where w.user_id=v_user_id and w.created_at>=now()-interval '24 hours'
+    and w.status in ('pending','approved','paid');
+  if v_daily+p_requested_coins>50000 then
+    raise exception 'daily_withdrawal_limit_exceeded' using errcode='22023';
+  end if;
+
+  select coalesce(sum(w.requested_coins),0) into v_weekly
+  from public.withdrawal_requests w
+  where w.user_id=v_user_id and w.created_at>=now()-interval '7 days'
+    and w.status in ('pending','approved','paid');
+  if v_weekly+p_requested_coins>350000 then
+    raise exception 'weekly_withdrawal_limit_exceeded' using errcode='22023';
+  end if;
+
+  v_usd := p_requested_coins::numeric/100;
+  v_gross := v_usd/v_config.usd_per_asset;
+  v_net := v_gross-v_config.network_fee_asset;
+  if v_net<=0 then raise exception 'withdrawal_less_than_network_fee' using errcode='22023'; end if;
+
+  v_idempotency := 'withdrawal-reserve:'||v_request_id::text;
+  update public.coin_wallets
+  set purchased_coins=purchased_coins-p_requested_coins,updated_at=now()
+  where user_id=v_user_id and purchased_coins>=p_requested_coins
+  returning * into v_wallet;
+  if not found then raise exception 'insufficient_value_wallet_balance' using errcode='23514'; end if;
+
+  insert into public.coin_ledger(user_id,amount,bucket,event_type,reference_id,idempotency_key)
+  values(v_user_id,-p_requested_coins,'purchased','withdrawal_reserve',v_request_id::text,v_idempotency);
+  select id into v_ledger_id from public.coin_ledger where idempotency_key=v_idempotency;
+
+  insert into public.withdrawal_requests(
+    id,user_id,requested_coins,asset_code,network_code,destination_address,
+    usd_per_asset_snapshot,coins_per_usd_snapshot,gross_asset_amount,
+    network_fee_asset_amount,net_asset_amount,status,reserve_ledger_id
+  )
+  values(
+    v_request_id,v_user_id,p_requested_coins,v_payout_address.asset_code,v_payout_address.network_code,v_payout_address.wallet_address,
+    v_config.usd_per_asset,100,v_gross,v_config.network_fee_asset,v_net,'pending',v_ledger_id
+  );
+
+  return v_request_id;
+end;
+$$;
+revoke all on function public.request_withdrawal(bigint,uuid) from public,anon;
+grant execute on function public.request_withdrawal(bigint,uuid) to authenticated;
+
+create or replace function public.review_withdrawal_request(
+  p_request_id uuid,p_action text,p_payout_tx_hash text default null,p_actual_asset_amount numeric default null,p_review_note text default null
+)
+returns public.withdrawal_requests
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_request public.withdrawal_requests;
+begin
+  if coalesce(auth.role(),'anon')<>'service_role' then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select * into v_request from public.withdrawal_requests where id=p_request_id for update;
+  if not found then raise exception 'withdrawal_request_not_found' using errcode='P0002'; end if;
+
+  if p_action='approve' then
+    if v_request.status<>'pending' then raise exception 'withdrawal_not_pending' using errcode='22023'; end if;
+    update public.withdrawal_requests
+    set status='approved',reviewed_at=now(),review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  elsif p_action='reject' then
+    if v_request.status not in ('pending','approved') then raise exception 'withdrawal_not_rejectable' using errcode='22023'; end if;
+    perform public.apply_coin_delta(
+      v_request.user_id,'purchased',v_request.requested_coins,'withdrawal_refund',
+      'withdrawal-refund:'||v_request.id::text,v_request.id::text
+    );
+    update public.withdrawal_requests
+    set status='rejected',reviewed_at=now(),review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  elsif p_action='paid' then
+    if v_request.status<>'approved'
+       or p_payout_tx_hash is null or char_length(btrim(p_payout_tx_hash))<16
+       or char_length(btrim(p_payout_tx_hash))>256
+       or p_payout_tx_hash ~ '[[:space:]]'
+       or p_actual_asset_amount is null or p_actual_asset_amount<=0
+    then
+      raise exception 'invalid_withdrawal_payout' using errcode='22023';
+    end if;
+    update public.withdrawal_requests
+    set status='paid',payout_tx_hash=btrim(p_payout_tx_hash),actual_asset_amount=p_actual_asset_amount,
+        paid_at=now(),reviewed_at=coalesce(reviewed_at,now()),
+        review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  else
+    raise exception 'invalid_withdrawal_action' using errcode='22023';
+  end if;
+  return v_request;
+end;
+$$;
+revoke all on function public.review_withdrawal_request(uuid,text,text,numeric,text) from public,anon,authenticated;
+grant execute on function public.review_withdrawal_request(uuid,text,text,numeric,text) to service_role;
+
+create or replace function public.complete_paid_match_turnover(p_match_id uuid)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_match public.matches;
+  v_consumption public.paid_coin_lot_consumptions;
+  v_lot public.paid_coin_lots;
+  v_add bigint;
+  v_total bigint := 0;
+begin
+  if coalesce(auth.role(),'anon')<>'service_role' then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select * into v_match from public.matches where id=p_match_id for update;
+  if not found or v_match.economy_mode<>'paid' or v_match.status<>'completed' then
+    raise exception 'paid_match_not_completed' using errcode='22023';
+  end if;
+  if exists(
+    select 1 from public.match_participants
+    where match_id=p_match_id and (final_result is null or final_result='forfeit')
+  ) then
+    raise exception 'match_result_not_eligible_for_turnover' using errcode='22023';
+  end if;
+  if (select count(*) from public.match_participants where match_id=p_match_id)<2 then
+    raise exception 'match_participants_incomplete' using errcode='22023';
+  end if;
+
+  for v_consumption in
+    select * from public.paid_coin_lot_consumptions
+    where match_id=p_match_id and qualifies_for_turnover=true and turnover_applied_at is null
+    order by created_at,id
+    for update
+  loop
+    select * into v_lot from public.paid_coin_lots where id=v_consumption.lot_id for update;
+    v_add := least(v_consumption.amount,greatest(0,v_lot.turnover_required-v_lot.turnover_completed));
+    update public.paid_coin_lots
+    set turnover_completed=turnover_completed+v_add
+    where id=v_lot.id;
+    update public.paid_coin_lot_consumptions
+    set turnover_counted=v_add,turnover_applied_at=now()
+    where id=v_consumption.id;
+    v_total := v_total+v_add;
+  end loop;
+  return v_total;
+end;
+$$;
+revoke all on function public.complete_paid_match_turnover(uuid) from public,anon,authenticated;
+grant execute on function public.complete_paid_match_turnover(uuid) to service_role;
+
+create or replace function public.get_my_financial_summary()
+returns table(
+  lifetime_deposit_coins bigint,
+  turnover_required bigint,
+  turnover_completed bigint,
+  turnover_remaining bigint,
+  value_wallet_coins bigint,
+  daily_withdrawal_remaining bigint,
+  weekly_withdrawal_remaining bigint
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_daily bigint;
+  v_weekly bigint;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select coalesce(sum(coin_amount),0) into lifetime_deposit_coins
+  from public.deposit_requests where user_id=v_user_id and status='credited';
+
+  select coalesce(sum(l.turnover_required),0),coalesce(sum(l.turnover_completed),0)
+  into turnover_required,turnover_completed
+  from public.paid_coin_lots l where l.user_id=v_user_id and l.source_type='deposit';
+  turnover_remaining := greatest(0,turnover_required-turnover_completed);
+
+  select purchased_coins into value_wallet_coins
+  from public.coin_wallets where user_id=v_user_id;
+
+  select coalesce(sum(requested_coins),0) into v_daily
+  from public.withdrawal_requests
+  where user_id=v_user_id and created_at>=now()-interval '24 hours'
+    and status in ('pending','approved','paid');
+  select coalesce(sum(requested_coins),0) into v_weekly
+  from public.withdrawal_requests
+  where user_id=v_user_id and created_at>=now()-interval '7 days'
+    and status in ('pending','approved','paid');
+
+  daily_withdrawal_remaining := greatest(0,50000-v_daily);
+  weekly_withdrawal_remaining := greatest(0,350000-v_weekly);
+  return next;
+end;
+$$;
+revoke all on function public.get_my_financial_summary() from public,anon;
+grant execute on function public.get_my_financial_summary() to authenticated;
+
+create or replace function public.get_member_game_access(p_game_id text)
+returns table(
+  free_level integer,
+  paid_level integer,
+  lifetime_deposit_coins bigint,
+  telegram_verified boolean,
+  phone_verified boolean,
+  wallet_verified boolean,
+  paid_random_unlocked boolean,
+  paid_private_unlocked boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_free_xp bigint;
+  v_paid_xp bigint;
+  v_verified public.member_gate_verifications;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if not exists(select 1 from public.catalog_games where id=p_game_id) then
+    raise exception 'game_not_found' using errcode='22023';
+  end if;
+
+  select coalesce(max(xp) filter(where economy_mode='free'),0),
+         coalesce(max(xp) filter(where economy_mode='paid'),0)
+  into v_free_xp,v_paid_xp
+  from public.member_game_stats where user_id=v_user_id and game_id=p_game_id;
+
+  free_level := coalesce((select max(level_no) from generate_series(1,1000) as level_no
+                          where 25*(level_no-1)*(level_no+2)<=v_free_xp),1);
+  paid_level := coalesce((select max(level_no) from generate_series(1,1000) as level_no
+                          where 25*(level_no-1)*(level_no+2)<=v_paid_xp),1);
+
+  select coalesce(sum(coin_amount),0) into lifetime_deposit_coins
+  from public.deposit_requests where user_id=v_user_id and status='credited';
+
+  select * into v_verified from public.member_gate_verifications where user_id=v_user_id;
+  telegram_verified := coalesce(v_verified.telegram_verified,false);
+  phone_verified := coalesce(v_verified.phone_verified,false);
+  wallet_verified := coalesce(v_verified.wallet_verified,false);
+
+  paid_random_unlocked := free_level>=5 and telegram_verified and phone_verified and wallet_verified;
+  paid_private_unlocked := paid_level>=5 and lifetime_deposit_coins>=500
+                           and telegram_verified and phone_verified and wallet_verified;
+  return next;
+end;
+$$;
+revoke all on function public.get_member_game_access(text) from public,anon;
+grant execute on function public.get_member_game_access(text) to authenticated;
+
+alter table public.member_gate_verifications enable row level security;
+alter table public.deposit_requests enable row level security;
+
+comment on table public.paid_coin_lots is
+  'Provenance inside the Value Wallet; these rows are not additional wallet balances.';
+comment on table public.paid_coin_lot_consumptions is
+  'Records which Value Wallet source funded each debit; only completed paid-match stakes from deposit lots satisfy 20% turnover.';
+comment on column public.deposit_requests.coin_amount is
+  'Coins calculated at the request-time snapshot rate: 100 coins per USD.';
+comment on table public.deposit_tx_first_claims is
+  'First claimant owns a chain-specific transaction hash permanently, including when manual review later rejects the request.';
+
+commit;
+),
+  network_code text not null check (network_code ~ '^[A-Z0-9_-]{2,24}
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  requested_coins bigint not null check (requested_coins>=500 and requested_coins<=50000),
+  asset_code text not null check (asset_code ~ '^[A-Z0-9]{2,10}$'),
+  network_code text not null check (network_code ~ '^[A-Z0-9_-]{2,24}$'),
+  destination_address text not null check (char_length(btrim(destination_address)) between 20 and 256),
+  usd_per_asset_snapshot numeric(30,12) not null check (usd_per_asset_snapshot>0),
+  coins_per_usd_snapshot integer not null default 100 check (coins_per_usd_snapshot=100),
+  gross_asset_amount numeric(30,12) not null check (gross_asset_amount>0),
+  network_fee_asset_amount numeric(30,12) not null check (network_fee_asset_amount>=0),
+  net_asset_amount numeric(30,12) not null check (net_asset_amount>0),
+  status text not null default 'pending' check (status in ('pending','approved','paid','rejected')),
+  reserve_ledger_id uuid references public.coin_ledger(id) on delete set null,
+  payout_tx_hash text,
+  actual_asset_amount numeric(30,12) check (actual_asset_amount is null or actual_asset_amount>0),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  paid_at timestamptz,
+  review_note text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists withdrawal_requests_user_created_idx
+  on public.withdrawal_requests(user_id,created_at desc);
+create index if not exists withdrawal_requests_queue_idx
+  on public.withdrawal_requests(status,created_at)
+  where status in ('pending','approved');
+create unique index if not exists withdrawal_payout_tx_unique
+  on public.withdrawal_requests(asset_code,network_code,lower(payout_tx_hash))
+  where payout_tx_hash is not null;
+
+alter table public.withdrawal_requests enable row level security;
+revoke all on public.withdrawal_requests from anon,authenticated;
+grant select on public.withdrawal_requests to authenticated;
+drop policy if exists "members see own withdrawal requests" on public.withdrawal_requests;
+create policy "members see own withdrawal requests"
+on public.withdrawal_requests for select
+to authenticated
+using ((select auth.uid())=user_id);
+
+alter table public.member_gate_verifications enable row level security;
+revoke all on public.member_gate_verifications from anon,authenticated;
+grant select on public.member_gate_verifications to authenticated;
+drop policy if exists "members see own gate verification" on public.member_gate_verifications;
+create policy "members see own gate verification"
+on public.member_gate_verifications for select
+to authenticated
+using ((select auth.uid())=user_id);
+
+alter table public.deposit_network_configs enable row level security;
+alter table public.withdrawal_network_configs enable row level security;
+alter table public.deposit_tx_first_claims enable row level security;
+alter table public.deposit_tx_duplicate_attempts enable row level security;
+alter table public.paid_coin_lots enable row level security;
+alter table public.paid_coin_lot_consumptions enable row level security;
+
+revoke all on public.deposit_network_configs from public,anon,authenticated;
+revoke all on public.withdrawal_network_configs from public,anon,authenticated;
+revoke all on public.deposit_tx_first_claims from public,anon,authenticated;
+revoke all on public.deposit_tx_duplicate_attempts from public,anon,authenticated;
+revoke all on public.paid_coin_lots from public,anon,authenticated;
+revoke all on public.paid_coin_lot_consumptions from public,anon,authenticated;
+
+create or replace function public.request_withdrawal(
+  p_requested_coins bigint,p_asset_code text,p_network_code text,p_destination_address text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_flags public.member_gate_verifications;
+  v_config public.withdrawal_network_configs;
+  v_daily bigint;
+  v_weekly bigint;
+  v_turnover_remaining bigint;
+  v_usd numeric(30,12);
+  v_gross numeric(30,12);
+  v_net numeric(30,12);
+  v_request_id uuid := gen_random_uuid();
+  v_ledger_id uuid;
+  v_wallet public.coin_wallets;
+  v_idempotency text;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if p_requested_coins is null or p_requested_coins<500 or p_requested_coins>50000
+     or p_destination_address is null or char_length(btrim(p_destination_address))<20
+     or char_length(btrim(p_destination_address))>256
+  then
+    raise exception 'invalid_withdrawal_request' using errcode='22023';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('withdrawal-limits:'||v_user_id::text,0)
+  );
+
+  select * into v_flags from public.member_gate_verifications where user_id=v_user_id;
+  if not found or not v_flags.telegram_verified or not v_flags.phone_verified or not v_flags.wallet_verified then
+    raise exception 'member_verification_incomplete' using errcode='42501';
+  end if;
+
+  select * into v_config
+  from public.withdrawal_network_configs
+  where asset_code=p_asset_code and network_code=p_network_code and is_enabled=true;
+  if not found then raise exception 'withdrawal_network_not_available' using errcode='22023'; end if;
+
+  select coalesce(sum(l.turnover_required-l.turnover_completed),0)
+  into v_turnover_remaining
+  from public.paid_coin_lots l
+  where l.user_id=v_user_id and l.source_type='deposit';
+  if v_turnover_remaining>0 then
+    raise exception 'deposit_turnover_incomplete' using errcode='22023';
+  end if;
+
+  select coalesce(sum(w.requested_coins),0) into v_daily
+  from public.withdrawal_requests w
+  where w.user_id=v_user_id and w.created_at>=now()-interval '24 hours'
+    and w.status in ('pending','approved','paid');
+  if v_daily+p_requested_coins>50000 then
+    raise exception 'daily_withdrawal_limit_exceeded' using errcode='22023';
+  end if;
+
+  select coalesce(sum(w.requested_coins),0) into v_weekly
+  from public.withdrawal_requests w
+  where w.user_id=v_user_id and w.created_at>=now()-interval '7 days'
+    and w.status in ('pending','approved','paid');
+  if v_weekly+p_requested_coins>350000 then
+    raise exception 'weekly_withdrawal_limit_exceeded' using errcode='22023';
+  end if;
+
+  v_usd := p_requested_coins::numeric/100;
+  v_gross := v_usd/v_config.usd_per_asset;
+  v_net := v_gross-v_config.network_fee_asset;
+  if v_net<=0 then raise exception 'withdrawal_less_than_network_fee' using errcode='22023'; end if;
+
+  v_idempotency := 'withdrawal-reserve:'||v_request_id::text;
+  update public.coin_wallets
+  set purchased_coins=purchased_coins-p_requested_coins,updated_at=now()
+  where user_id=v_user_id and purchased_coins>=p_requested_coins
+  returning * into v_wallet;
+  if not found then raise exception 'insufficient_value_wallet_balance' using errcode='23514'; end if;
+
+  insert into public.coin_ledger(user_id,amount,bucket,event_type,reference_id,idempotency_key)
+  values(v_user_id,-p_requested_coins,'purchased','withdrawal_reserve',v_request_id::text,v_idempotency);
+  select id into v_ledger_id from public.coin_ledger where idempotency_key=v_idempotency;
+
+  insert into public.withdrawal_requests(
+    id,user_id,requested_coins,asset_code,network_code,destination_address,
+    usd_per_asset_snapshot,coins_per_usd_snapshot,gross_asset_amount,
+    network_fee_asset_amount,net_asset_amount,status,reserve_ledger_id
+  )
+  values(
+    v_request_id,v_user_id,p_requested_coins,p_asset_code,p_network_code,btrim(p_destination_address),
+    v_config.usd_per_asset,100,v_gross,v_config.network_fee_asset,v_net,'pending',v_ledger_id
+  );
+
+  return v_request_id;
+end;
+$$;
+revoke all on function public.request_withdrawal(bigint,text,text,text) from public,anon;
+grant execute on function public.request_withdrawal(bigint,text,text,text) to authenticated;
+
+create or replace function public.review_withdrawal_request(
+  p_request_id uuid,p_action text,p_payout_tx_hash text default null,p_actual_asset_amount numeric default null,p_review_note text default null
+)
+returns public.withdrawal_requests
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_request public.withdrawal_requests;
+begin
+  if coalesce(auth.role(),'anon')<>'service_role' then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select * into v_request from public.withdrawal_requests where id=p_request_id for update;
+  if not found then raise exception 'withdrawal_request_not_found' using errcode='P0002'; end if;
+
+  if p_action='approve' then
+    if v_request.status<>'pending' then raise exception 'withdrawal_not_pending' using errcode='22023'; end if;
+    update public.withdrawal_requests
+    set status='approved',reviewed_at=now(),review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  elsif p_action='reject' then
+    if v_request.status not in ('pending','approved') then raise exception 'withdrawal_not_rejectable' using errcode='22023'; end if;
+    perform public.apply_coin_delta(
+      v_request.user_id,'purchased',v_request.requested_coins,'withdrawal_refund',
+      'withdrawal-refund:'||v_request.id::text,v_request.id::text
+    );
+    update public.withdrawal_requests
+    set status='rejected',reviewed_at=now(),review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  elsif p_action='paid' then
+    if v_request.status<>'approved'
+       or p_payout_tx_hash is null or char_length(btrim(p_payout_tx_hash))<16
+       or char_length(btrim(p_payout_tx_hash))>256
+       or p_payout_tx_hash ~ '[[:space:]]'
+       or p_actual_asset_amount is null or p_actual_asset_amount<=0
+    then
+      raise exception 'invalid_withdrawal_payout' using errcode='22023';
+    end if;
+    update public.withdrawal_requests
+    set status='paid',payout_tx_hash=btrim(p_payout_tx_hash),actual_asset_amount=p_actual_asset_amount,
+        paid_at=now(),reviewed_at=coalesce(reviewed_at,now()),
+        review_note=left(coalesce(p_review_note,''),1000),updated_at=now()
+    where id=p_request_id returning * into v_request;
+  else
+    raise exception 'invalid_withdrawal_action' using errcode='22023';
+  end if;
+  return v_request;
+end;
+$$;
+revoke all on function public.review_withdrawal_request(uuid,text,text,numeric,text) from public,anon,authenticated;
+grant execute on function public.review_withdrawal_request(uuid,text,text,numeric,text) to service_role;
+
+create or replace function public.complete_paid_match_turnover(p_match_id uuid)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_match public.matches;
+  v_consumption public.paid_coin_lot_consumptions;
+  v_lot public.paid_coin_lots;
+  v_add bigint;
+  v_total bigint := 0;
+begin
+  if coalesce(auth.role(),'anon')<>'service_role' then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select * into v_match from public.matches where id=p_match_id for update;
+  if not found or v_match.economy_mode<>'paid' or v_match.status<>'completed' then
+    raise exception 'paid_match_not_completed' using errcode='22023';
+  end if;
+  if exists(
+    select 1 from public.match_participants
+    where match_id=p_match_id and (final_result is null or final_result='forfeit')
+  ) then
+    raise exception 'match_result_not_eligible_for_turnover' using errcode='22023';
+  end if;
+  if (select count(*) from public.match_participants where match_id=p_match_id)<2 then
+    raise exception 'match_participants_incomplete' using errcode='22023';
+  end if;
+
+  for v_consumption in
+    select * from public.paid_coin_lot_consumptions
+    where match_id=p_match_id and qualifies_for_turnover=true and turnover_applied_at is null
+    order by created_at,id
+    for update
+  loop
+    select * into v_lot from public.paid_coin_lots where id=v_consumption.lot_id for update;
+    v_add := least(v_consumption.amount,greatest(0,v_lot.turnover_required-v_lot.turnover_completed));
+    update public.paid_coin_lots
+    set turnover_completed=turnover_completed+v_add
+    where id=v_lot.id;
+    update public.paid_coin_lot_consumptions
+    set turnover_counted=v_add,turnover_applied_at=now()
+    where id=v_consumption.id;
+    v_total := v_total+v_add;
+  end loop;
+  return v_total;
+end;
+$$;
+revoke all on function public.complete_paid_match_turnover(uuid) from public,anon,authenticated;
+grant execute on function public.complete_paid_match_turnover(uuid) to service_role;
+
+create or replace function public.get_my_financial_summary()
+returns table(
+  lifetime_deposit_coins bigint,
+  turnover_required bigint,
+  turnover_completed bigint,
+  turnover_remaining bigint,
+  value_wallet_coins bigint,
+  daily_withdrawal_remaining bigint,
+  weekly_withdrawal_remaining bigint
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_daily bigint;
+  v_weekly bigint;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+
+  select coalesce(sum(coin_amount),0) into lifetime_deposit_coins
+  from public.deposit_requests where user_id=v_user_id and status='credited';
+
+  select coalesce(sum(l.turnover_required),0),coalesce(sum(l.turnover_completed),0)
+  into turnover_required,turnover_completed
+  from public.paid_coin_lots l where l.user_id=v_user_id and l.source_type='deposit';
+  turnover_remaining := greatest(0,turnover_required-turnover_completed);
+
+  select purchased_coins into value_wallet_coins
+  from public.coin_wallets where user_id=v_user_id;
+
+  select coalesce(sum(requested_coins),0) into v_daily
+  from public.withdrawal_requests
+  where user_id=v_user_id and created_at>=now()-interval '24 hours'
+    and status in ('pending','approved','paid');
+  select coalesce(sum(requested_coins),0) into v_weekly
+  from public.withdrawal_requests
+  where user_id=v_user_id and created_at>=now()-interval '7 days'
+    and status in ('pending','approved','paid');
+
+  daily_withdrawal_remaining := greatest(0,50000-v_daily);
+  weekly_withdrawal_remaining := greatest(0,350000-v_weekly);
+  return next;
+end;
+$$;
+revoke all on function public.get_my_financial_summary() from public,anon;
+grant execute on function public.get_my_financial_summary() to authenticated;
+
+create or replace function public.get_member_game_access(p_game_id text)
+returns table(
+  free_level integer,
+  paid_level integer,
+  lifetime_deposit_coins bigint,
+  telegram_verified boolean,
+  phone_verified boolean,
+  wallet_verified boolean,
+  paid_random_unlocked boolean,
+  paid_private_unlocked boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_free_xp bigint;
+  v_paid_xp bigint;
+  v_verified public.member_gate_verifications;
+begin
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if not exists(select 1 from public.catalog_games where id=p_game_id) then
+    raise exception 'game_not_found' using errcode='22023';
+  end if;
+
+  select coalesce(max(xp) filter(where economy_mode='free'),0),
+         coalesce(max(xp) filter(where economy_mode='paid'),0)
+  into v_free_xp,v_paid_xp
+  from public.member_game_stats where user_id=v_user_id and game_id=p_game_id;
+
+  free_level := coalesce((select max(level_no) from generate_series(1,1000) as level_no
+                          where 25*(level_no-1)*(level_no+2)<=v_free_xp),1);
+  paid_level := coalesce((select max(level_no) from generate_series(1,1000) as level_no
+                          where 25*(level_no-1)*(level_no+2)<=v_paid_xp),1);
+
+  select coalesce(sum(coin_amount),0) into lifetime_deposit_coins
+  from public.deposit_requests where user_id=v_user_id and status='credited';
+
+  select * into v_verified from public.member_gate_verifications where user_id=v_user_id;
+  telegram_verified := coalesce(v_verified.telegram_verified,false);
+  phone_verified := coalesce(v_verified.phone_verified,false);
+  wallet_verified := coalesce(v_verified.wallet_verified,false);
+
+  paid_random_unlocked := free_level>=5 and telegram_verified and phone_verified and wallet_verified;
+  paid_private_unlocked := paid_level>=5 and lifetime_deposit_coins>=500
+                           and telegram_verified and phone_verified and wallet_verified;
+  return next;
+end;
+$$;
+revoke all on function public.get_member_game_access(text) from public,anon;
+grant execute on function public.get_member_game_access(text) to authenticated;
+
+alter table public.member_gate_verifications enable row level security;
+alter table public.deposit_requests enable row level security;
+
+comment on table public.paid_coin_lots is
+  'Provenance inside the Value Wallet; these rows are not additional wallet balances.';
+comment on table public.paid_coin_lot_consumptions is
+  'Records which Value Wallet source funded each debit; only completed paid-match stakes from deposit lots satisfy 20% turnover.';
+comment on column public.deposit_requests.coin_amount is
+  'Coins calculated at the request-time snapshot rate: 100 coins per USD.';
+comment on table public.deposit_tx_first_claims is
+  'First claimant owns a chain-specific transaction hash permanently, including when manual review later rejects the request.';
+
+commit;
+),
+  wallet_address text not null check (char_length(btrim(wallet_address)) between 20 and 256),
+  verification_status text not null default 'pending'
+    check (verification_status in ('pending','verified','rejected')),
+  submitted_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id) on delete set null,
+  review_note text
+);
+create unique index if not exists member_payout_address_identity_idx
+  on public.member_payout_addresses(user_id,asset_code,network_code,lower(btrim(wallet_address)));
+create index if not exists member_payout_addresses_user_idx
+  on public.member_payout_addresses(user_id,submitted_at desc);
+alter table public.member_payout_addresses enable row level security;
+revoke all on public.member_payout_addresses from public,anon,authenticated;
+grant select on public.member_payout_addresses to authenticated;
+create policy "members see own payout addresses"
+on public.member_payout_addresses for select
+to authenticated using ((select auth.uid())=user_id);
+
+create or replace function public.register_member_payout_address(
+  p_asset_code text,p_network_code text,p_wallet_address text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_user uuid:=auth.uid();
+  v_id uuid;
+begin
+  if coalesce(auth.role(),'')<>'authenticated' or v_user is null
+     or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if p_asset_code is null or p_network_code is null or p_wallet_address is null
+     or char_length(btrim(p_wallet_address))<20 or char_length(btrim(p_wallet_address))>256 then
+    raise exception 'invalid_payout_address' using errcode='22023';
+  end if;
+  if not exists (
+    select 1 from public.withdrawal_network_configs c
+    where c.asset_code=p_asset_code and c.network_code=p_network_code and c.is_enabled=true
+  ) then
+    raise exception 'withdrawal_network_not_available' using errcode='22023';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended('payout-address:'||v_user::text||':'||p_asset_code||':'||p_network_code,0)
+  );
+  insert into public.member_payout_addresses(user_id,asset_code,network_code,wallet_address)
+  values(v_user,p_asset_code,p_network_code,btrim(p_wallet_address))
+  on conflict do nothing;
+  select a.id into v_id from public.member_payout_addresses a
+  where a.user_id=v_user and a.asset_code=p_asset_code and a.network_code=p_network_code
+    and lower(btrim(a.wallet_address))=lower(btrim(p_wallet_address));
+  return v_id;
+end;
+$;
+revoke all on function public.register_member_payout_address(text,text,text) from public,anon;
+grant execute on function public.register_member_payout_address(text,text,text) to authenticated;
+
+create or replace function public.review_member_payout_address(
+  p_address_id uuid,p_approved boolean,p_review_note text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_address public.member_payout_addresses%rowtype;
+begin
+  if coalesce(auth.role(),'anon')<>'service_role' then
+    raise exception 'not_authorized' using errcode='42501';
+  end if;
+  if p_review_note is not null and char_length(p_review_note)>1000 then
+    raise exception 'review_note_too_long' using errcode='22023';
+  end if;
+  select * into v_address from public.member_payout_addresses where id=p_address_id for update;
+  if not found then raise exception 'payout_address_not_found' using errcode='P0002'; end if;
+  update public.member_payout_addresses
+  set verification_status=case when p_approved then 'verified' else 'rejected' end,
+      reviewed_at=now(),reviewed_by=null,review_note=left(coalesce(p_review_note,''),1000)
+  where id=v_address.id;
+  update public.member_gate_verifications g
+  set wallet_verified=case when p_approved then true else exists(
+       select 1 from public.member_payout_addresses a
+       where a.user_id=v_address.user_id and a.verification_status='verified' and a.id<>v_address.id
+     ) end,
+     updated_at=now(),updated_by=null
+  where g.user_id=v_address.user_id;
+  insert into public.security_audit_events(user_id,event_type,request_id,details)
+  values(v_address.user_id,'payout_address_reviewed',v_address.id::text,
+    jsonb_build_object('approved',p_approved,'asset',v_address.asset_code,'network',v_address.network_code));
+  return true;
+end;
+$;
+revoke all on function public.review_member_payout_address(uuid,boolean,text) from public,anon,authenticated;
+grant execute on function public.review_member_payout_address(uuid,boolean,text) to service_role;
 
 create table if not exists public.withdrawal_requests (
   id uuid primary key default gen_random_uuid(),
