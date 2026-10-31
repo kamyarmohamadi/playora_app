@@ -26,7 +26,7 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
-  IF visible_count <> 2 THEN RAISE EXCEPTION 'Member One can see % game stats rows, expected 2 tracks', visible_count; END IF;
+  IF visible_count <> (SELECT count(*) FROM public.catalog_games) * 2 THEN RAISE EXCEPTION 'Member One can see % game stats rows, expected two tracks per catalog game', visible_count; END IF;
   IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free') <> 1000 THEN
     RAISE EXCEPTION 'New member should start at competitive rating 1000';
   END IF;
@@ -78,7 +78,7 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
-  IF visible_count <> 2 THEN RAISE EXCEPTION 'Member Two can see % game stats rows, expected 2 tracks', visible_count; END IF;
+  IF visible_count <> (SELECT count(*) FROM public.catalog_games) * 2 THEN RAISE EXCEPTION 'Member Two can see % game stats rows, expected two tracks per catalog game', visible_count; END IF;
   IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free') <> 1000 THEN
     RAISE EXCEPTION 'Second member should start at competitive rating 1000';
   END IF;
