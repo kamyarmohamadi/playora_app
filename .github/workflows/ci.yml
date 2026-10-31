@@ -185,6 +185,10 @@ jobs:
         run: deno check --config supabase/functions/member-self/deno.json supabase/functions/member-self/index.ts
       - name: Type-check account deletion endpoint
         run: deno check --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index.ts
+      - name: Type-check private finance administrator endpoint
+        run: deno check --config supabase/functions/finance-admin/deno.json supabase/functions/finance-admin/index.ts
+      - name: Test finance administrator authorization and config validation
+        run: deno test --allow-env --config supabase/functions/finance-admin/deno.json supabase/functions/finance-admin/index_test.ts
       - name: Test account deletion request validation
         run: deno test --allow-env --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index_test.ts
       - name: Type-check finance administration endpoint
