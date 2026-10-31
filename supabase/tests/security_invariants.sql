@@ -237,7 +237,7 @@ BEGIN
   IF NOT has_function_privilege('authenticated','public.get_deposit_options()','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.get_withdrawal_options()','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.submit_deposit_claim(text,text,numeric,text,timestamptz)','EXECUTE')
-     OR NOT has_function_privilege('authenticated','public.request_withdrawal(bigint,text,text,text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.request_withdrawal(bigint,uuid)','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.get_my_financial_summary()','EXECUTE')
      OR NOT has_function_privilege('authenticated','public.get_member_game_access(text)','EXECUTE') THEN
     RAISE EXCEPTION 'Signed-in members must be able to use their scoped financial request and status APIs';
