@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION auth.jwt()
 RETURNS jsonb
 LANGUAGE sql
 STABLE
-AS $
+AS $$
   SELECT jsonb_build_object(
     'sub', auth.uid(),
     'role', auth.role(),
@@ -52,7 +52,7 @@ AS $
       'false'
     )::boolean
   )
-$;
+$$;
 
 GRANT EXECUTE ON FUNCTION auth.jwt() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION auth.role() TO anon, authenticated, service_role;
