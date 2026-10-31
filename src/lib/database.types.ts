@@ -128,47 +128,208 @@ export type Database = {
         }
         Relationships: []
       }
+      deposit_network_configs: {
+        Row: {
+          asset_code: string
+          coins_per_usd: number
+          deposit_address: string
+          hash_case_insensitive: boolean
+          is_enabled: boolean
+          min_amount: number
+          network_code: string
+          updated_at: string
+          updated_by: string | null
+          usd_per_asset: number
+        }
+        Insert: {
+          asset_code: string
+          coins_per_usd?: number
+          deposit_address: string
+          hash_case_insensitive?: boolean
+          is_enabled?: boolean
+          min_amount?: number
+          network_code: string
+          updated_at?: string
+          updated_by?: string | null
+          usd_per_asset: number
+        }
+        Update: {
+          asset_code?: string
+          coins_per_usd?: number
+          deposit_address?: string
+          hash_case_insensitive?: boolean
+          is_enabled?: boolean
+          min_amount?: number
+          network_code?: string
+          updated_at?: string
+          updated_by?: string | null
+          usd_per_asset?: number
+        }
+        Relationships: []
+      }
       deposit_requests: {
         Row: {
           asset_code: string
+          coin_amount: number
+          coins_per_usd_snapshot: number
           confirmations: number
           created_at: string
           credited_at: string | null
+          credited_ledger_id: string | null
+          destination_address_snapshot: string | null
+          duplicate_of_request_id: string | null
           expected_amount: number
           id: string
           network_code: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
+          transaction_at: string | null
           tx_hash: string | null
           updated_at: string
+          usd_per_asset_snapshot: number | null
+          usd_value: number
           user_id: string
         }
         Insert: {
           asset_code: string
+          coin_amount?: number
+          coins_per_usd_snapshot?: number
           confirmations?: number
           created_at?: string
           credited_at?: string | null
+          credited_ledger_id?: string | null
+          destination_address_snapshot?: string | null
+          duplicate_of_request_id?: string | null
           expected_amount: number
           id?: string
           network_code: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          transaction_at?: string | null
           tx_hash?: string | null
           updated_at?: string
+          usd_per_asset_snapshot?: number | null
+          usd_value?: number
           user_id: string
         }
         Update: {
           asset_code?: string
+          coin_amount?: number
+          coins_per_usd_snapshot?: number
           confirmations?: number
           created_at?: string
           credited_at?: string | null
+          credited_ledger_id?: string | null
+          destination_address_snapshot?: string | null
+          duplicate_of_request_id?: string | null
           expected_amount?: number
           id?: string
           network_code?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          transaction_at?: string | null
           tx_hash?: string | null
           updated_at?: string
+          usd_per_asset_snapshot?: number | null
+          usd_value?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deposit_requests_credited_ledger_id_fkey"
+            columns: ["credited_ledger_id"]
+            isOneToOne: false
+            referencedRelation: "coin_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deposit_requests_duplicate_of_request_id_fkey"
+            columns: ["duplicate_of_request_id"]
+            isOneToOne: false
+            referencedRelation: "deposit_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposit_tx_duplicate_attempts: {
+        Row: {
+          attempted_at: string
+          attempted_by: string
+          duplicate_request_id: string
+          first_request_id: string
+          id: string
+        }
+        Insert: {
+          attempted_at?: string
+          attempted_by: string
+          duplicate_request_id: string
+          first_request_id: string
+          id?: string
+        }
+        Update: {
+          attempted_at?: string
+          attempted_by?: string
+          duplicate_request_id?: string
+          first_request_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_tx_duplicate_attempts_duplicate_request_id_fkey"
+            columns: ["duplicate_request_id"]
+            isOneToOne: true
+            referencedRelation: "deposit_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deposit_tx_duplicate_attempts_first_request_id_fkey"
+            columns: ["first_request_id"]
+            isOneToOne: false
+            referencedRelation: "deposit_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposit_tx_first_claims: {
+        Row: {
+          asset_code: string
+          first_claimed_at: string
+          first_request_id: string
+          first_user_id: string
+          network_code: string
+          tx_hash_key: string
+        }
+        Insert: {
+          asset_code: string
+          first_claimed_at?: string
+          first_request_id: string
+          first_user_id: string
+          network_code: string
+          tx_hash_key: string
+        }
+        Update: {
+          asset_code?: string
+          first_claimed_at?: string
+          first_request_id?: string
+          first_user_id?: string
+          network_code?: string
+          tx_hash_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_tx_first_claims_first_request_id_fkey"
+            columns: ["first_request_id"]
+            isOneToOne: false
+            referencedRelation: "deposit_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       friend_requests: {
         Row: {
@@ -331,6 +492,7 @@ export type Database = {
         Row: {
           created_at: string
           economy_mode: string
+          entry_coins: number
           finished_at: string | null
           game_id: string
           id: string
@@ -344,6 +506,7 @@ export type Database = {
         Insert: {
           created_at?: string
           economy_mode?: string
+          entry_coins?: number
           finished_at?: string | null
           game_id: string
           id?: string
@@ -357,6 +520,7 @@ export type Database = {
         Update: {
           created_at?: string
           economy_mode?: string
+          entry_coins?: number
           finished_at?: string | null
           game_id?: string
           id?: string
@@ -501,6 +665,72 @@ export type Database = {
           },
         ]
       }
+      member_gate_verifications: {
+        Row: {
+          phone_verified: boolean
+          telegram_verified: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          wallet_verified: boolean
+        }
+        Insert: {
+          phone_verified?: boolean
+          telegram_verified?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+          wallet_verified?: boolean
+        }
+        Update: {
+          phone_verified?: boolean
+          telegram_verified?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          wallet_verified?: boolean
+        }
+        Relationships: []
+      }
+      member_payout_addresses: {
+        Row: {
+          asset_code: string
+          id: string
+          network_code: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          submitted_at: string
+          user_id: string
+          verification_status: string
+          wallet_address: string
+        }
+        Insert: {
+          asset_code: string
+          id?: string
+          network_code: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string
+          user_id: string
+          verification_status?: string
+          wallet_address: string
+        }
+        Update: {
+          asset_code?: string
+          id?: string
+          network_code?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string
+          user_id?: string
+          verification_status?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       member_preferences: {
         Row: {
           locale: string
@@ -554,6 +784,117 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      paid_coin_lot_consumptions: {
+        Row: {
+          amount: number
+          created_at: string
+          event_type: string
+          id: string
+          ledger_id: string
+          lot_id: string
+          match_id: string | null
+          qualifies_for_turnover: boolean
+          turnover_applied_at: string | null
+          turnover_counted: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          event_type: string
+          id?: string
+          ledger_id: string
+          lot_id: string
+          match_id?: string | null
+          qualifies_for_turnover?: boolean
+          turnover_applied_at?: string | null
+          turnover_counted?: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          event_type?: string
+          id?: string
+          ledger_id?: string
+          lot_id?: string
+          match_id?: string | null
+          qualifies_for_turnover?: boolean
+          turnover_applied_at?: string | null
+          turnover_counted?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_coin_lot_consumptions_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "coin_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_coin_lot_consumptions_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "paid_coin_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_coin_lot_consumptions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_coin_lots: {
+        Row: {
+          created_at: string
+          credit_ledger_id: string
+          id: string
+          original_coins: number
+          reference_id: string | null
+          remaining_coins: number
+          source_type: string
+          turnover_completed: number
+          turnover_required: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credit_ledger_id: string
+          id?: string
+          original_coins: number
+          reference_id?: string | null
+          remaining_coins: number
+          source_type: string
+          turnover_completed?: number
+          turnover_required?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credit_ledger_id?: string
+          id?: string
+          original_coins?: number
+          reference_id?: string | null
+          remaining_coins?: number
+          source_type?: string
+          turnover_completed?: number
+          turnover_required?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_coin_lots_credit_ledger_id_fkey"
+            columns: ["credit_ledger_id"]
+            isOneToOne: true
+            referencedRelation: "coin_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       private_room_secrets: {
         Row: {
@@ -833,6 +1174,113 @@ export type Database = {
           },
         ]
       }
+      withdrawal_network_configs: {
+        Row: {
+          asset_code: string
+          is_enabled: boolean
+          network_code: string
+          network_fee_asset: number
+          updated_at: string
+          updated_by: string | null
+          usd_per_asset: number
+        }
+        Insert: {
+          asset_code: string
+          is_enabled?: boolean
+          network_code: string
+          network_fee_asset?: number
+          updated_at?: string
+          updated_by?: string | null
+          usd_per_asset: number
+        }
+        Update: {
+          asset_code?: string
+          is_enabled?: boolean
+          network_code?: string
+          network_fee_asset?: number
+          updated_at?: string
+          updated_by?: string | null
+          usd_per_asset?: number
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          actual_asset_amount: number | null
+          asset_code: string
+          coins_per_usd_snapshot: number
+          created_at: string
+          destination_address: string
+          gross_asset_amount: number
+          id: string
+          net_asset_amount: number
+          network_code: string
+          network_fee_asset_amount: number
+          paid_at: string | null
+          payout_tx_hash: string | null
+          requested_coins: number
+          reserve_ledger_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          status: string
+          updated_at: string
+          usd_per_asset_snapshot: number
+          user_id: string
+        }
+        Insert: {
+          actual_asset_amount?: number | null
+          asset_code: string
+          coins_per_usd_snapshot?: number
+          created_at?: string
+          destination_address: string
+          gross_asset_amount: number
+          id?: string
+          net_asset_amount: number
+          network_code: string
+          network_fee_asset_amount: number
+          paid_at?: string | null
+          payout_tx_hash?: string | null
+          requested_coins: number
+          reserve_ledger_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+          usd_per_asset_snapshot: number
+          user_id: string
+        }
+        Update: {
+          actual_asset_amount?: number | null
+          asset_code?: string
+          coins_per_usd_snapshot?: number
+          created_at?: string
+          destination_address?: string
+          gross_asset_amount?: number
+          id?: string
+          net_asset_amount?: number
+          network_code?: string
+          network_fee_asset_amount?: number
+          paid_at?: string | null
+          payout_tx_hash?: string | null
+          requested_coins?: number
+          reserve_ledger_id?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          status?: string
+          updated_at?: string
+          usd_per_asset_snapshot?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_reserve_ledger_id_fkey"
+            columns: ["reserve_ledger_id"]
+            isOneToOne: false
+            referencedRelation: "coin_ledger"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -866,6 +1314,10 @@ export type Database = {
         Args: { p_game_id: string }
         Returns: boolean
       }
+      complete_paid_match_turnover: {
+        Args: { p_match_id: string }
+        Returns: number
+      }
       create_private_room: {
         Args: { p_game_id: string; p_max_players?: number }
         Returns: {
@@ -875,6 +1327,17 @@ export type Database = {
         }[]
       }
       find_tictactoe_winner: { Args: { p_board: Json }; Returns: string }
+      get_deposit_options: {
+        Args: never
+        Returns: {
+          asset_code: string
+          coins_per_usd: number
+          deposit_address: string
+          min_amount: number
+          network_code: string
+          usd_per_asset: number
+        }[]
+      }
       get_game_leaderboard: {
         Args: { p_game_id?: string; p_limit?: number }
         Returns: {
@@ -903,6 +1366,40 @@ export type Database = {
           username: string
           wins: number
           xp: number
+        }[]
+      }
+      get_member_game_access: {
+        Args: { p_game_id: string }
+        Returns: {
+          free_level: number
+          lifetime_deposit_coins: number
+          paid_level: number
+          paid_private_unlocked: boolean
+          paid_random_unlocked: boolean
+          phone_verified: boolean
+          telegram_verified: boolean
+          wallet_verified: boolean
+        }[]
+      }
+      get_my_financial_summary: {
+        Args: never
+        Returns: {
+          daily_withdrawal_remaining: number
+          lifetime_deposit_coins: number
+          turnover_completed: number
+          turnover_remaining: number
+          turnover_required: number
+          value_wallet_coins: number
+          weekly_withdrawal_remaining: number
+        }[]
+      }
+      get_withdrawal_options: {
+        Args: never
+        Returns: {
+          asset_code: string
+          network_code: string
+          network_fee_asset: number
+          usd_per_asset: number
         }[]
       }
       hash_room_invite_code: { Args: { p_code: string }; Returns: string }
@@ -939,6 +1436,18 @@ export type Database = {
           queue_status: string
         }[]
       }
+      register_member_payout_address: {
+        Args: {
+          p_asset_code: string
+          p_network_code: string
+          p_wallet_address: string
+        }
+        Returns: string
+      }
+      request_withdrawal: {
+        Args: { p_payout_address_id: string; p_requested_coins: number }
+        Returns: string
+      }
       respond_friend_request: {
         Args: { p_action: string; p_request_id: string }
         Returns: {
@@ -946,12 +1455,113 @@ export type Database = {
           request_id: string
         }[]
       }
+      review_deposit_request: {
+        Args: {
+          p_approve: boolean
+          p_request_id: string
+          p_review_note?: string
+        }
+        Returns: {
+          asset_code: string
+          coin_amount: number
+          coins_per_usd_snapshot: number
+          confirmations: number
+          created_at: string
+          credited_at: string | null
+          credited_ledger_id: string | null
+          destination_address_snapshot: string | null
+          duplicate_of_request_id: string | null
+          expected_amount: number
+          id: string
+          network_code: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transaction_at: string | null
+          tx_hash: string | null
+          updated_at: string
+          usd_per_asset_snapshot: number | null
+          usd_value: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "deposit_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      review_member_payout_address: {
+        Args: {
+          p_address_id: string
+          p_approved: boolean
+          p_review_note?: string
+        }
+        Returns: boolean
+      }
+      review_withdrawal_request: {
+        Args: {
+          p_action: string
+          p_actual_asset_amount?: number
+          p_payout_tx_hash?: string
+          p_request_id: string
+          p_review_note?: string
+        }
+        Returns: {
+          actual_asset_amount: number | null
+          asset_code: string
+          coins_per_usd_snapshot: number
+          created_at: string
+          destination_address: string
+          gross_asset_amount: number
+          id: string
+          net_asset_amount: number
+          network_code: string
+          network_fee_asset_amount: number
+          paid_at: string | null
+          payout_tx_hash: string | null
+          requested_coins: number
+          reserve_ledger_id: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          status: string
+          updated_at: string
+          usd_per_asset_snapshot: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "withdrawal_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       send_friend_request: {
         Args: { p_username: string }
         Returns: {
           relationship_status: string
           request_id: string
         }[]
+      }
+      set_member_gate_verification: {
+        Args: {
+          p_phone_verified: boolean
+          p_telegram_verified: boolean
+          p_user_id: string
+          p_wallet_verified: boolean
+        }
+        Returns: undefined
+      }
+      submit_deposit_claim: {
+        Args: {
+          p_amount: number
+          p_asset_code: string
+          p_network_code: string
+          p_transaction_at: string
+          p_tx_hash: string
+        }
+        Returns: string
       }
       submit_private_tictactoe_move: {
         Args: { p_cell_index: number; p_match_id: string }
