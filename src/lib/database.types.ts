@@ -1,7 +1,3 @@
-// Generated from Supabase project playora-dev (nnowvfewtrfurnluhflt), EU Central.
-// Snapshot date: 2026-10-23. Regenerate after any database migration.
-// Do not hand-edit generated schema types; review schema changes in migrations first.
-
 export type Json =
   | string
   | number
@@ -334,6 +330,7 @@ export type Database = {
       matches: {
         Row: {
           created_at: string
+          economy_mode: string
           finished_at: string | null
           game_id: string
           id: string
@@ -346,6 +343,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          economy_mode?: string
           finished_at?: string | null
           game_id: string
           id?: string
@@ -358,6 +356,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          economy_mode?: string
           finished_at?: string | null
           game_id?: string
           id?: string
@@ -381,6 +380,7 @@ export type Database = {
       matchmaking_queue: {
         Row: {
           created_at: string
+          economy_mode: string
           game_id: string
           id: string
           match_id: string | null
@@ -391,6 +391,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          economy_mode?: string
           game_id: string
           id?: string
           match_id?: string | null
@@ -401,6 +402,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          economy_mode?: string
           game_id?: string
           id?: string
           match_id?: string | null
@@ -456,6 +458,7 @@ export type Database = {
         Row: {
           competitive_rating: number
           draws: number
+          economy_mode: string
           game_id: string
           losses: number
           matches_played: number
@@ -467,6 +470,7 @@ export type Database = {
         Insert: {
           competitive_rating?: number
           draws?: number
+          economy_mode?: string
           game_id: string
           losses?: number
           matches_played?: number
@@ -478,6 +482,7 @@ export type Database = {
         Update: {
           competitive_rating?: number
           draws?: number
+          economy_mode?: string
           game_id?: string
           losses?: number
           matches_played?: number
@@ -579,6 +584,7 @@ export type Database = {
       private_rooms: {
         Row: {
           created_at: string
+          economy_mode: string
           expires_at: string
           game_id: string
           host_user_id: string
@@ -589,6 +595,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          economy_mode?: string
           expires_at?: string
           game_id: string
           host_user_id: string
@@ -599,6 +606,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          economy_mode?: string
           expires_at?: string
           game_id?: string
           host_user_id?: string
@@ -869,6 +877,21 @@ export type Database = {
       find_tictactoe_winner: { Args: { p_board: Json }; Returns: string }
       get_game_leaderboard: {
         Args: { p_game_id?: string; p_limit?: number }
+        Returns: {
+          competitive_rating: number
+          display_name: string
+          draws: number
+          losses: number
+          matches_played: number
+          rank_position: number
+          updated_at: string
+          username: string
+          wins: number
+          xp: number
+        }[]
+      }
+      get_game_leaderboard_for_mode: {
+        Args: { p_economy_mode: string; p_game_id: string; p_limit?: number }
         Returns: {
           competitive_rating: number
           display_name: string
