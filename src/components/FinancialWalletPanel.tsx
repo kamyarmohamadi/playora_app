@@ -89,7 +89,6 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
   const [payoutNetwork, setPayoutNetwork] = useState("");
   const [newPayoutAddress, setNewPayoutAddress] = useState("");
   const [depSelected, setDepSelected] = useState("");
-  const [wdSelected, setWdSelected] = useState("");
   const [depAmount, setDepAmount] = useState("");
   const [txHash, setTxHash] = useState("");
   const [txTime, setTxTime] = useState("");
@@ -120,20 +119,20 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
     setPayoutNetwork(current => current && w.some(o => optionKey(o.asset_code,o.network_code) === current) ? current : (w[0] ? optionKey(w[0].asset_code,w[0].network_code) : ""));
     setSelectedPayoutAddressId(current => current && payoutRows.some(a => a.id === current && a.verification_status === "verified") ? current : (payoutRows.find(a => a.verification_status === "verified")?.id ?? ""));
     setDepSelected(current => current && d.some(o => optionKey(o.asset_code,o.network_code) === current) ? current : (d[0] ? optionKey(d[0].asset_code,d[0].network_code) : ""));
-    setWdSelected(current => current && w.some(o => optionKey(o.asset_code,o.network_code) === current) ? current : (w[0] ? optionKey(w[0].asset_code,w[0].network_code) : ""));
     setLoading(false);
   }, [database, userId, t.error]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
   const depOption = useMemo(() => depOptions.find(o => optionKey(o.asset_code,o.network_code) === depSelected) ?? null, [depOptions,depSelected]);
-  const wdOption = useMemo(() => wdOptions.find(o => optionKey(o.asset_code,o.network_code) === wdSelected) ?? null, [wdOptions,wdSelected]);
   const depositAmount = Math.max(0,Number(depAmount)||0);
   const depositUsd = depOption ? depositAmount*Number(depOption.usd_per_asset) : 0;
   const depositCoins = depOption ? Math.round(depositUsd*Number(depOption.coins_per_usd||100)) : 0;
   const withdrawalCoins = Math.floor(Number(wdAmount)||0);
-  const gross = wdOption ? (withdrawalCoins/100)/Number(wdOption.usd_per_asset) : 0;
-  const fee = wdOption ? Number(wdOption.network_fee_asset) : 0;
+  const selectedPayoutAddress = payoutAddresses.find(a => a.id === selectedPayoutAddressId && a.verification_status === "verified") ?? null;
+  const payoutOption = selectedPayoutAddress ? wdOptions.find(o => o.asset_code === selectedPayoutAddress.asset_code && o.network_code === selectedPayoutAddress.network_code) ?? null : null;
+  const gross = payoutOption ? (withdrawalCoins/100)/Number(payoutOption.usd_per_asset) : 0;
+  const fee = payoutOption ? Number(payoutOption.network_fee_asset) : 0;
   const net = Math.max(0,gross-fee);
   const freeBalance = wallet ? Number(wallet.free_coins)+Number(wallet.reward_coins) : null;
   const valueBalance = wallet ? Number(wallet.purchased_coins) : Number(summary?.value_wallet_coins??0);
@@ -169,7 +168,7 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
   const submitWithdrawal = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const verified=payoutAddresses.find(a=>a.id===selectedPayoutAddressId&&a.verification_status==="verified");
-    if(!verified||withdrawalCoins<500){setError(t.required);return;}
+    if(!verified||!payoutOption||withdrawalCoins<500){setError(t.required);return;}
     if(withdrawalCoins>Number(summary?.value_wallet_coins??wallet?.purchased_coins??0)){setError(t.error);return;}
     setBusy(true);setError("");
     try{
@@ -245,7 +244,7 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
                   {payoutAddresses.filter(a=>a.verification_status==="verified").map(a=><option key={a.id} value={a.id}>{a.asset_code} · {a.network_code} · {a.wallet_address.slice(0,12)}…</option>)}
                 </select></label>
                 <label>{t.amount} ({t.coins})<input type="number" min="500" max="50000" step="1" value={wdAmount} onChange={e=>setWdAmount(e.target.value)} required/></label>
-                <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(withdrawalCoins/100,locale,2)}</b><span>{t.fee}</span><b>{fmt(fee,locale,8)} {wdOption?.asset_code??""}</b><span>{t.net}</span><b>{fmt(net,locale,8)} {wdOption?.asset_code??""}</b></div>
+                <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(withdrawalCoins/100,locale,2)}</b><span>{t.fee}</span><b>{fmt(fee,locale,8)} {payoutOption?.asset_code??""}</b><span>{t.net}</span><b>{fmt(net,locale,8)} {payoutOption?.asset_code??""}</b></div>
                 <p className="financial-small-note">{t.min} · {t.feeNote}</p>
                 <button className="financial-submit-btn" type="submit" disabled={busy||loading||!selectedPayoutAddressId}><ArrowUpFromLine size={15}/>{t.sendWithdraw}</button>
               </form>
