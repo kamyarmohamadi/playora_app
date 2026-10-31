@@ -9,12 +9,12 @@ ON CONFLICT (id) DO NOTHING;
 -- Test-only leaderboard grant; the platform-only database migration disables this client RPC.
 UPDATE public.catalog_games SET is_enabled=true WHERE id='tictactoe';
 GRANT EXECUTE ON FUNCTION public.get_game_leaderboard(text,integer) TO authenticated;
-INSERT INTO public.member_game_stats(user_id,game_id,xp,competitive_rating,matches_played,wins,losses,draws)
+INSERT INTO public.member_game_stats(user_id,game_id,economy_mode,xp,competitive_rating,matches_played,wins,losses,draws)
 VALUES
-  ('00000000-0000-4000-8000-000000000011','tictactoe',300,1350,5,3,2,0),
-  ('00000000-0000-4000-8000-000000000012','tictactoe',500,1600,7,6,1,0),
-  ('00000000-0000-4000-8000-000000000013','tictactoe',100,1100,2,1,1,0)
-ON CONFLICT(user_id,game_id) DO UPDATE SET
+  ('00000000-0000-4000-8000-000000000011','tictactoe','free',300,1350,5,3,2,0),
+  ('00000000-0000-4000-8000-000000000012','tictactoe','free',500,1600,7,6,1,0),
+  ('00000000-0000-4000-8000-000000000013','tictactoe','free',100,1100,2,1,1,0)
+ON CONFLICT(user_id,game_id,economy_mode) DO UPDATE SET
   xp=excluded.xp,competitive_rating=excluded.competitive_rating,
   matches_played=excluded.matches_played,wins=excluded.wins,losses=excluded.losses,draws=excluded.draws;
 
