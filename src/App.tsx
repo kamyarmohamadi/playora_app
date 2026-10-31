@@ -14,6 +14,7 @@ import type { CatalogGame as Game } from "./catalog/gameRegistry";
 import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
 import { GamePluginHost } from "./plugin-host/GamePluginHost";
 import { SupportReportDialog, type SupportReportSubmission, type SupportReportSummary } from "./components/SupportReportDialog";
+import { FinancialWalletPanel } from "./components/FinancialWalletPanel";
 import { listMySupportReports, submitMySupportReport } from "./platform/supportReportService";
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platform/nativeOAuth";
@@ -1148,7 +1149,9 @@ export default function App() {
             <div className="leaderboard-empty"><div className="empty-state-icon"><Trophy size={26} /></div><h3>{t("rankedUnavailable")}</h3></div>
           </section>}
 
-          {page === "wallet" && <section className="wallet-layout"><div className="wallet-balance-card"><span className="wallet-label"><Coins size={16} />{t("balance")}</span><b className="wallet-total">{formattedCoins} <small>{t("coins")}</small></b><div className="wallet-buckets" aria-label={t("walletBreakdown")}><div><span>{t("freeCoins")}</span><b>{walletSnapshot ? formatWalletAmount(Number(walletSnapshot.free_coins) + Number(walletSnapshot.reward_coins)) : "—"}</b></div><div><span>{t("purchasedCoins")}</span><b>{formatWalletAmount(walletSnapshot?.purchased_coins)}</b></div></div><span className="wallet-preview-tag"><LockKeyhole size={13} />{t("noMoney")}</span><div className="wallet-actions"><button disabled onClick={() => setToast(t("walletToast"))}><CreditCard size={16} />{t("deposit")}</button><button disabled onClick={() => setToast(t("walletToast"))}><Activity size={16} />{t("history")}</button></div></div><div className="crypto-info-card"><div className="crypto-card-head"><span className="security-icon"><ShieldCheck size={18} /></span><span className="connection-status">{t("notConnected")}</span></div><h2>{t("cryptoTitle")}</h2><p>{t("cryptoText")}</p><div className="crypto-list"><span className="crypto-token usdt">₮</span><div><b>USDT</b><small>Example asset · no deposit address</small></div><span className="crypto-token btc">₿</span><div><b>BTC</b><small>Not configured</small></div></div><button className="btn-disabled" disabled><LockKeyhole size={15} />{t("notConnected")}</button></div></section>}
+          {page === "wallet" && (session && supabase
+            ? <FinancialWalletPanel database={supabase as unknown as SupabaseClient<any>} userId={session.user.id} locale={locale} wallet={walletSnapshot} onNotify={setToast} />
+            : <section className="wallet-login-required"><div className="empty-state-icon"><Wallet size={27} /></div><h2>{t("walletTitle")}</h2><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></section>)}
 
           {page === "profile" && <section className="profile-layout"><div className="profile-card"><div className="profile-cover"><BrandMark /></div><div className="profile-identity"><span className="profile-avatar-large">{session ? currentName.charAt(0).toLocaleUpperCase(locale) : "O"}</span><div><h2>{session ? currentName : t("sampleProfile")}</h2><p>{session ? (memberProfile?.user_id === session.user.id ? "@" + memberProfile.username : t("loading")) : t("account")}</p></div>{session && <span className="profile-level"><BadgeCheck size={14} />{memberStats ? `${t("level")} ${progression.level}` : t("member")}</span>}</div>
               {session && memberProfile?.user_id === session.user.id && <form className="profile-edit-form" onSubmit={event => void saveProfile(event)}>
