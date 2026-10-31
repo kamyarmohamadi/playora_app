@@ -78,4 +78,38 @@ BEGIN
 END
 $immutable_mode$;
 
+
+-- Every member must have both tracks for every currently catalogued game.
+DO $all_game_tracks$
+DECLARE
+  v_members integer;
+  v_games integer;
+  v_rows integer;
+BEGIN
+  SELECT count(*) INTO v_members FROM public.member_profiles;
+  SELECT count(*) INTO v_games FROM public.catalog_games;
+  SELECT count(*) INTO v_rows FROM public.member_game_stats;
+  IF v_rows <> v_members * v_games * 2 THEN
+    RAISE EXCEPTION 'Expected two progression rows per member/game; members %, games %, rows %',v_members,v_games,v_rows;
+  END IF;
+  IF has_function_privilege('authenticated','public.get_game_leaderboard_for_mode(text,text,integer)','EXECUTE') IS NOT true THEN
+    RAISE EXCEPTION 'Authenticated clients must be able to read the mode-scoped leaderboard RPC';
+  END IF;
+END
+$all_game_tracks$;
+
+-- Future catalog additions automatically receive both independent progression rows.
+INSERT INTO public.catalog_games(id,title_en,title_fa,category)
+VALUES('economy_test_game','Economy Test','بازی آزمایشی اقتصاد','board');
+DO $future_game_tracks$
+DECLARE v_rows integer;
+BEGIN
+  SELECT count(*) INTO v_rows FROM public.member_game_stats WHERE game_id='economy_test_game';
+  IF v_rows <> (SELECT count(*) FROM public.member_profiles) * 2 THEN
+    RAISE EXCEPTION 'Future game catalog trigger did not seed both tracks; rows %',v_rows;
+  END IF;
+END
+$future_game_tracks$;
+DELETE FROM public.catalog_games WHERE id='economy_test_game';
+
 RESET ROLE;
