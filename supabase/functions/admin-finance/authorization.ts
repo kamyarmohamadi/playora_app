@@ -37,6 +37,7 @@ export function validateAdminActionPayload(payload: unknown): payload is Record<
   if (!isSafeText(value.action, 3, 64)) return false;
   switch (value.action) {
     case "dashboard":
+    case "check_access":
     case "list_admins":
       return true;
     case "configure_deposit_network":
