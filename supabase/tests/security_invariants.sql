@@ -63,6 +63,24 @@ BEGIN
     RAISE EXCEPTION 'Members may only read their own payout addresses, not change verification state';
   END IF;
 
+
+  IF has_table_privilege('authenticated','public.platform_admin_members','SELECT')
+     OR has_table_privilege('authenticated','public.platform_admin_members','INSERT')
+     OR has_table_privilege('authenticated','public.platform_admin_members','UPDATE')
+     OR has_table_privilege('authenticated','public.platform_admin_members','DELETE')
+     OR has_table_privilege('authenticated','public.platform_admin_audit_events','SELECT')
+     OR has_table_privilege('authenticated','public.platform_admin_audit_events','INSERT')
+     OR has_table_privilege('authenticated','public.platform_admin_audit_events','UPDATE')
+     OR has_table_privilege('authenticated','public.platform_admin_audit_events','DELETE') THEN
+    RAISE EXCEPTION 'Admin membership and audit records must never be directly accessible to browser roles';
+  END IF;
+  IF NOT has_table_privilege('service_role','public.platform_admin_members','SELECT')
+     OR NOT has_table_privilege('service_role','public.platform_admin_members','INSERT')
+     OR NOT has_table_privilege('service_role','public.platform_admin_members','UPDATE')
+     OR NOT has_table_privilege('service_role','public.platform_admin_audit_events','INSERT') THEN
+    RAISE EXCEPTION 'Trusted admin Edge Function must be able to read membership and append audit records';
+  END IF;
+
   IF has_table_privilege('authenticated','public.deposit_requests','INSERT')
      OR has_table_privilege('authenticated','public.deposit_requests','UPDATE')
      OR has_table_privilege('authenticated','public.deposit_requests','DELETE') THEN
