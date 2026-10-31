@@ -15,6 +15,7 @@ import type { ApprovedPluginDescriptor } from "@playora/game-sdk";
 import { GamePluginHost } from "./plugin-host/GamePluginHost";
 import { SupportReportDialog, type SupportReportSubmission, type SupportReportSummary } from "./components/SupportReportDialog";
 import { FinancialWalletPanel } from "./components/FinancialWalletPanel";
+import { FinanceAdminPanel } from "./components/FinanceAdminPanel";
 import { listMySupportReports, submitMySupportReport } from "./platform/supportReportService";
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platform/nativeOAuth";
@@ -265,6 +266,7 @@ export default function App() {
   const [supportReportsUnavailable, setSupportReportsUnavailable] = useState(false);
   const [supportRefresh, setSupportRefresh] = useState(0);
   const [memberWallet, setMemberWallet] = useState<MemberWallet | null>(null);
+  const [hasFinanceAdminAccess, setHasFinanceAdminAccess] = useState(false);
   const [memberStats, setMemberStats] = useState<MemberStats | null>(null);
   const [memberGameStats, setMemberGameStats] = useState<MemberGameStats[]>([]);
   const [socialRows, setSocialRows] = useState<SocialRelationship[]>([]);
@@ -273,6 +275,21 @@ export default function App() {
   const [socialError, setSocialError] = useState("");
   const [socialRefresh, setSocialRefresh] = useState(0);
   const activeUserIdRef = useRef<string | null>(null);
+
+  const currentMemberId = session?.user.id;
+  useEffect(() => {
+    if (!supabase || !currentMemberId) {
+      setHasFinanceAdminAccess(false);
+      return;
+    }
+    let active = true;
+    void supabase.functions.invoke("admin-finance", { body: { action: "check_access" } })
+      .then(({ data, error }) => {
+        if (active) setHasFinanceAdminAccess(!error && Boolean(data?.ok));
+      })
+      .catch(() => { if (active) setHasFinanceAdminAccess(false); });
+    return () => { active = false; };
+  }, [currentMemberId]);
 
   const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
   useEffect(() => {
@@ -1195,7 +1212,7 @@ export default function App() {
               {session && <section className="profile-history"><p className="profile-history-empty">{t("rankedUnavailable")}</p></section>}
               {session ? <div className="profile-auth-footer"><p>{t("securityLiveNote")}</p><button className="btn-outline" onClick={() => void handleSignOut()}><LogIn size={14} />{t("signOut")}</button></div> : <div className="profile-auth-footer"><p>{t("accountRequired")}</p><button className="btn-gradient" onClick={() => openAuth("signin")}><LogIn size={15} />{t("signIn")}</button></div>}</div></section>}
 
-          {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => changeLocale("en")}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => changeLocale("fa")}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><p className="security-live-note">{session ? t("securityLiveNote") : t("securityText")}</p><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div>{session && <div className="settings-card danger-card"><div className="settings-card-heading"><div className="settings-icon danger"><ShieldCheck size={20} /></div><div><h2>{t("accountDangerTitle")}</h2><p>{t("accountDangerBody")}</p></div></div><button className="danger-action" type="button" onClick={() => { setDeleteConfirmation(""); setDeleteMessage(""); setDeleteDialogOpen(true); }} disabled={!supabaseConfigured || !accountDeletionEnabled || deleteBusy}><X size={15} />{t("deleteAccount")}</button>{!accountDeletionEnabled && <p className="danger-unavailable-note">{t("deleteAccountNotEnabled")}</p>}</div>}</section>}
+          {page === "settings" && <section className="settings-layout"><div className="settings-card"><div className="settings-card-heading"><div className="settings-icon"><Languages size={20} /></div><div><h2>{t("language")}</h2><p>{t("settingsSub")}</p></div></div><div className="language-options"><button className={locale === "en" ? "language-option selected" : "language-option"} onClick={() => changeLocale("en")}><span className="language-flag">EN</span><span><b>{t("english")}</b><small>English · LTR</small></span>{locale === "en" && <Check size={17} />}</button><button className={locale === "fa" ? "language-option selected" : "language-option"} onClick={() => changeLocale("fa")}><span className="language-flag fa-flag">فا</span><span><b>{t("persian")}</b><small>فارسی · RTL</small></span>{locale === "fa" && <Check size={17} />}</button></div></div><div className="settings-card security-card"><div className="settings-card-heading"><div className="settings-icon shield"><ShieldCheck size={20} /></div><div><h2>{t("security")}</h2><p>{t("securityText")}</p></div></div><div className="security-check-row"><LockKeyhole size={16} /><span>{t("secureNote")}</span></div><p className="security-live-note">{session ? t("securityLiveNote") : t("securityText")}</p><button className="text-action" onClick={() => setToast(t("security"))}>{t("about")}<ArrowRight size={15} /></button></div>{session && <div className="settings-card danger-card"><div className="settings-card-heading"><div className="settings-icon danger"><ShieldCheck size={20} /></div><div><h2>{t("accountDangerTitle")}</h2><p>{t("accountDangerBody")}</p></div></div><button className="danger-action" type="button" onClick={() => { setDeleteConfirmation(""); setDeleteMessage(""); setDeleteDialogOpen(true); }} disabled={!supabaseConfigured || !accountDeletionEnabled || deleteBusy}><X size={15} />{t("deleteAccount")}</button>{!accountDeletionEnabled && <p className="danger-unavailable-note">{t("deleteAccountNotEnabled")}</p>}</div>}{session && hasFinanceAdminAccess && supabase && <FinanceAdminPanel database={supabase as unknown as SupabaseClient<any>} locale={locale} />}</section>}
 
           <footer className="main-footer"><div><BrandMark /><span>{t("footer")}</span></div><span>{t("rights")}</span><button type="button" onClick={() => setSupportDialogOpen(true)}><LifeBuoy size={13} />{t("help")}</button><button onClick={() => go("settings")}><ShieldCheck size={13} />{t("security")}</button></footer>
         </main>
