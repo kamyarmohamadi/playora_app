@@ -119,6 +119,20 @@ Deno.serve(async (request: Request) => {
   try {
     switch (action) {
       case "dashboard": {
+        if (role === "support_admin") {
+          const { data, error } = await service.from("member_gate_verifications")
+            .select("user_id,telegram_verified,phone_verified,wallet_verified,updated_at")
+            .order("updated_at", { ascending: false }).limit(100);
+          if (error) throw new Error("verification_dashboard_failed");
+          const ids = (data ?? []).map(row => row.user_id);
+          const profiles = ids.length
+            ? await service.from("member_profiles").select("user_id,username,display_name").in("user_id", ids)
+            : { data: [], error: null };
+          if (profiles.error) throw new Error("member_profile_query_failed");
+          const profileMap = new Map((profiles.data ?? []).map(profile => [profile.user_id, profile]));
+          result = { memberVerifications: (data ?? []).map(row => ({ ...row, member: profileMap.get(row.user_id) ?? null })) };
+          break;
+        }
         const [deposits, duplicates, payoutAddresses, withdrawals, admins] = await Promise.all([
           service.from("deposit_requests")
             .select("id,user_id,asset_code,network_code,expected_amount,tx_hash,status,usd_value,coin_amount,transaction_at,created_at,duplicate_of_request_id,review_note")
@@ -136,9 +150,7 @@ Deno.serve(async (request: Request) => {
             ? service.from("platform_admin_members").select("user_id,role,is_active,created_at,updated_at").order("created_at", { ascending: true })
             : Promise.resolve({ data: [], error: null }),
         ]);
-        if (deposits.error || duplicates.error || payoutAddresses.error || withdrawals.error || admins.error) {
-          throw new Error("dashboard_query_failed");
-        }
+        if (deposits.error || duplicates.error || payoutAddresses.error || withdrawals.error || admins.error) throw new Error("dashboard_query_failed");
         const ids = new Set<string>();
         for (const row of [...(deposits.data ?? []), ...(payoutAddresses.data ?? []), ...(withdrawals.data ?? [])]) ids.add(row.user_id);
         const profiles = ids.size
@@ -230,6 +242,12 @@ Deno.serve(async (request: Request) => {
         break;
       }
       case "set_member_verification": {
+        if (payload.wallet_verified === true) {
+          const { data: verifiedAddress, error: addressError } = await service.from("member_payout_addresses")
+            .select("id").eq("user_id", payload.user_id).eq("verification_status", "verified").limit(1).maybeSingle();
+          if (addressError) throw new Error("wallet_verification_lookup_failed");
+          if (!verifiedAddress) return respond({ error: "A verified payout address is required before wallet verification." }, 409, headers);
+        }
         const { error } = await service.rpc("set_member_gate_verification", {
           p_user_id: payload.user_id,
           p_telegram_verified: payload.telegram_verified,
