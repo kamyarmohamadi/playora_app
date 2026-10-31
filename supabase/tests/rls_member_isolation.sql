@@ -12,6 +12,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001'
 DO $member_one$
 DECLARE visible_count integer;
 DECLARE current_coins bigint;
+DECLARE value_coins bigint;
 DECLARE affected integer;
 BEGIN
   SELECT count(*) INTO visible_count FROM public.member_profiles;
@@ -19,12 +20,14 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_wallets;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % wallets, expected 1', visible_count; END IF;
   SELECT free_coins INTO current_coins FROM public.coin_wallets WHERE user_id = auth.uid();
-  IF current_coins <> 55 THEN RAISE EXCEPTION 'New member welcome wallet was not initialized to 55'; END IF;
+  IF current_coins <> 0 THEN RAISE EXCEPTION 'New member Free Wallet must start at zero'; END IF;
+  SELECT purchased_coins INTO value_coins FROM public.coin_wallets WHERE user_id = auth.uid();
+  IF value_coins <> 50 THEN RAISE EXCEPTION 'New member Value Wallet must receive exactly 50 signup coins'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
-  IF visible_count <> 1 THEN RAISE EXCEPTION 'Member One can see % game stats rows, expected 1', visible_count; END IF;
-  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe') <> 1000 THEN
+  IF visible_count <> 2 THEN RAISE EXCEPTION 'Member One can see % game stats rows, expected 2 tracks', visible_count; END IF;
+  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free') <> 1000 THEN
     RAISE EXCEPTION 'New member should start at competitive rating 1000';
   END IF;
   SELECT count(*) INTO visible_count FROM public.member_favorites;
@@ -61,6 +64,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002'
 DO $member_two$
 DECLARE visible_count integer;
 DECLARE current_coins bigint;
+DECLARE value_coins bigint;
 DECLARE affected integer;
 BEGIN
   SELECT count(*) INTO visible_count FROM public.member_profiles;
@@ -68,12 +72,14 @@ BEGIN
   SELECT count(*) INTO visible_count FROM public.coin_wallets;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % wallets, expected 1', visible_count; END IF;
   SELECT free_coins INTO current_coins FROM public.coin_wallets WHERE user_id = auth.uid();
-  IF current_coins <> 55 THEN RAISE EXCEPTION 'Member Two wallet has unexpected welcome balance'; END IF;
+  IF current_coins <> 0 THEN RAISE EXCEPTION 'Member Two Free Wallet has unexpected welcome balance'; END IF;
+  SELECT purchased_coins INTO value_coins FROM public.coin_wallets WHERE user_id = auth.uid();
+  IF value_coins <> 50 THEN RAISE EXCEPTION 'Member Two Value Wallet has unexpected signup gift'; END IF;
   SELECT count(*) INTO visible_count FROM public.coin_ledger;
   IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % ledger rows, expected 1', visible_count; END IF;
   SELECT count(*) INTO visible_count FROM public.member_game_stats;
-  IF visible_count <> 1 THEN RAISE EXCEPTION 'Member Two can see % game stats rows, expected 1', visible_count; END IF;
-  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe') <> 1000 THEN
+  IF visible_count <> 2 THEN RAISE EXCEPTION 'Member Two can see % game stats rows, expected 2 tracks', visible_count; END IF;
+  IF (SELECT competitive_rating FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free') <> 1000 THEN
     RAISE EXCEPTION 'Second member should start at competitive rating 1000';
   END IF;
   SELECT count(*) INTO visible_count FROM public.member_favorites;
