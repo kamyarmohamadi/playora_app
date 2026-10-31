@@ -1,73 +1,64 @@
-# Playora — Free-first pilot scope
+# Playora — برنامهٔ اجرای کم‌هزینه و انتشار مرحله‌ای
 
-Reviewed: 2026-10-23  
-Working branch: `feature/playora-platform-game-plugin-architecture-2026-10-22`
+آخرین بازبینی: ۲۰۲۶-۱۰-۳۱  
+شاخه: `feature/playora-platform-game-plugin-architecture-2026-10-22`
 
-## Decision
+## وضعیت فعلی
 
-Build the first useful version with a **zero-required-spend** operating model and a pilot target of a few hundred registered members. This is a development target, not a verified concurrency guarantee. Do not add a paid dependency unless the owner explicitly approves it after seeing the actual free-tier limit and the reason the limit blocks the pilot.
+این برنامه دیگر یک pilot صرفاً رایگان نیست. مدل هدف مالک شامل Free Wallet، Value Wallet و جریان مالی دستی است؛ با این حال هر دو مسیر بازی و پول واقعی باید تا عبور از گیت‌های مربوط به خودشان غیرفعال بمانند. استفاده از زیرساخت رایگان/کم‌هزینه همچنان اولویت دارد، ولی رایگان‌بودن زیرساخت به‌معنی ظرفیت نامحدود یا آمادگی برای هم‌زمانی بالا نیست.
 
-## What “free” means for this stage
+## گیت A — هستهٔ پلتفرم و ساخت
 
-- No paid hosting, analytics, email, game-server, or monitoring product is required by the source code for local development and CI.
-- Prefer free hosting and the free tier of a managed backend only after checking the provider's current quotas, inactivity/sleep behavior, data retention, and upgrade triggers.
-- Never assume “free tier” means unlimited, permanently available, or suitable for realtime traffic. Quotas and terms can change.
-- No payment gateway, deposits, withdrawals, cash prizes, or real-money wallet operation in the pilot.
-- No game plugin is enabled until its runtime, server-side rules, security, and recovery paths are verified.
-- Never put service-role keys, private tokens, or provider secrets in frontend code, repository files, or load-test commands.
+- [x] Shell مستقل از افزونه‌های بازی.
+- [x] جداسازی Free/Paid progression در دیتابیس و پروفایل.
+- [x] RLS و آزمون دو کاربر در CI.
+- [x] Migrationهای ۰۰۲، ۰۰۳ و ۰۰۴ در Supabase توسعه.
+- [x] CI کامل برای commit `e3ceddfa680f1803a7f42e1595ac4cee36747280`.
+- [x] APK اندروید برای همان commit ساخته شد.
+- [ ] حل انتشار Browser Preview/GitHub Pages؛ build وب موفق است اما مرحلهٔ Deploy به‌طور پایدار موفق نشده.
+- [ ] تست نصب APK روی دستگاه واقعی و بررسی OAuth و RTL.
 
-## Pilot release gates
+## گیت B — امور مالی دستی
 
-### Gate A — Free local preview
-- [x] The app has a local catalog fallback when Supabase is not configured.
-- [x] The shell and navigation have automated UI tests.
-- [x] Game modules are separated from platform shell and unapproved plugins cannot launch.
-- [ ] Run the current branch's full CI successfully; recent runs have failed before any job steps, so the latest changes are not yet verified.
-- [ ] Confirm the local development flow from a clean checkout using the lockfile.
+- [x] دو کیف پول و gift 50 Value coins.
+- [x] ثبت ادعای واریز، ثبت هش و جلوگیری از ادعای تکراری در همان شبکه.
+- [x] اعتباردهی فقط بعد از تأیید دستی.
+- [x] دفتر منشأ Value coins و شرط گردش ۲۰٪ برای هر واریز.
+- [x] رزرو برداشت، حداقل ۵۰۰، سقف ۵۰٬۰۰۰ روزانه و ۳۵۰٬۰۰۰ هفتگی، بازگشت وجه در صورت رد.
+- [x] ثبت آدرس برداشت و الزام تأیید دستی پیش از برداشت.
+- [ ] پنل امن مدیر برای تنظیم شبکه/آدرس/نرخ/کارمزد و بررسی درخواست‌ها.
+- [ ] تعیین حساب مالک و نقش‌های admin/finance.
+- [ ] دریافت پیکربندی واقعی شبکه‌ها، آدرس‌ها و کارمزدها از مالک؛ در حال حاضر همهٔ configها خالی هستند.
+- [ ] اتصال اپراتوری برای ثبت تلگرام، تلفن و آدرس کیف پول هر عضو.
+- [ ] اجرای روال‌های reconciliation و ممیزی مالی با داده‌های واقعی.
 
-### Gate B — Free hosted, read-only preview
-- [ ] Choose a free static host and document its current quota/limitations before publishing.
-- [ ] Verify production build, HTTPS, route fallback, mobile layout, English and Persian/RTL.
-- [ ] Verify the public game catalog works without leaking member data.
-- [ ] Confirm no environment secrets are bundled into client assets.
-- [ ] Add a clear preview label; keep all game launch, wallet, room creation and payments disabled unless their backend gates pass.
+## گیت C — بازی و رقابت
 
-### Gate C — Small member pilot
-- [ ] Verify email sign-in/session refresh/logout with two separate test accounts.
-- [ ] Run two-user isolation checks for profile, social graph, private rooms, history and support reports.
-- [ ] Check the selected backend's current free quotas and behavior at inactivity, rate limits, and quota exhaustion.
-- [ ] Run the read-only catalog k6 test at 10, 25, 50, then 100 virtual users against an isolated staging project; stop on unexpected errors or quota warnings.
-- [ ] Test burst behavior and record p50/p95/p99, request failure rate, and provider usage.
-- [ ] Invite only a small, controlled group after these gates pass; expand toward a few hundred members based on evidence.
+- [x] دادهٔ پیشرفت هر بازی در دو مسیر Free و Paid.
+- [x] Match economy_mode تغییرناپذیر و دو ردیف آمار در هر بازی.
+- [ ] موتور تأییدشدهٔ هر بازی و Matchmaking مستقل برای Free و Paid.
+- [ ] قفل Level 5 طبق مسیر و بازی.
+- [ ] قفل ورود به Private Paid تا Paid Level 5 و مجموع واریز شخصی ۵۰۰.
+- [ ] منع ربات از بازی‌های سکه‌ای؛ ربات فقط تمرین بدون امتیاز/سکه.
+- [ ] تسویهٔ اتمیک ورودیه، جایزهٔ ۹۵٪ و کمیسیون ۵٪.
+- [ ] مدیریت لغو/قطع اتصال/تقلب/بازپرداخت و دعوای تراکنش.
+- [ ] اتاق خصوصی، Ready state، چت و کنترل‌های ضدتبانی.
+- [ ] تبلیغات پاداش‌دار با سقف ۲۰ بار در روز.
 
-### Gate D — Online gameplay (not enabled yet)
-- [ ] Server-authoritative match state and validation; never trust a client's claimed move or result.
-- [ ] Room lifecycle, Ready state, reconnect, stale-session cleanup and abuse limits.
-- [ ] Realtime authorization and fan-out measured under realistic room sizes.
-- [ ] Duplicate/replayed move and transaction tests.
-- [ ] A game-specific release checklist and a rollback path.
+## گیت D — انتشار
 
-## Initial capacity language
+- [ ] بررسی امنیتی کامل و آزمون دو عضو واقعی.
+- [ ] تست بار در محیط جدا از production و بررسی ظرفیت واقعی Supabase/hosting.
+- [ ] مرور privacy/security و پیکربندی محیط.
+- [ ] APK release-signed، تست نصب و به‌روزرسانی.
+- [ ] انتشار وب روی دامنه/میزبان منتخب با HTTPS و route fallback.
+- [ ] فهرست کشورهای مجاز و تنظیمات عملیاتی توسط مالک تعیین شود؛ مناطق نامجاز مسدود شوند.
+- [ ] runbook برای توقف پرداخت، تعلیق حساب و رسیدگی به مغایرت مالی.
+- [ ] چک نهایی امنیت، مهاجرت دیتابیس و نسخهٔ rollback قبل از روشن‌کردن بازی پولی.
 
-The initial pilot target is **a few hundred registered accounts**. Registered accounts are not the same as simultaneous active users. Before testing, do not advertise a specific number of concurrent players. The current k6 script tests only public catalog reads; it does not certify sign-in, private data, rooms, realtime chat, or gameplay.
+## قواعد کار
 
-For a low-cost first pilot, use staged testing at 10–100 virtual users and keep the script's hard cap at 500 VUs. Do not run load tests against production or a shared project. Higher targets require an isolated environment, provider quota review, and a planned test window.
-
-## What is deliberately deferred
-
-- 100,000 concurrent sessions.
-- Real-money payments, deposits, withdrawals and prizes.
-- Enabling games before each game has trusted, server-side rules.
-- Paid scaling services before measurements show they are necessary.
-- Any statement that a release gate passed without a run, result, or review record.
-
-## Current blockers
-
-1. GitHub Actions jobs have recently failed before executing any steps (no runner assigned in the observed attempts). This does not prove the code failed, but it also means the latest changes have no CI pass.
-2. The new capacity indexes have not been verified by a successful database test run or realistic query plan.
-3. No staging load-test result has been captured.
-4. Live auth/RLS verification with two browser accounts remains outstanding.
-
-## Working rule
-
-Every meaningful change must be saved on the working branch, and the checkpoint/checklist updated. Keep `main` untouched. A code commit is not evidence of deployment or production readiness.
+- `main` دست‌نخورده می‌ماند تا تأیید صریح مالک.
+- هر تغییر معنادار روی شاخهٔ توسعه commit می‌شود.
+- موفقیت build به‌تنهایی به معنی deploy، فعال‌شدن بازی یا آمادگی عملیات مالی نیست.
+- هیچ آدرس کیف پول، نرخ یا کارمزدی جعل نمی‌شود؛ configها تا دریافت اطلاعات مالک خالی می‌مانند.
