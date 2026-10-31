@@ -122,6 +122,7 @@ BEGIN
 
 
   -- A second, separately-classified Paid match updates only the Paid track.
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',0);
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
   PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',3);
