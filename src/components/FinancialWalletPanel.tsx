@@ -26,7 +26,7 @@ const words = {
     fee:"Network fee", net:"Estimated amount you receive", feeNote:"Network fees are deducted from the payout; the final received amount may differ.",
     lifetime:"Verified deposits", turnover:"Deposit turnover", done:"Completed", remaining:"Remaining",
     daily:"Daily limit remaining", weekly:"Weekly limit remaining", deposits:"Recent deposits", withdrawals:"Recent withdrawals",
-    empty:"No transactions yet.", copied:"Deposit address copied.", depositSent:"Deposit details submitted for manual review.",
+    empty:"No transactions yet.", copyAddress:"Copy deposit address", copied:"Deposit address copied.", depositSent:"Deposit details submitted for manual review.",
     withdrawSent:"Withdrawal request submitted for manual review.", review:"Manual review may take up to 24 hours.",
     turnoverNote:"Only completed human-vs-human Paid matches funded by your own deposit coins count toward the 20% turnover. Signup gifts do not count.",
     refresh:"Refresh", loading:"Loading…", required:"Complete all required fields.", error:"Request failed. Check your details and try again.",
@@ -47,7 +47,7 @@ const words = {
     fee:"کارمزد شبکه", net:"مقدار تقریبی دریافتی", feeNote:"کارمزد شبکه از پرداخت کسر می‌شود؛ مبلغ نهایی ممکن است کمی متفاوت باشد.",
     lifetime:"واریزهای تأییدشده", turnover:"گردش واریز", done:"انجام‌شده", remaining:"باقی‌مانده",
     daily:"مانده سقف روزانه", weekly:"مانده سقف هفتگی", deposits:"واریزهای اخیر", withdrawals:"برداشت‌های اخیر",
-    empty:"هنوز تراکنشی ثبت نشده است.", copied:"آدرس واریز کپی شد.", depositSent:"اطلاعات واریز برای بررسی دستی ثبت شد.",
+    empty:"هنوز تراکنشی ثبت نشده است.", copyAddress:"کپی آدرس واریز", copied:"آدرس واریز کپی شد.", depositSent:"اطلاعات واریز برای بررسی دستی ثبت شد.",
     withdrawSent:"درخواست برداشت برای بررسی دستی ثبت شد.", review:"بررسی دستی ممکن است تا ۲۴ ساعت زمان ببرد.",
     turnoverNote:"فقط ورودیهٔ مسابقات کامل‌شدهٔ پولی با انسان واقعی که از سکه‌های واریزی خودتان تأمین شده باشد، در شرط گردش ۲۰٪ محاسبه می‌شود. هدیهٔ ثبت‌نام محاسبه نمی‌شود.",
     refresh:"به‌روزرسانی", loading:"در حال دریافت اطلاعات…", required:"همهٔ فیلدهای لازم را کامل کنید.",
@@ -195,7 +195,7 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
           {!depOptions.length ? <div className="financial-not-configured"><ShieldCheck size={23} /><b>{t.noDeposit}</b></div> : (
             <form className="financial-form" onSubmit={e => void submitDeposit(e)}>
               <label>{t.network}<select value={depSelected} onChange={e => setDepSelected(e.target.value)} required>{depOptions.map(o => <option key={optionKey(o.asset_code,o.network_code)} value={optionKey(o.asset_code,o.network_code)}>{o.asset_code} · {o.network_code}</option>)}</select></label>
-              {depOption && <div className="financial-deposit-address"><span>{depOption.asset_code} · {depOption.network_code}</span><code>{depOption.deposit_address}</code><button type="button" onClick={() => void copyAddress(depOption.deposit_address)}><Copy size={13} />{t.copy}</button></div>}
+              {depOption && <div className="financial-deposit-address"><span>{depOption.asset_code} · {depOption.network_code}</span><code>{depOption.deposit_address}</code><button type="button" onClick={() => void copyAddress(depOption.deposit_address)}><Copy size={13} />{t.copyAddress}</button></div>}
               <label>{t.amount} ({depOption?.asset_code ?? ""})<input type="number" inputMode="decimal" min={depOption ? String(depOption.min_amount) : "0.00000001"} step="any" value={depAmount} onChange={e => setDepAmount(e.target.value)} required /></label>
               <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(usd, locale, 4)}</b><span>{t.estimate}</span><b>{fmt(coins, locale)} {t.coins}</b></div>
               <label>{t.txHash}<input value={txHash} onChange={e => setTxHash(e.target.value)} minLength={16} maxLength={256} autoComplete="off" required /></label>

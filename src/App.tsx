@@ -21,7 +21,7 @@ import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platf
 import { getProgressionSnapshot } from "./platform/progression";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
-  Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, CreditCard, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
+  Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
 } from "lucide-react";
 import { copy, type Locale } from "./i18n/copy";
 import "./index.css";
