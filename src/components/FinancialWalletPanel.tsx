@@ -219,7 +219,7 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
               <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(depositUsd,locale,4)}</b><span>{t.estimate}</span><b>{fmt(depositCoins,locale)} {t.coins}</b></div>
               <label>{t.txHash}<input value={txHash} onChange={e=>setTxHash(e.target.value)} minLength={16} maxLength={256} autoComplete="off" required/></label>
               <label>{t.txTime}<input type="datetime-local" value={txTime} onChange={e=>setTxTime(e.target.value)} required/></label>
-              <button className="financial-submit-btn" type="submit" disabled={busy||loading}>{busy?<LoaderCircle className="spin" size={15}/>:<ArrowDownToLine size={15}/ >}{t.sendDeposit}</button>
+              <button className="financial-submit-btn" type="submit" disabled={busy||loading}>{busy?<LoaderCircle className="spin" size={15}/>:<ArrowDownToLine size={15} />}{t.sendDeposit}</button>
             </form>
           )}
         </div>:<div className="financial-flow-body">
