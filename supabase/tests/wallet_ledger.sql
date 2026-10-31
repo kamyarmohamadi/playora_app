@@ -96,7 +96,7 @@ BEGIN
   BEGIN
     PERFORM public.apply_coin_delta(
       '00000000-0000-4000-8000-000000000003'::uuid,
-      'purchased',-101,'match_entry',
+      'purchased',-151,'match_entry',
       'wallet-test-overdraft-0003','ci-wallet-test'
     );
     v_overdraft_rejected := false;
