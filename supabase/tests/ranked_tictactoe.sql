@@ -94,7 +94,7 @@ BEGIN
 
   SELECT xp,competitive_rating,wins INTO v_xp,v_rating,v_wins
   FROM public.member_game_stats
-  WHERE user_id='00000000-0000-4000-8000-000000000001' AND game_id='tictactoe';
+  WHERE user_id='00000000-0000-4000-8000-000000000001' AND game_id='tictactoe' AND economy_mode='free';
   IF v_xp <> 20 OR v_rating <> 1016 OR v_wins <> 1 THEN
     RAISE EXCEPTION 'Unexpected winner XP/rating/stats: xp %, rating %, wins %',v_xp,v_rating,v_wins;
   END IF;
@@ -102,9 +102,59 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
   SELECT xp,competitive_rating,losses INTO v_xp,v_rating,v_losses
   FROM public.member_game_stats
-  WHERE user_id=auth.uid() AND game_id='tictactoe';
+  WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
   IF v_xp <> 6 OR v_rating <> 984 OR v_losses <> 1 THEN
     RAISE EXCEPTION 'Unexpected loser XP/rating/stats: xp %, rating %, losses %',v_xp,v_rating,v_losses;
+  END IF;
+
+
+  -- A second, separately-classified Paid match updates only the Paid track.
+  INSERT INTO public.matches(id,game_id,mode,economy_mode,status,state_version,server_state,started_at)
+  VALUES (
+    '00000000-0000-4000-8000-000000000099','tictactoe','ranked','paid','active',0,
+    pg_catalog.jsonb_build_object(
+      'board',pg_catalog.jsonb_build_array(null,null,null,null,null,null,null,null,null),
+      'current_mark','X','current_seat',1
+    ),now()
+  );
+  INSERT INTO public.match_participants(match_id,user_id,seat) VALUES
+    ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000001',1),
+    ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000002',2);
+
+  PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',0);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
+  PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',3);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+  PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',1);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
+  PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',4);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
+  PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',2);
+
+  SELECT xp,competitive_rating,wins INTO v_xp,v_rating,v_wins
+  FROM public.member_game_stats
+  WHERE user_id='00000000-0000-4000-8000-000000000001' AND game_id='tictactoe' AND economy_mode='paid';
+  IF v_xp <> 20 OR v_rating <> 1016 OR v_wins <> 1 THEN
+    RAISE EXCEPTION 'Paid result must update only the Paid track; xp %, rating %, wins %',v_xp,v_rating,v_wins;
+  END IF;
+  SELECT xp,competitive_rating,wins INTO v_xp,v_rating,v_wins
+  FROM public.member_game_stats
+  WHERE user_id='00000000-0000-4000-8000-000000000001' AND game_id='tictactoe' AND economy_mode='free';
+  IF v_xp <> 20 OR v_rating <> 1016 OR v_wins <> 1 THEN
+    RAISE EXCEPTION 'Paid result changed or corrupted the previously completed Free track';
+  END IF;
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
+  SELECT xp,competitive_rating,losses INTO v_xp,v_rating,v_losses
+  FROM public.member_game_stats
+  WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='paid';
+  IF v_xp <> 6 OR v_rating <> 984 OR v_losses <> 1 THEN
+    RAISE EXCEPTION 'Paid loss must update only the Paid track';
+  END IF;
+  SELECT xp,competitive_rating,losses INTO v_xp,v_rating,v_losses
+  FROM public.member_game_stats
+  WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
+  IF v_xp <> 6 OR v_rating <> 984 OR v_losses <> 1 THEN
+    RAISE EXCEPTION 'Paid loss changed or corrupted the previously completed Free track';
   END IF;
 
   -- Neither participant can continue moving after the authoritative match completes.
