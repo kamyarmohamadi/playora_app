@@ -10,6 +10,7 @@ type WithdrawalOption = { asset_code: string; network_code: string; usd_per_asse
 type Summary = { lifetime_deposit_coins: number | string; turnover_required: number | string; turnover_completed: number | string; turnover_remaining: number | string; value_wallet_coins: number | string; daily_withdrawal_remaining: number | string; weekly_withdrawal_remaining: number | string };
 type DepositRow = { id: string; asset_code: string; network_code: string; status: string; coin_amount: number | string; created_at: string };
 type WithdrawalRow = { id: string; requested_coins: number | string; asset_code: string; network_code: string; status: string; created_at: string };
+type PayoutAddress = { id: string; asset_code: string; network_code: string; wallet_address: string; verification_status: string; submitted_at: string };
 type PayoutAddressRow = { id: string; asset_code: string; network_code: string; wallet_address: string; verification_status: "pending" | "verified" | "rejected"; submitted_at: string };
 type Props = { database: SupabaseClient<any>; userId: string; locale: Locale; wallet: WalletSnapshot | null; onNotify?: (message: string) => void };
 
@@ -76,6 +77,10 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
   const [summary, setSummary] = useState<Summary | null>(null);
   const [depRows, setDepRows] = useState<DepositRow[]>([]);
   const [wdRows, setWdRows] = useState<WithdrawalRow[]>([]);
+  const [payoutAddresses, setPayoutAddresses] = useState<PayoutAddress[]>([]);
+  const [payoutAddressId, setPayoutAddressId] = useState("");
+  const [payoutNetwork, setPayoutNetwork] = useState("");
+  const [newPayoutAddress, setNewPayoutAddress] = useState("");
   const [depSelected, setDepSelected] = useState("");
   const [wdSelected, setWdSelected] = useState("");
   const [depAmount, setDepAmount] = useState("");
@@ -99,6 +104,7 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
       database.rpc("get_my_financial_summary"),
       database.from("deposit_requests").select("id,asset_code,network_code,status,coin_amount,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(12),
       database.from("withdrawal_requests").select("id,requested_coins,asset_code,network_code,status,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(12),
+      database.from("member_payout_addresses").select("id,asset_code,network_code,wallet_address,verification_status,submitted_at").eq("user_id", userId).order("submitted_at", { ascending: false }).limit(10),
       database.from("member_payout_addresses").select("id,asset_code,network_code,wallet_address,verification_status,submitted_at").eq("user_id", userId).order("submitted_at", { ascending: false }).limit(20),
     ]);
     if (dep.error || wd.error || sum.error || depHistory.error || wdHistory.error || payoutHistory.error) setError(t.error);
@@ -109,6 +115,11 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
     setSummary(!sum.error && Array.isArray(sum.data) ? (sum.data[0] as Summary | undefined) ?? null : null);
     setDepRows(!depHistory.error && Array.isArray(depHistory.data) ? depHistory.data as DepositRow[] : []);
     setWdRows(!wdHistory.error && Array.isArray(wdHistory.data) ? wdHistory.data as WithdrawalRow[] : []);
+    const payoutData = !payoutResult.error && Array.isArray(payoutResult.data) ? payoutResult.data as PayoutAddress[] : [];
+    setPayoutAddresses(payoutData);
+    setPayoutAddressId(current => current && payoutData.some(a => a.id === current && a.verification_status === "verified") ? current : (payoutData.find(a => a.verification_status === "verified")?.id ?? ""));
+    setPayoutNetwork(current => current && w.some(o => optionKey(o.asset_code,o.network_code) === current) ? current : (w[0] ? optionKey(w[0].asset_code,w[0].network_code) : ""));
+
     const payoutRows = !payoutHistory.error && Array.isArray(payoutHistory.data) ? payoutHistory.data as PayoutAddressRow[] : [];
     setPayoutAddresses(payoutRows);
     setSelectedPayoutAddressId(current => current && payoutRows.some(row => row.id === current && row.verification_status === "verified") ? current : (payoutRows.find(row => row.asset_code === wdSelected.split(":")[0] && row.network_code === wdSelected.split(":")[1] && row.verification_status === "verified")?.id ?? ""));
@@ -163,14 +174,33 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
     finally { setBusy(false); }
   };
 
+  const registerPayoutAddress = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const selected = wdOptions.find(o => optionKey(o.asset_code,o.network_code) === payoutNetwork);
+    if (!selected || !newPayoutAddress.trim()) { setError(t.required); return; }
+    setBusy(true); setError("");
+    try {
+      const { error: err } = await database.rpc("register_member_payout_address", {
+        p_asset_code: selected.asset_code, p_network_code: selected.network_code,
+        p_wallet_address: newPayoutAddress.trim(),
+      });
+      if (err) throw err;
+      setNewPayoutAddress("");
+      onNotify?.(t.addressSubmitted);
+      await refresh();
+    } catch { setError(t.error); }
+    finally { setBusy(false); }
+  };
+
   const submitWithdrawal = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!wdOption || coinsToWithdraw < 500 || !selectedPayoutAddressId) { setError(t.required); return; }
+    const selectedAddress = payoutAddresses.find(a => a.id === payoutAddressId && a.verification_status === "verified");
+    if (!selectedAddress || coinsToWithdraw < 500) { setError(t.required); return; }
     if (coinsToWithdraw > Number(summary?.value_wallet_coins ?? wallet?.purchased_coins ?? 0)) { setError(t.error); return; }
     setBusy(true); setError("");
     try {
       const { error: err } = await database.rpc("request_withdrawal", {
-        p_requested_coins: coinsToWithdraw, p_payout_address_id: selectedPayoutAddressId,
+        p_requested_coins: coinsToWithdraw, p_payout_address_id: selectedAddress.id,
       });
       if (err) throw err;
       onNotify?.(t.withdrawSent);
@@ -226,19 +256,34 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
         </div> : <div className="financial-flow-body">
           <p>{t.withdrawHelp} {t.review}</p>
           {!wdOptions.length ? <div className="financial-not-configured"><ShieldCheck size={23} /><b>{t.noWithdraw}</b></div> : (
-            <form className="financial-form" onSubmit={e => void submitWithdrawal(e)}>
-              <label>{t.network}<select value={wdSelected} onChange={e => { setWdSelected(e.target.value); setSelectedPayoutAddressId(""); }} required>{wdOptions.map(o => <option key={optionKey(o.asset_code,o.network_code)} value={optionKey(o.asset_code,o.network_code)}>{o.asset_code} · {o.network_code}</option>)}</select></label>
-              <label>{t.amount} ({t.coins})<input type="number" min="500" max="50000" step="1" value={wdAmount} onChange={e => setWdAmount(e.target.value)} required /></label>
-              <label>{t.destination}<input value={wdAddress} onChange={e => setWdAddress(e.target.value)} minLength={20} maxLength={256} autoComplete="off" /></label>
-              <button className="financial-submit-btn" type="button" onClick={() => void submitPayoutAddress()} disabled={busy || loading || wdAddress.trim().length<20}><ShieldCheck size={15} />{t.registerAddress}</button>
-              <label>{t.selectAddress}<select value={selectedPayoutAddressId} onChange={e => setSelectedPayoutAddressId(e.target.value)}>
-                <option value="">{t.noWithdraw}</option>
-                {payoutAddresses.filter(a => a.asset_code===wdOption?.asset_code && a.network_code===wdOption?.network_code).map(a => <option key={a.id} value={a.id} disabled={a.verification_status!=="verified"}>{a.wallet_address.slice(0,8)}…{a.wallet_address.slice(-6)} · {a.verification_status==="verified" ? t.addressVerified : a.verification_status==="pending" ? t.waitingAddress : t.addressRejected}</option>)}
-              </select></label>
-              <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(coinsToWithdraw / 100, locale, 2)}</b><span>{t.fee}</span><b>{fmt(fee, locale, 8)} {wdOption?.asset_code ?? ""}</b><span>{t.net}</span><b>{fmt(net, locale, 8)} {wdOption?.asset_code ?? ""}</b></div>
-              <p className="financial-small-note">{t.min} · {t.feeNote} · {t.review}</p>
-              <button className="financial-submit-btn" type="submit" disabled={busy || loading || !selectedPayoutAddressId}><ArrowUpFromLine size={15} />{t.sendWithdraw}</button>
-            </form>
+            <>
+              <section className="financial-payout-addresses">
+                <h4>{t.payoutAddresses}</h4>
+                <form className="financial-form" onSubmit={e => void registerPayoutAddress(e)}>
+                  <label>{t.network}<select value={payoutNetwork} onChange={e => setPayoutNetwork(e.target.value)} required>
+                    {wdOptions.map(o => <option key={optionKey(o.asset_code,o.network_code)} value={optionKey(o.asset_code,o.network_code)}>{o.asset_code} · {o.network_code}</option>)}
+                  </select></label>
+                  <label>{t.destination}<input value={newPayoutAddress} onChange={e => setNewPayoutAddress(e.target.value)} minLength={20} maxLength={256} autoComplete="off" required /></label>
+                  <button className="financial-submit-btn" type="submit" disabled={busy || loading}>{t.registerAddress}</button>
+                </form>
+                {!payoutAddresses.length ? <p className="financial-small-note">{t.noPayoutAddress}</p> : payoutAddresses.map(a => (
+                  <div className="financial-payout-address-row" key={a.id}>
+                    <div><b>{a.asset_code} · {a.network_code}</b><code>{a.wallet_address}</code></div>
+                    <span className={"financial-status payout-"+a.verification_status}>{a.verification_status==="verified"?t.payoutStatusVerified:a.verification_status==="rejected"?t.payoutStatusRejected:t.payoutStatusPending}</span>
+                  </div>
+                ))}
+              </section>
+              <form className="financial-form" onSubmit={e => void submitWithdrawal(e)}>
+                <label>{t.selectPayoutAddress}<select value={payoutAddressId} onChange={e => setPayoutAddressId(e.target.value)} required>
+                  <option value="">{t.verifyFirst}</option>
+                  {payoutAddresses.filter(a => a.verification_status==="verified").map(a => <option key={a.id} value={a.id}>{a.asset_code} · {a.network_code} · {a.wallet_address.slice(0,12)}…</option>)}
+                </select></label>
+                <label>{t.amount} ({t.coins})<input type="number" min="500" max="50000" step="1" value={wdAmount} onChange={e => setWdAmount(e.target.value)} required /></label>
+                <div className="financial-conversion"><span>{t.usd}</span><b>{"$"}{fmt(coinsToWithdraw / 100, locale, 2)}</b><span>{t.fee}</span><b>{fmt(fee, locale, 8)} {wdOption?.asset_code ?? ""}</b><span>{t.net}</span><b>{fmt(net, locale, 8)} {wdOption?.asset_code ?? ""}</b></div>
+                <p className="financial-small-note">{t.min} · {t.feeNote}</p>
+                <button className="financial-submit-btn" type="submit" disabled={busy || loading || !payoutAddressId}><ArrowUpFromLine size={15} />{t.sendWithdraw}</button>
+              </form>
+            </>
           )}
         </div>}
         {error && <p className="financial-error" role="alert">{error}</p>}

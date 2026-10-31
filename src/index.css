@@ -634,3 +634,9 @@
 .wallet-login-required{max-width:520px;padding:25px;border:1px solid var(--line);border-radius:15px;background:#0b1830}.wallet-login-required h2{font-size:18px}.wallet-login-required p{color:#94a9c7;font-size:10px}
 @media(max-width:760px){.financial-wallet-balances{grid-template-columns:1fr 1fr}.financial-balance-card.combined{grid-column:1/-1}.financial-summary-grid{grid-template-columns:1fr 1fr}.financial-history-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.financial-wallet-heading{align-items:center}.financial-form{grid-template-columns:1fr}.financial-balance-card strong{font-size:19px}.financial-summary-grid strong{font-size:12px}}
+
+.financial-payout-addresses{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding:13px;border:1px solid #2b4565;border-radius:11px;background:#0b1a2e}
+.financial-payout-addresses h4{margin:0;color:#e6effe;font-size:11px}
+.financial-payout-address-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid #20344f}
+.financial-payout-address-row>div{min-width:0}.financial-payout-address-row b,.financial-payout-address-row code{display:block}
+.financial-payout-address-row b{color:#eaf2ff;font-size:9px}.financial-payout-address-row code{margin-top:4px;overflow-wrap:anywhere;color:#8da4c3;font-size:8px}
