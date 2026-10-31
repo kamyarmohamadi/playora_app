@@ -39,4 +39,20 @@ $$;
 
 GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated, service_role;
+CREATE OR REPLACE FUNCTION auth.jwt()
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+AS $
+  SELECT jsonb_build_object(
+    'sub', auth.uid(),
+    'role', auth.role(),
+    'is_anonymous', coalesce(
+      nullif(pg_catalog.current_setting('request.jwt.claim.is_anonymous', true), ''),
+      'false'
+    )::boolean
+  )
+$;
+
+GRANT EXECUTE ON FUNCTION auth.jwt() TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION auth.role() TO anon, authenticated, service_role;
