@@ -817,6 +817,9 @@ begin
   ) then
     raise exception 'match_result_not_eligible_for_turnover' using errcode='22023';
   end if;
+  if (select count(*) from public.match_participants where match_id=p_match_id)<2 then
+    raise exception 'match_participants_incomplete' using errcode='22023';
+  end if;
 
   for v_consumption in
     select * from public.paid_coin_lot_consumptions
@@ -866,9 +869,9 @@ begin
   select coalesce(sum(coin_amount),0) into lifetime_deposit_coins
   from public.deposit_requests where user_id=v_user_id and status='credited';
 
-  select coalesce(sum(turnover_required),0),coalesce(sum(turnover_completed),0)
+  select coalesce(sum(l.turnover_required),0),coalesce(sum(l.turnover_completed),0)
   into turnover_required,turnover_completed
-  from public.paid_coin_lots where user_id=v_user_id and source_type='deposit';
+  from public.paid_coin_lots l where l.user_id=v_user_id and l.source_type='deposit';
   turnover_remaining := greatest(0,turnover_required-turnover_completed);
 
   select purchased_coins into value_wallet_coins
