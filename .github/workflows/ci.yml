@@ -131,6 +131,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
       - name: Seed both progression tracks for every game and future member
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000300_seed_both_game_tracks.sql
+      - name: Add manual deposits, withdrawals and deposit-only turnover
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000400_manual_financial_flows_and_turnover.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Verify capacity query indexes are valid
@@ -153,6 +155,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
       - name: Test account deletion cleanup without reward side effects
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
+      - name: Test manual financial flows, duplicate transaction claims, turnover and withdrawal limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/financial_flows.sql
 
 
   edge-functions:

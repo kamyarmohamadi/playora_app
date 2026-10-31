@@ -13,7 +13,7 @@ create table if not exists public.deposit_network_configs (
   hash_case_insensitive boolean not null default true,
   is_enabled boolean not null default false,
   updated_at timestamptz not null default now(),
-  updated_by uuid references auth.users(id),
+  updated_by uuid references auth.users(id) on delete set null,
   primary key(asset_code,network_code)
 );
 
@@ -35,11 +35,11 @@ alter table public.deposit_requests
   add column if not exists transaction_at timestamptz,
   add column if not exists usd_per_asset_snapshot numeric(30,12),
   add column if not exists coins_per_usd_snapshot integer not null default 100,
-  add column if not exists duplicate_of_request_id uuid references public.deposit_requests(id),
+  add column if not exists duplicate_of_request_id uuid references public.deposit_requests(id) on delete set null,
   add column if not exists reviewed_at timestamptz,
-  add column if not exists reviewed_by uuid references auth.users(id),
+  add column if not exists reviewed_by uuid references auth.users(id) on delete set null,
   add column if not exists review_note text,
-  add column if not exists credited_ledger_id uuid references public.coin_ledger(id);
+  add column if not exists credited_ledger_id uuid references public.coin_ledger(id) on delete set null;
 
 drop index if exists public.deposit_requests_tx_hash_unique;
 alter table public.deposit_requests drop constraint if exists deposit_requests_status_check;
@@ -57,17 +57,17 @@ create table if not exists public.deposit_tx_first_claims (
   asset_code text not null,
   network_code text not null,
   tx_hash_key text not null,
-  first_request_id uuid not null references public.deposit_requests(id),
-  first_user_id uuid not null references auth.users(id),
+  first_request_id uuid not null references public.deposit_requests(id) on delete cascade,
+  first_user_id uuid not null references auth.users(id) on delete cascade,
   first_claimed_at timestamptz not null default now(),
   primary key(asset_code,network_code,tx_hash_key)
 );
 
 create table if not exists public.deposit_tx_duplicate_attempts (
   id uuid primary key default gen_random_uuid(),
-  duplicate_request_id uuid not null unique references public.deposit_requests(id),
-  first_request_id uuid not null references public.deposit_requests(id),
-  attempted_by uuid not null references auth.users(id),
+  duplicate_request_id uuid not null unique references public.deposit_requests(id) on delete cascade,
+  first_request_id uuid not null references public.deposit_requests(id) on delete cascade,
+  attempted_by uuid not null references auth.users(id) on delete cascade,
   attempted_at timestamptz not null default now()
 );
 
@@ -110,7 +110,7 @@ on conflict(user_id) do nothing;
 create table if not exists public.paid_coin_lots (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  credit_ledger_id uuid not null unique references public.coin_ledger(id),
+  credit_ledger_id uuid not null unique references public.coin_ledger(id) on delete cascade,
   source_type text not null check (source_type in ('signup_gift','deposit','winnings','refund','adjustment')),
   reference_id text,
   original_coins bigint not null check (original_coins > 0),
@@ -127,12 +127,12 @@ create index if not exists paid_coin_lots_turnover_idx
 
 create table if not exists public.paid_coin_lot_consumptions (
   id uuid primary key default gen_random_uuid(),
-  ledger_id uuid not null references public.coin_ledger(id),
-  lot_id uuid not null references public.paid_coin_lots(id),
+  ledger_id uuid not null references public.coin_ledger(id) on delete cascade,
+  lot_id uuid not null references public.paid_coin_lots(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
   amount bigint not null check (amount > 0),
   event_type text not null,
-  match_id uuid references public.matches(id),
+  match_id uuid references public.matches(id) on delete set null,
   qualifies_for_turnover boolean not null default false,
   turnover_counted bigint not null default 0 check (turnover_counted >= 0 and turnover_counted <= amount),
   turnover_applied_at timestamptz,
@@ -582,7 +582,7 @@ create table if not exists public.withdrawal_requests (
   network_fee_asset_amount numeric(30,12) not null check (network_fee_asset_amount>=0),
   net_asset_amount numeric(30,12) not null check (net_asset_amount>0),
   status text not null default 'pending' check (status in ('pending','approved','paid','rejected')),
-  reserve_ledger_id uuid references public.coin_ledger(id),
+  reserve_ledger_id uuid references public.coin_ledger(id) on delete set null,
   payout_tx_hash text,
   actual_asset_amount numeric(30,12) check (actual_asset_amount is null or actual_asset_amount>0),
   created_at timestamptz not null default now(),

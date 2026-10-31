@@ -10,7 +10,9 @@ BEGIN
     'member_favorites','matches','match_participants','member_game_stats','matchmaking_queue',
     'private_rooms','private_room_secrets','room_members','friend_requests','tournaments',
     'tournament_entries','deposit_requests','security_audit_events','social_action_events',
-    'game_plugin_artifact_origins','game_plugin_versions', 'support_reports'
+    'game_plugin_artifact_origins','game_plugin_versions', 'support_reports',
+    'withdrawal_requests','member_gate_verifications','deposit_network_configs','withdrawal_network_configs',
+    'deposit_tx_first_claims','deposit_tx_duplicate_attempts','paid_coin_lots','paid_coin_lot_consumptions'
   ] LOOP
     SELECT c.relrowsecurity INTO rls_enabled
     FROM pg_class c
@@ -180,6 +182,55 @@ BEGIN
      OR has_table_privilege('authenticated','public.support_reports','UPDATE')
      OR has_table_privilege('authenticated','public.support_reports','DELETE') THEN
     RAISE EXCEPTION 'Support reports must be private and immutable to browser clients';
+  END IF;
+
+
+  IF has_table_privilege('authenticated','public.deposit_requests','INSERT')
+     OR has_table_privilege('authenticated','public.deposit_requests','UPDATE')
+     OR has_table_privilege('authenticated','public.deposit_requests','DELETE')
+     OR has_table_privilege('authenticated','public.withdrawal_requests','INSERT')
+     OR has_table_privilege('authenticated','public.withdrawal_requests','UPDATE')
+     OR has_table_privilege('authenticated','public.withdrawal_requests','DELETE')
+     OR has_table_privilege('authenticated','public.member_gate_verifications','INSERT')
+     OR has_table_privilege('authenticated','public.member_gate_verifications','UPDATE')
+     OR has_table_privilege('authenticated','public.member_gate_verifications','DELETE') THEN
+    RAISE EXCEPTION 'Members may read their own financial status but cannot mutate financial or verification records directly';
+  END IF;
+
+  IF has_table_privilege('authenticated','public.deposit_network_configs','SELECT')
+     OR has_table_privilege('authenticated','public.withdrawal_network_configs','SELECT')
+     OR has_table_privilege('authenticated','public.deposit_tx_first_claims','SELECT')
+     OR has_table_privilege('authenticated','public.deposit_tx_duplicate_attempts','SELECT')
+     OR has_table_privilege('authenticated','public.paid_coin_lots','SELECT')
+     OR has_table_privilege('authenticated','public.paid_coin_lot_consumptions','SELECT') THEN
+    RAISE EXCEPTION 'Private network configuration, transaction claim indexes and Value Wallet provenance must not be directly exposed';
+  END IF;
+
+  IF has_function_privilege('anon','public.get_deposit_options()','EXECUTE')
+     OR has_function_privilege('anon','public.get_withdrawal_options()','EXECUTE')
+     OR has_function_privilege('anon','public.submit_deposit_claim(text,text,numeric,text,timestamptz)','EXECUTE')
+     OR has_function_privilege('anon','public.request_withdrawal(bigint,text,text,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.review_deposit_request(uuid,boolean,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.review_withdrawal_request(uuid,text,text,numeric,text)','EXECUTE')
+     OR has_function_privilege('authenticated','public.set_member_gate_verification(uuid,boolean,boolean,boolean)','EXECUTE')
+     OR has_function_privilege('authenticated','public.complete_paid_match_turnover(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'Financial review, verification and turnover settlement must remain server-only';
+  END IF;
+
+  IF NOT has_function_privilege('authenticated','public.get_deposit_options()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.get_withdrawal_options()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.submit_deposit_claim(text,text,numeric,text,timestamptz)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.request_withdrawal(bigint,text,text,text)','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.get_my_financial_summary()','EXECUTE')
+     OR NOT has_function_privilege('authenticated','public.get_member_game_access(text)','EXECUTE') THEN
+    RAISE EXCEPTION 'Signed-in members must be able to use their scoped financial request and status APIs';
+  END IF;
+
+  IF NOT has_function_privilege('service_role','public.review_deposit_request(uuid,boolean,text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.review_withdrawal_request(uuid,text,text,numeric,text)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.set_member_gate_verification(uuid,boolean,boolean,boolean)','EXECUTE')
+     OR NOT has_function_privilege('service_role','public.complete_paid_match_turnover(uuid)','EXECUTE') THEN
+    RAISE EXCEPTION 'Trusted server must be able to review financial requests and settle verified turnover';
   END IF;
 
   IF EXISTS (SELECT 1 FROM public.catalog_games WHERE is_enabled = true) THEN

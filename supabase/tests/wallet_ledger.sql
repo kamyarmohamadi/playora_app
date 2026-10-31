@@ -114,7 +114,7 @@ BEGIN
 
   v_wallet := public.apply_coin_delta(
     '00000000-0000-4000-8000-000000000003'::uuid,
-    'purchased',-40,'match_entry',
+    'purchased',-40,'admin_adjustment',
     'wallet-test-entry-0003','ci-wallet-test'
   );
   IF v_wallet.purchased_coins <> 110 THEN
