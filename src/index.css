@@ -569,7 +569,7 @@
 
 
 /* Player economy and progression surfaces */
-.wallet-buckets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.wallet-buckets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}
 .wallet-buckets>div{min-width:0;padding:11px 9px;border:1px solid var(--line);border-radius:10px;background:#08152a}
 .wallet-buckets span,.wallet-buckets b{display:block}
 .wallet-buckets span{min-height:25px;color:#8298b9;font-size:8px;line-height:1.5}
@@ -596,3 +596,12 @@
 .leaderboard-personal-stats b{margin-top:6px;color:#eef5ff;font-size:16px;font-variant-numeric:tabular-nums}
 .leaderboard-personal-card>p{margin:13px 0 0;color:#8ea4c4;font-size:9px;line-height:1.8}
 @media(max-width:480px){.leaderboard-personal-head{align-items:flex-start;flex-direction:column}.leaderboard-personal-stats{gap:6px}.leaderboard-personal-stats>div{padding:9px 7px}.leaderboard-personal-stats b{font-size:13px}}
+
+.profile-game-tracks{margin:0 20px 18px;padding:16px;border:1px solid #263f5f;border-radius:12px;background:#09172a}
+.profile-game-tracks-heading{margin-bottom:12px}
+.profile-game-tracks-heading p{margin:5px 0 0;color:#8ea4c4;font-size:11px}
+.profile-game-track{padding:11px 0;border-top:1px solid #1d3553}
+.profile-game-track-head{display:flex;justify-content:space-between;gap:10px;color:#edf5ff;font-size:12px}
+.profile-game-track-head span{color:#91b8e9;font-size:10px;font-weight:700}
+.profile-game-track-stats{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:8px;color:#8ea4c4;font-size:10px}
+.profile-game-track-stats b{color:#edf5ff;margin-inline-start:3px;font-variant-numeric:tabular-nums}
