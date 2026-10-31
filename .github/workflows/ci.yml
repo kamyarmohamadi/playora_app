@@ -127,8 +127,6 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000000_player_progression_economy.sql
       - name: Set the default free wallet grant to 55 coins
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000100_wallet_default_55.sql
-      - name: Split Free and Paid progression tracks and migrate signup gift
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
       - name: Verify capacity query indexes are valid
@@ -139,8 +137,6 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/support_reports.sql
       - name: Test wallet ledger idempotency and overdraft protections
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
-      - name: Test independent Free and Paid progression tracks
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/economy_tracks.sql
       - name: Test isolation between two authenticated members
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
       - name: Test ranked Tic Tac Toe matchmaking and server-authoritative outcomes

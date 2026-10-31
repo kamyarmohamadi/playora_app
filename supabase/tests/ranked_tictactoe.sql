@@ -9,6 +9,19 @@ ON CONFLICT (id) DO NOTHING;
 
 -- This fixture intentionally re-enables legacy game RPCs only inside disposable CI PostgreSQL.
 UPDATE public.catalog_games SET is_enabled = true WHERE id = 'tictactoe';
+-- Prepare a Paid-track match fixture as the database owner; clients can only submit moves.
+INSERT INTO public.matches(id,game_id,mode,economy_mode,status,state_version,server_state,started_at)
+VALUES (
+  '00000000-0000-4000-8000-000000000099','tictactoe','ranked','paid','active',0,
+  pg_catalog.jsonb_build_object(
+    'board',pg_catalog.jsonb_build_array(null,null,null,null,null,null,null,null,null),
+    'current_mark','X','current_seat',1
+  ),now()
+);
+INSERT INTO public.match_participants(match_id,user_id,seat) VALUES
+  ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000001',1),
+  ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000002',2);
+
 GRANT EXECUTE ON FUNCTION public.queue_for_random_match(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_random_match_queue(text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_tictactoe_move(uuid,integer) TO authenticated;
@@ -109,18 +122,6 @@ BEGIN
 
 
   -- A second, separately-classified Paid match updates only the Paid track.
-  INSERT INTO public.matches(id,game_id,mode,economy_mode,status,state_version,server_state,started_at)
-  VALUES (
-    '00000000-0000-4000-8000-000000000099','tictactoe','ranked','paid','active',0,
-    pg_catalog.jsonb_build_object(
-      'board',pg_catalog.jsonb_build_array(null,null,null,null,null,null,null,null,null),
-      'current_mark','X','current_seat',1
-    ),now()
-  );
-  INSERT INTO public.match_participants(match_id,user_id,seat) VALUES
-    ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000001',1),
-    ('00000000-0000-4000-8000-000000000099','00000000-0000-4000-8000-000000000002',2);
-
   PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',0);
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
   PERFORM public.submit_tictactoe_move('00000000-0000-4000-8000-000000000099',3);

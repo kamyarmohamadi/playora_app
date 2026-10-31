@@ -512,30 +512,32 @@ having w.free_coins >= 50
      or (l.event_type='promotion' and l.idempotency_key='signup_bonus_adjustment_55:' || w.user_id::text)
    );
 
-insert into public.coin_ledger(user_id,amount,bucket,event_type,idempotency_key,reference_id)
-select user_id,-coins_to_move,'free','admin_adjustment',
-       'signup_paid_conversion_debit:' || user_id::text,
-       'Move untouched legacy signup gift to the Value Wallet'
-from playora_untouched_signup_gifts
-on conflict(idempotency_key) do nothing;
-
-insert into public.coin_ledger(user_id,amount,bucket,event_type,idempotency_key,reference_id)
-select user_id,coins_to_move,'purchased','admin_adjustment',
-       'signup_paid_conversion_credit:' || user_id::text,
-       'Move untouched legacy signup gift to the Value Wallet'
-from playora_untouched_signup_gifts
-on conflict(idempotency_key) do nothing;
-
+with debited as (
+  insert into public.coin_ledger(user_id,amount,bucket,event_type,idempotency_key,reference_id)
+  select user_id,-coins_to_move,'free','admin_adjustment',
+         'signup_paid_conversion_debit:' || user_id::text,
+         'Move untouched legacy signup gift to the Value Wallet'
+  from playora_untouched_signup_gifts
+  on conflict(idempotency_key) do nothing
+  returning user_id
+),
+credited as (
+  insert into public.coin_ledger(user_id,amount,bucket,event_type,idempotency_key,reference_id)
+  select d.user_id,c.coins_to_move,'purchased','admin_adjustment',
+         'signup_paid_conversion_credit:' || d.user_id::text,
+         'Move untouched legacy signup gift to the Value Wallet'
+  from debited d
+  join playora_untouched_signup_gifts c on c.user_id=d.user_id
+  on conflict(idempotency_key) do nothing
+  returning user_id
+)
 update public.coin_wallets w
 set free_coins=w.free_coins-c.coins_to_move,
     purchased_coins=w.purchased_coins+c.coins_to_move,
     updated_at=now()
-from playora_untouched_signup_gifts c
-where w.user_id=c.user_id
-  and not exists (
-    select 1 from public.coin_ledger l
-    where l.idempotency_key='signup_paid_conversion_debit:' || c.user_id::text
-  );
+from credited x
+join playora_untouched_signup_gifts c on c.user_id=x.user_id
+where w.user_id=x.user_id;
 
 -- Rewards are a legacy sub-bucket of the Free Wallet. Preserve the historical ledger,
 -- but consolidate its remaining balance into free_coins for the two-wallet product model.

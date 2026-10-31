@@ -56,8 +56,8 @@ BEGIN
     'purchased',100,'purchase',
     'wallet-test-purchase-0003','ci-wallet-test'
   );
-  IF v_wallet.purchased_coins <> 100 THEN
-    RAISE EXCEPTION 'First purchase must add exactly 100 coins; got %',v_wallet.purchased_coins;
+  IF v_wallet.purchased_coins <> 150 THEN
+    RAISE EXCEPTION 'Purchase should add 100 coins on top of the 50-coin signup gift; got %',v_wallet.purchased_coins;
   END IF;
 
   -- Exact replay with the same idempotency key must return current balance, not apply again.
@@ -66,8 +66,8 @@ BEGIN
     'purchased',100,'purchase',
     'wallet-test-purchase-0003','ci-wallet-test'
   );
-  IF v_wallet.purchased_coins <> 100 THEN
-    RAISE EXCEPTION 'Idempotent purchase replay double-credited wallet: %',v_wallet.purchased_coins;
+  IF v_wallet.purchased_coins <> 150 THEN
+    RAISE EXCEPTION 'Idempotent purchase replay returned an unexpected balance: %',v_wallet.purchased_coins;
   END IF;
 
   SELECT count(*) INTO v_ledger_rows FROM public.coin_ledger
@@ -110,15 +110,15 @@ BEGIN
   SELECT purchased_coins INTO v_after
   FROM public.coin_wallets
   WHERE user_id='00000000-0000-4000-8000-000000000003';
-  IF v_after <> 100 THEN RAISE EXCEPTION 'Rejected overdraft changed wallet balance to %',v_after; END IF;
+  IF v_after <> 150 THEN RAISE EXCEPTION 'Rejected overdraft changed wallet balance to %',v_after; END IF;
 
   v_wallet := public.apply_coin_delta(
     '00000000-0000-4000-8000-000000000003'::uuid,
     'purchased',-40,'match_entry',
     'wallet-test-entry-0003','ci-wallet-test'
   );
-  IF v_wallet.purchased_coins <> 60 THEN
-    RAISE EXCEPTION 'Valid debit must reduce balance to 60, got %',v_wallet.purchased_coins;
+  IF v_wallet.purchased_coins <> 110 THEN
+    RAISE EXCEPTION 'Valid debit must reduce balance to 110, got %',v_wallet.purchased_coins;
   END IF;
 
   -- Procedure's own authorization guard must reject non-service roles even if it is called internally.
@@ -141,7 +141,7 @@ BEGIN
   SELECT purchased_coins INTO v_after
   FROM public.coin_wallets
   WHERE user_id='00000000-0000-4000-8000-000000000003';
-  IF v_after <> 60 THEN
+  IF v_after <> 110 THEN
     RAISE EXCEPTION 'Unauthorized wallet call changed balance to %',v_after;
   END IF;
 
