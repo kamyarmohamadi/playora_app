@@ -28,7 +28,7 @@ returns table(
 language plpgsql
 security definer
 set search_path = ''
-as $playora_rpc$
+as $$
 declare
   v_user_id uuid := auth.uid();
 begin
@@ -64,8 +64,7 @@ begin
     end,
     fr.created_at desc;
 end;
-$playora_rpc$
-;
+$$;
 revoke all on function public.list_social_relationships() from public, anon;
 grant execute on function public.list_social_relationships() to authenticated;
 
@@ -74,7 +73,7 @@ returns table(request_id uuid, relationship_status text)
 language plpgsql
 security definer
 set search_path = ''
-as $playora_rpc$
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_target_id uuid;
@@ -88,110 +87,7 @@ begin
   end if;
 
   if p_username is null or pg_catalog.char_length(pg_catalog.btrim(p_username)) not between 3 and 24
-     or pg_catalog.btrim(p_username) !~ '^[a-zA-Z0-9_]{3,24}
-revoke all on function public.send_friend_request(text) from public, anon;
-grant execute on function public.send_friend_request(text) to authenticated;
-
-create or replace function public.respond_friend_request(p_request_id uuid,p_action text)
-returns table(request_id uuid, relationship_status text)
-language plpgsql
-security definer
-set search_path = ''
-as $playora_rpc$
-declare
-  v_user_id uuid := auth.uid();
-  v_status text;
-  v_updated_id uuid;
-begin
-  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
-    raise exception 'not_authorized' using errcode = '42501';
-  end if;
-  if p_action is null or p_action not in ('accepted','declined','blocked') then
-    raise exception 'invalid_relationship_action' using errcode = '22023';
-  end if;
-  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_user_id::text, 29));
-
-  if (select count(*) from public.social_action_events e
-      where e.user_id=v_user_id and e.event_type='respond_friend_request'
-        and e.created_at > now()-interval '1 minute') >= 20 then
-    raise exception 'relationship_rate_limited' using errcode = '22023';
-  end if;
-  insert into public.social_action_events(user_id,event_type)
-  values(v_user_id,'respond_friend_request');
-
-  update public.friend_requests fr
-  set status=p_action,responded_at=now()
-  where fr.id=p_request_id and fr.recipient_id=v_user_id and fr.status='pending'
-  returning fr.id,fr.status into v_updated_id,v_status;
-
-  if v_updated_id is null then
-    raise exception 'request_not_available' using errcode = 'P0002';
-  end if;
-
-  return query select v_updated_id,v_status;
-end;
-$playora_rpc$
-;
-revoke all on function public.respond_friend_request(uuid,text) from public, anon;
-grant execute on function public.respond_friend_request(uuid,text) to authenticated;
-
-create or replace function public.get_game_leaderboard(
-  p_game_id text default 'tictactoe',
-  p_limit integer default 25
-)
-returns table(
-  rank_position bigint,
-  username text,
-  display_name text,
-  xp bigint,
-  competitive_rating integer,
-  matches_played integer,
-  wins integer,
-  losses integer,
-  draws integer,
-  updated_at timestamptz
-)
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_user_id uuid := auth.uid();
-  v_limit integer := least(greatest(coalesce(p_limit,25),1),100);
-begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
-    raise exception 'not_authorized' using errcode = '42501';
-  end if;
-  if p_game_id is null or not exists (
-    select 1 from public.catalog_games g where g.id=p_game_id and g.is_enabled=true
-  ) then
-    raise exception 'game_not_available' using errcode = '22023';
-  end if;
-
-  return query
-  select
-    pg_catalog.row_number() over (
-      order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
-    )::bigint,
-    p.username,
-    p.display_name,
-    s.xp,
-    s.competitive_rating,
-    s.matches_played,
-    s.wins,
-    s.losses,
-    s.draws,
-    s.updated_at
-  from public.member_game_stats s
-  join public.member_profiles p on p.user_id=s.user_id
-  where s.game_id=p_game_id and s.matches_played > 0
-  order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
-  limit v_limit;
-end;
-$playora_rpc$;
-revoke all on function public.get_game_leaderboard(text,integer) from public, anon;
-grant execute on function public.get_game_leaderboard(text,integer) to authenticated;
- then
+     or pg_catalog.btrim(p_username) !~ '^[a-zA-Z0-9_]{3,24}$' then
     raise exception 'member_not_found' using errcode = 'P0002';
   end if;
 
@@ -301,8 +197,7 @@ grant execute on function public.get_game_leaderboard(text,integer) to authentic
 
   return query select v_request_id,'pending'::text;
 end;
-$playora_rpc$
-;
+$$;
 revoke all on function public.send_friend_request(text) from public, anon;
 grant execute on function public.send_friend_request(text) to authenticated;
 
@@ -317,7 +212,7 @@ declare
   v_status text;
   v_updated_id uuid;
 begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
   if p_action is null or p_action not in ('accepted','declined','blocked') then
@@ -344,7 +239,7 @@ begin
 
   return query select v_updated_id,v_status;
 end;
-$playora_rpc$;
+$$;
 revoke all on function public.respond_friend_request(uuid,text) from public, anon;
 grant execute on function public.respond_friend_request(uuid,text) to authenticated;
 
@@ -401,6 +296,6 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$playora_rpc$;
+$$;
 revoke all on function public.get_game_leaderboard(text,integer) from public, anon;
 grant execute on function public.get_game_leaderboard(text,integer) to authenticated;
