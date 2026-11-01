@@ -58,6 +58,7 @@ It does not contain records for these branch migrations:
 - `20261031000600_financial_fk_indexes.sql`
 - `20261101000000_enforce_verified_deposit_withdrawal_minimum.sql`
 - `20261101000100_signup_device_ip_guard.sql`
+- `20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql`
 
 ## 3. Structural drift confirmed
 
@@ -93,7 +94,7 @@ The read-only function inventory identified four member-only RPCs whose live bod
 
 Supabase anonymous sign-ins use the `authenticated` Postgres role, so the role check alone is not a sufficient registered-member check. Their function definitions have an empty `search_path`, and the observed grants exclude `anon`; this is a narrower authorization gap, not evidence that anonymous users can bypass RLS on every table.
 
-A branch-only remediation is being added as `20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql`, alongside CI tests that set the anonymous JWT claim while keeping the Postgres role set to `authenticated`. This source fix is **not deployed to the live database**. It must be reviewed and tested in CI before it can be included in a reconciled live migration plan.
+A branch-only remediation has now been added as `20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql`. It replaces the four RPC bodies with explicit `auth.jwt()->>'is_anonymous'` rejection while preserving authenticated-member grants. The migration is included in the PostgreSQL CI workflow, and `supabase/tests/social_leaderboard.sql` now verifies that all four calls fail when the JWT is anonymous but the database role is `authenticated`. CI run #1143 (`41260521018`) was queued at the time this report was updated. This source fix is **not deployed to the live database**.
 
 ## 4. Security Advisor findings
 
