@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Check, Clock3, LockKeyhole, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
+import { Check, LockKeyhole, RefreshCw, ShieldCheck, X } from "lucide-react";
 
 type Locale = "en" | "fa";
 type Props = { database: SupabaseClient<any>; locale: Locale };
@@ -26,7 +26,7 @@ const copy = {
     payoutAddresses:"Payout address verification", noPayoutAddresses:"No payout addresses registered.",
     verify:"Verify address", rejectAddress:"Reject address",
     withdrawals:"Withdrawal requests", noWithdrawals:"No withdrawal requests.",
-    payoutHash:"Outgoing transaction hash", actualAmount:"Actual amount sent", approvePayout:"Approve request", markPaid:"Mark as paid", rejectWithdrawal:"Reject and refund",
+    payoutHash:"Outgoing transaction hash", actualAmount:"Actual amount sent", net:"Net amount", approvePayout:"Approve request", markPaid:"Mark as paid", rejectWithdrawal:"Reject and refund",
     depositConfig:"Deposit network configuration", withdrawalConfig:"Withdrawal network configuration",
     asset:"Asset", address:"Receiving address", usdRate:"USD per asset", minAmount:"Minimum transfer", networkFee:"Network fee (asset units)", enabled:"Enable network", saveNetwork:"Save network",
     verification:"Member verification", userId:"Member user ID", telegram:"Telegram verified", phone:"Phone verified", wallet:"Wallet address verified", saveFlags:"Save verification flags",
@@ -46,7 +46,7 @@ const copy = {
     payoutAddresses:"تأیید آدرس‌های برداشت", noPayoutAddresses:"آدرس برداشتی ثبت نشده است.",
     verify:"تأیید آدرس", rejectAddress:"رد آدرس",
     withdrawals:"درخواست‌های برداشت", noWithdrawals:"درخواست برداشتی وجود ندارد.",
-    payoutHash:"هش تراکنش خروجی", actualAmount:"مقدار واقعی ارسال‌شده", approvePayout:"تأیید درخواست", markPaid:"ثبت پرداخت‌شده", rejectWithdrawal:"رد و بازگشت سکه",
+    payoutHash:"هش تراکنش خروجی", actualAmount:"مقدار واقعی ارسال‌شده", net:"مبلغ خالص", approvePayout:"تأیید درخواست", markPaid:"ثبت پرداخت‌شده", rejectWithdrawal:"رد و بازگشت سکه",
     depositConfig:"تنظیم شبکهٔ واریز", withdrawalConfig:"تنظیم شبکهٔ برداشت",
     asset:"ارز", address:"آدرس دریافت", usdRate:"قیمت هر واحد به دلار", minAmount:"حداقل مقدار انتقال", networkFee:"کارمزد شبکه (واحد ارز)", enabled:"فعال‌سازی شبکه", saveNetwork:"ذخیره شبکه",
     verification:"تأیید اطلاعات عضو", userId:"شناسه کاربر", telegram:"تلگرام تأیید شده", phone:"شماره موبایل تأیید شده", wallet:"آدرس کیف پول تأیید شده", saveFlags:"ذخیره وضعیت تأییدها",
