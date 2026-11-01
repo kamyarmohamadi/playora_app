@@ -5,7 +5,8 @@ import { FinanceAdminPanel } from "./FinanceAdminPanel";
 
 describe("FinanceAdminPanel", () => {
   it("maps the finance endpoint dashboard contract and loads owner identities", async () => {
-    const invoke = vi.fn(async ({ action }: { action: string }) => {
+    const invoke = vi.fn(async (_functionName: string, { body }: { body: { action: string } }) => {
+      const { action } = body;
       if (action === "check_access") {
         return { data: { ok: true, result: { role: "owner" } }, error: null };
       }
@@ -50,11 +51,12 @@ describe("FinanceAdminPanel", () => {
     expect(screen.getByText("duplicate-request")).toBeInTheDocument();
     expect(screen.getByText(/500 Coins/)).toBeInTheDocument();
     expect(screen.getByText("No admin identities seeded.")).toBeInTheDocument();
-    expect(invoke).toHaveBeenCalledWith({ action: "list_admins" });
+    expect(invoke).toHaveBeenCalledWith("admin-finance", { body: { action: "list_admins" } });
   });
 
   it("submits a deposit review through the privileged endpoint", async () => {
-    const invoke = vi.fn(async ({ action }: { action: string }) => {
+    const invoke = vi.fn(async (_functionName: string, { body }: { body: { action: string } }) => {
+      const { action } = body;
       if (action === "check_access") {
         return { data: { ok: true, result: { role: "finance_admin" } }, error: null };
       }
@@ -83,9 +85,9 @@ describe("FinanceAdminPanel", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Approve and credit" }));
 
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith({
+      expect(invoke).toHaveBeenCalledWith("admin-finance", { body: {
         action: "review_deposit", request_id: "deposit-2", approve: true, note: "",
-      });
+      }});
     });
   });
 });
