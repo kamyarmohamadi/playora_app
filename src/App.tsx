@@ -87,6 +87,7 @@ const supportCopy: Record<Locale, Record<string, string>> = {
     supportBackendUnavailable:"Support submissions are not connected yet. Please try again after the service is enabled.",
     deviceInstallUnavailable:"This browser could not create a persistent Playora install ID. Enable site storage and try again.",
     deviceAlreadyRegistered:"This device is already linked to another Playora account. Sign in with that account instead.",
+    deviceClaimUnavailable:"Playora could not verify this installation. Check your connection and try again.",
   },
   fa: {
     supportEyebrow:"پشتیبانی پلیورا", supportSubtitle:"گزارش خود را برای تیم پلیورا بفرست.",
@@ -109,6 +110,7 @@ const supportCopy: Record<Locale, Record<string, string>> = {
     supportBackendUnavailable:"ثبت گزارش هنوز به سرویس پشتیبانی متصل نشده است.",
     deviceInstallUnavailable:"مرورگر نتوانست شناسهٔ نصب پایدار پلیورا را ذخیره کند. فضای ذخیره‌سازی سایت را فعال و دوباره تلاش کن.",
     deviceAlreadyRegistered:"این دستگاه قبلاً به حساب دیگری متصل شده است. با همان حساب وارد شو.",
+    deviceClaimUnavailable:"پلیورا نتوانست شناسهٔ نصب را تأیید کند. اتصال را بررسی و دوباره تلاش کن.",
   },
 };
 
@@ -314,14 +316,20 @@ export default function App() {
     void supabase.rpc("claim_playora_installation", { p_install_id: installId })
       .then(({ error }) => {
         if (!active || !error) return;
-        setAuthMessage(t("deviceAlreadyRegistered"));
+        const errorText = String(error.message ?? "").toLowerCase();
+        const duplicate = errorText.includes("playora_device_already_registered")
+          || errorText.includes("device_already_registered");
+        setAuthMessage(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
         setAuthMode("signin");
         setAuthOpen(true);
         void supabase.auth.signOut();
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!active) return;
-        setAuthMessage(t("deviceAlreadyRegistered"));
+        const errorText = error instanceof Error ? error.message.toLowerCase() : "";
+        const duplicate = errorText.includes("playora_device_already_registered")
+          || errorText.includes("device_already_registered");
+        setAuthMessage(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
         setAuthMode("signin");
         setAuthOpen(true);
         void supabase.auth.signOut();
@@ -753,8 +761,15 @@ export default function App() {
         if (error) throw error;
         setAuthMessage(t("resetSent"));
       }
-    } catch {
-      setAuthMessage(t("authFailure"));
+    } catch (error) {
+      const errorText = error instanceof Error ? error.message.toLowerCase() : "";
+      setAuthMessage(
+        errorText.includes("already linked") || errorText.includes("playora_device_already_registered")
+          ? t("deviceAlreadyRegistered")
+          : errorText.includes("invalid_playora_install_id")
+            ? t("deviceInstallUnavailable")
+            : t("authFailure")
+      );
     } finally {
       setAuthBusy(false);
     }
