@@ -100,7 +100,7 @@ Migration مالی، مدل زیر را ایجاد کرده است:
 
 ### وضعیت زندهٔ Supabase در زمان ممیزی
 - پروژهٔ `playora-dev` در وضعیت `ACTIVE_HEALTHY` است.
-- تاریخچهٔ remote تا migration مالی `manual_financial_flows_and_turnover` پیش رفته است؛ برچسب‌های migration مربوط به `economy_tracks_and_value_signup_gift` و `seed_both_game_tracks` تکراری‌اند.
+- تاریخچهٔ remote تا `manual_financial_flows_and_turnover` با نسخهٔ `20261031005556` پیش رفته است. سه نام migration هرکدام دو بار ثبت شده‌اند: `plugin_registry_hardening` (نسخه‌های `20261021223140` و `20261021223334`)، `economy_tracks_and_value_signup_gift` (نسخه‌های `20261031003308` و `20261031003317`) و `seed_both_game_tracks` (نسخه‌های `20261031003726` و `20261031003752`). این نسخه‌های remote با نام‌گذاری timestamp فایل‌های source یک‌به‌یک منطبق نیستند.
 - migration پنل مدیر `20261031000500_private_finance_admin_control_plane.sql` و migration ایندکس‌های کلید خارجی `20261031000600_financial_fk_indexes.sql` در تاریخچهٔ زنده دیده نمی‌شوند.
 - جدول‌های `platform_admin_members` و `platform_admin_audit_events` در دیتابیس زنده وجود ندارند؛ در نتیجه پنل مدیر تا اعمال کنترل‌شدهٔ migration و استقرار Edge Function کار نمی‌کند.
 - هیچ Edge Function مستقرشده‌ای در پروژه گزارش نشد.
