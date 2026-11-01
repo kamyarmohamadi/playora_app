@@ -181,6 +181,67 @@ BEGIN
 END
 $social_test$;
 
+
+-- Anonymous Supabase Auth sessions also carry the authenticated Postgres role.
+-- Member-only RPCs must reject them before doing any lookup or write.
+DO $anonymous_member_rpc_guard$
+DECLARE
+  v_username text;
+  v_request_id uuid := '00000000-0000-4000-8000-0000000000aa';
+  v_blocked boolean;
+BEGIN
+  SELECT username INTO v_username
+  FROM public.member_profiles
+  WHERE user_id='00000000-0000-4000-8000-000000000012';
+
+  PERFORM set_config('request.jwt.claim.role','authenticated',false);
+  PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
+  PERFORM set_config('request.jwt.claim.is_anonymous','true',false);
+
+  v_blocked := false;
+  BEGIN
+    PERFORM * FROM public.list_social_relationships();
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'Anonymous session called list_social_relationships';
+  END IF;
+
+  v_blocked := false;
+  BEGIN
+    PERFORM * FROM public.send_friend_request(v_username);
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'Anonymous session called send_friend_request';
+  END IF;
+
+  v_blocked := false;
+  BEGIN
+    PERFORM * FROM public.respond_friend_request(v_request_id,'accepted');
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'Anonymous session called respond_friend_request';
+  END IF;
+
+  v_blocked := false;
+  BEGIN
+    PERFORM * FROM public.get_game_leaderboard_for_mode('tictactoe','free',10);
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_blocked := true;
+  END;
+  IF NOT v_blocked THEN
+    RAISE EXCEPTION 'Anonymous session called get_game_leaderboard_for_mode';
+  END IF;
+
+  PERFORM set_config('request.jwt.claim.is_anonymous','false',false);
+END
+$anonymous_member_rpc_guard$;
+
 RESET ROLE;
 
 DO $social_admin_check$
