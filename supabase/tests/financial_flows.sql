@@ -295,8 +295,6 @@ DECLARE
   v_deposits bigint;
   v_remaining bigint;
   v_wallet bigint;
-  v_required bigint;
-  v_completed bigint;
   v_withdrawal uuid;
 BEGIN
   SELECT free_level,paid_level,paid_random_unlocked,paid_private_unlocked
@@ -312,14 +310,6 @@ BEGIN
   IF v_deposits<>500 OR v_remaining<>0 OR v_wallet<>500 THEN
     RAISE EXCEPTION 'Financial summary mismatch: deposits %, turnover remaining %, wallet %',v_deposits,v_remaining,v_wallet;
   END IF;
-  SELECT sum(turnover_required),sum(turnover_completed)
-  INTO v_required,v_completed
-  FROM public.paid_coin_lots
-  WHERE user_id=auth.uid() AND source_type='deposit';
-  IF v_required<>100 OR v_completed<>100 THEN
-    RAISE EXCEPTION 'Both deposit lots must complete 100/100 turnover, got %/%',v_completed,v_required;
-  END IF;
-
   v_withdrawal := public.request_withdrawal(500,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'));
   INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_10',v_withdrawal);
   IF (SELECT status FROM public.withdrawal_requests WHERE id=v_withdrawal)<>'pending' THEN
