@@ -64,7 +64,8 @@ begin
     end,
     fr.created_at desc;
 end;
-$;
+$playora_rpc$
+;
 revoke all on function public.list_social_relationships() from public, anon;
 grant execute on function public.list_social_relationships() to authenticated;
 
@@ -129,7 +130,8 @@ begin
 
   return query select v_updated_id,v_status;
 end;
-$;
+$playora_rpc$
+;
 revoke all on function public.respond_friend_request(uuid,text) from public, anon;
 grant execute on function public.respond_friend_request(uuid,text) to authenticated;
 
@@ -299,7 +301,8 @@ grant execute on function public.get_game_leaderboard(text,integer) to authentic
 
   return query select v_request_id,'pending'::text;
 end;
-$;
+$playora_rpc$
+;
 revoke all on function public.send_friend_request(text) from public, anon;
 grant execute on function public.send_friend_request(text) to authenticated;
 
