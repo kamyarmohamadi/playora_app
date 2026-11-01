@@ -420,6 +420,10 @@ RESET ROLE;
 SELECT set_config('request.jwt.claim.role','service_role',false);
 SELECT public.review_withdrawal_request(
   (SELECT id FROM finance_test_ids WHERE name='withdrawal_user_12'),
+  'approve',null,null,'CI approve request before recording the outgoing transfer'
+);
+SELECT public.review_withdrawal_request(
+  (SELECT id FROM finance_test_ids WHERE name='withdrawal_user_12'),
   'paid','0x4444444444444444444444444444444444444444444444444444444444444444',499.9,'CI paid request to exercise rolling daily cap'
 );
 SELECT set_config('request.jwt.claim.role','authenticated',false);
