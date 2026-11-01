@@ -262,22 +262,23 @@ SELECT public.apply_coin_delta(
 );
 
 -- The 370-coin match first consumes the older winnings lot before reaching the
--- second deposit. A separate 10-coin completed match must finish that lot's
--- turnover; winnings themselves do not count toward deposit turnover.
+-- second deposit. A separate 200-coin completed match consumes the remaining
+-- 190 winnings coins plus 10 coins from the second deposit; only those final
+-- 10 deposit coins complete turnover. Winnings themselves do not count.
 INSERT INTO public.matches(id,game_id,mode,economy_mode,status,entry_coins)
-VALUES('00000000-0000-4000-8000-000000000106','chess','ranked','paid','active',10);
+VALUES('00000000-0000-4000-8000-000000000106','chess','ranked','paid','active',200);
 INSERT INTO public.match_participants(match_id,user_id,seat,final_result)
 VALUES
  ('00000000-0000-4000-8000-000000000106','00000000-0000-4000-8000-000000000010',1,'win'),
  ('00000000-0000-4000-8000-000000000106','00000000-0000-4000-8000-000000000011',2,'loss');
 SELECT public.apply_coin_delta(
- '00000000-0000-4000-8000-000000000010','purchased',-10,'match_entry',
+ '00000000-0000-4000-8000-000000000010','purchased',-200,'match_entry',
  'finance-match-entry-106','00000000-0000-4000-8000-000000000106'
 );
 UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000106';
 SELECT public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000106');
 SELECT public.apply_coin_delta(
- '00000000-0000-4000-8000-000000000010','purchased',10,'match_payout',
+ '00000000-0000-4000-8000-000000000010','purchased',200,'match_payout',
  'finance-match-payout-010-106','00000000-0000-4000-8000-000000000106'
 );
 
