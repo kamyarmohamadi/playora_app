@@ -99,3 +99,29 @@ Do **not** run a bulk Supabase CLI migration push/replay yet. The remote history
 ## 7. Support UI rollout gate
 
 The member-facing support dialog is connected to the platform shell and the source-level service adapter. Keep `VITE_SUPPORT_REPORTS_ENABLED=false` until the `support_reports` migration is safely applied to the development project, generated database types are refreshed from the actual schema, and the live RLS/API behavior is verified with two separate Auth members. The dialog remains visible but reports that the backend is not connected while the flag is false. CI uses a disposable PostgreSQL schema; it is not proof that the live Supabase table exists.
+
+## 8. Withdrawal history and signup abuse gates (2026-11-01)
+
+### Cumulative verified-deposit requirement
+
+The new migration `20261101000000_enforce_verified_deposit_withdrawal_minimum.sql` changes the server-side `request_withdrawal` RPC. A member must have at least **500 cumulative coins from manually credited deposit requests** before any withdrawal can be requested. It sums `deposit_requests.coin_amount` where `status='credited'`; signup gifts, ad/reward coins, winnings, adjustments and the current wallet balance do not count. The check is serialized with the member's withdrawal limit/reservation lock.
+
+The SQL regression test verifies that 450 credited deposit coins are rejected without reserving coins, and that a second independent 50-coin credited deposit satisfies the 500-coin history threshold after both deposit lots complete their separate 20% turnover.
+
+### Device binding and IP signup throttling
+
+The new migration `20261101000100_signup_device_ip_guard.sql` creates a Supabase **Before User Created** Postgres Auth Hook at:
+
+`pg-functions://postgres/public/hook_playora_before_user_created`
+
+Enable it in the Supabase Dashboard under **Authentication → Hooks → Before User Created** after the migration has been applied. The hook reads the source IP supplied by Supabase Auth (not a client-submitted IP field), HMACs it with a database-held random pepper, and stores only the fingerprint. It allows at most **three new accounts from a single IP in a rolling 24-hour period** to reduce false positives on household and carrier-NAT networks. HMAC fingerprints are retained for 30 days and old attempts are purged during later hook calls.
+
+For email/password registration, the client sends a random per-install UUID in signup metadata. The Auth `auth.users` insert trigger binds the hash of that UUID to the new member; the same installation cannot be bound to a second member. OAuth providers do not accept pre-creation custom user metadata in the same way, so the first authenticated session binds the current install through `claim_playora_installation`. One member may use several devices; one device may not be shared by multiple member accounts.
+
+**Important limitation:** a browser local-storage install ID is not a hardware fingerprint or device attestation. Clearing site data, using another browser profile or modifying a client can create another ID. The IP quota reduces bulk abuse but is not a permanent one-account-per-public-IP rule, because shared networks are common. A stronger Android-only guarantee would require platform attestation such as Play Integrity and a recovery path for legitimate device replacement.
+
+Keep `VITE_SIGNUP_DEVICE_GUARD_ENABLED=false` until both migrations are reconciled/applied, the Postgres Auth Hook is enabled, and live Auth signup tests have passed. The source migration and disposable PostgreSQL CI tests alone do not activate the Auth Hook in `playora-dev`.
+
+### Remote deployment gate
+
+The existing `playora-dev` migration history still contains duplicate/mismatched versions. Do not run a bulk `supabase db push` or apply the new migrations to the live project until that history has been reconciled and a backup exists. CI applies these migrations to a disposable database to validate the SQL and regression tests; this is not evidence that the remote project has been updated.
