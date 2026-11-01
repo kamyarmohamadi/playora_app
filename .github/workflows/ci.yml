@@ -84,10 +84,24 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Install PostgreSQL client
+      - name: Use PostgreSQL client from the service image
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+          sudo tee /usr/local/bin/psql >/dev/null <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          : "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
+          exec docker run --rm --network host \
+            -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+            -w "${GITHUB_WORKSPACE}" \
+            -e PGHOST="${PGHOST:-localhost}" \
+            -e PGPORT="${PGPORT:-5432}" \
+            -e PGUSER="${PGUSER:-postgres}" \
+            -e PGPASSWORD="${PGPASSWORD:-}" \
+            -e PGDATABASE="${PGDATABASE:-playora_test}" \
+            postgres:16 psql "$@"
+          SH
+          sudo chmod +x /usr/local/bin/psql
+          psql --version
       - name: Bootstrap minimal Supabase auth test schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
       - name: Simulate Supabase pgcrypto extension schema
