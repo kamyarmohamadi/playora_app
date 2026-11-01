@@ -427,12 +427,12 @@ returns table(rank_position bigint, username text, display_name text, xp bigint,
 language plpgsql
 security definer
 set search_path = ''
-as $$
+as $
 declare
   v_user_id uuid := auth.uid();
   v_limit integer := least(greatest(coalesce(p_limit,25),1),100);
 begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
   if p_game_id is null or p_economy_mode not in ('free','paid') or not exists (
@@ -452,7 +452,7 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$$;
+$;
 revoke all on function public.get_game_leaderboard_for_mode(text,text,integer) from public,anon,authenticated;
 
 
