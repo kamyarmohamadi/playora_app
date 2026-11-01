@@ -34,6 +34,7 @@ const words = {
     withdrawSent:"Withdrawal request submitted for manual review.", addressSubmitted:"Your receiving address was submitted for manual verification.",
     review:"Manual review may take up to 24 hours.",
     turnoverNote:"Only completed human-vs-human Paid matches funded by your own deposit coins count toward the 20% turnover. Signup gifts do not count.",
+    depositHistoryMinimum:"At least 500 coins must come from verified deposits before withdrawals are enabled.",
     refresh:"Refresh", loading:"Loading…", required:"Complete all required fields.", error:"Request failed. Check your details and try again.",
     created:"Created", under_review:"Under review", pending_confirmation:"Pending confirmation", credited:"Credited",
     rejected:"Rejected", duplicate:"Duplicate transaction", expired:"Expired", pending:"Pending review", approved:"Approved",
@@ -59,6 +60,7 @@ const words = {
     withdrawSent:"درخواست برداشت برای بررسی دستی ثبت شد.", addressSubmitted:"آدرس مقصد برای تأیید دستی ثبت شد.",
     review:"بررسی دستی ممکن است تا ۲۴ ساعت زمان ببرد.",
     turnoverNote:"فقط ورودیهٔ مسابقات کامل‌شدهٔ پولی با انسان واقعی که از سکه‌های واریزی خودتان تأمین شده باشد، در شرط گردش ۲۰٪ محاسبه می‌شود. هدیهٔ ثبت‌نام محاسبه نمی‌شود.",
+    depositHistoryMinimum:"برای فعال‌شدن برداشت، مجموع واریزهای تأییدشده باید حداقل ۵۰۰ سکه باشد.",
     refresh:"به‌روزرسانی", loading:"در حال دریافت اطلاعات…", required:"همهٔ فیلدهای لازم را کامل کنید.",
     error:"درخواست ثبت نشد. اطلاعات را بررسی و دوباره تلاش کنید.",
     created:"ایجادشده", under_review:"در حال بررسی", pending_confirmation:"در انتظار تأیید شبکه", credited:"شارژشده",
@@ -177,7 +179,10 @@ export function FinancialWalletPanel({ database, userId, locale, wallet, onNotif
       });
       if(err)throw err;
       onNotify?.(t.withdrawSent);await refresh();
-    }catch{setError(t.error);}finally{setBusy(false);}
+    }catch(error){
+      const message=error && typeof error==="object" && "message" in error ? String((error as {message?:unknown}).message??"") : "";
+      setError(message.includes("verified_deposit_history_below_minimum")?t.depositHistoryMinimum:t.error);
+    }finally{setBusy(false);}
   };
 
   const copyAddress=async(address:string)=>{
