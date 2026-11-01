@@ -48,7 +48,7 @@ describe("FinanceAdminPanel", () => {
 
     expect(await screen.findByText(/BTC · BTC · 0.01/)).toBeInTheDocument();
     expect(screen.getByText("duplicate-request")).toBeInTheDocument();
-    expect(screen.getByText(/500 Value coins/)).toBeInTheDocument();
+    expect(screen.getByText(/500 Coins/)).toBeInTheDocument();
     expect(screen.getByText("No admin identities seeded.")).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith({ action: "list_admins" });
   });
