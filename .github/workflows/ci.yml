@@ -135,6 +135,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000400_manual_financial_flows_and_turnover.sql
       - name: Require 500 credited real-deposit coins before withdrawals
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000000_enforce_verified_deposit_withdrawal_minimum.sql
+      - name: Add server-side signup device and IP abuse controls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000100_signup_device_ip_guard.sql
       - name: Add private finance administration control plane
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000500_private_finance_admin_control_plane.sql
       - name: Index finance foreign keys and remove duplicate request index
@@ -163,6 +165,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
       - name: Test manual financial flows, duplicate transaction claims, turnover and withdrawal limits
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/financial_flows.sql
+      - name: Test unique device binding and signup IP rate limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/signup_abuse_guard.sql
       - name: Test private finance admin identities and audit permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/admin_finance.sql
       - name: Verify finance foreign-key indexes
