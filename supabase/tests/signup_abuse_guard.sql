@@ -2,6 +2,7 @@
 
 -- The before-user-created hook receives the source IP from Supabase Auth.
 -- Its install identifier is a random UUID stored by the app; only its hash is persisted.
+SET ROLE supabase_auth_admin;
 DO $device_hook_allows_first_account$
 DECLARE
   v_result jsonb;
@@ -18,6 +19,7 @@ BEGIN
   END IF;
 END
 $device_hook_allows_first_account$;
+RESET ROLE;
 
 INSERT INTO auth.users(id,email,raw_user_meta_data)
 VALUES(
@@ -26,6 +28,7 @@ VALUES(
  '{"playora_install_id":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}'
 );
 
+SET ROLE supabase_auth_admin;
 DO $device_hook_rejects_second_account$
 DECLARE
   v_result jsonb;
@@ -70,12 +73,14 @@ BEGIN
   IF v_result<>'{}'::jsonb THEN RAISE EXCEPTION 'Third IP account should be allowed: %',v_result; END IF;
 END
 $ip_limit_allows_three$;
+RESET ROLE;
 
 INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
  ('00000000-0000-4000-8000-000000000201','device-201@example.test','{"playora_install_id":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"}'),
  ('00000000-0000-4000-8000-000000000202','device-202@example.test','{"playora_install_id":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}'),
  ('00000000-0000-4000-8000-000000000203','device-203@example.test','{"playora_install_id":"dddddddd-dddd-4ddd-8ddd-dddddddddddd"}');
 
+SET ROLE supabase_auth_admin;
 DO $ip_limit_rejects_fourth$
 DECLARE
   v_result jsonb;
@@ -91,11 +96,13 @@ BEGIN
   END IF;
 END
 $ip_limit_rejects_fourth$;
+RESET ROLE;
 
 -- OAuth providers may not supply custom user_metadata before account creation.
 -- After the first authenticated session, the app binds its installation ID
 -- through a user-scoped RPC. The same account may use additional devices;
 -- a different account cannot claim an already-bound installation.
+SET ROLE supabase_auth_admin;
 DO $oauth_hook_allows_ip_limited_signup$
 DECLARE v_result jsonb;
 BEGIN
@@ -106,6 +113,7 @@ BEGIN
   IF v_result<>'{}'::jsonb THEN RAISE EXCEPTION 'OAuth signup without metadata should use the IP guard: %',v_result; END IF;
 END
 $oauth_hook_allows_ip_limited_signup$;
+RESET ROLE;
 INSERT INTO auth.users(id,email,raw_user_meta_data)
 VALUES('00000000-0000-4000-8000-000000000301','oauth-device@example.test','{}');
 
