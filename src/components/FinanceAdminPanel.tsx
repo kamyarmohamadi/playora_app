@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Check, Clock3, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
+import { Check, Clock3, LockKeyhole, RefreshCw, ShieldCheck, Wallet, X } from "lucide-react";
 
 type Locale = "en" | "fa";
 type Props = { database: SupabaseClient<any>; locale: Locale };
 type AdminRole = "owner" | "finance_admin" | "support_admin";
 type AdminDashboard = {
-  depositRequests?: any[];
-  duplicateTransactionAttempts?: any[];
+  deposits?: any[];
+  duplicateAttempts?: any[];
   payoutAddresses?: any[];
-  withdrawalRequests?: any[];
+  withdrawals?: any[];
   memberVerifications?: any[];
   admins?: any[];
 };
@@ -96,9 +96,11 @@ export function FinanceAdminPanel({database,locale}:Props) {
     setLoading(true);setError("");
     try{
       const access=await invoke({action:"check_access"});
-      const dashboardData=await invoke({action:"dashboard"});
-      setRole(access.role as AdminRole);
-      setDashboard(dashboardData as AdminDashboard);
+      const nextRole=access.role as AdminRole;
+      const dashboardData=await invoke({action:"dashboard"}) as AdminDashboard;
+      const admins=nextRole==="owner" ? await invoke({action:"list_admins"}) as any[] : [];
+      setRole(nextRole);
+      setDashboard({...dashboardData,admins});
     }catch{
       setRole(null);setDashboard(null);setError(t.unauthorized);
     }finally{setLoading(false);}
@@ -118,7 +120,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
 
   return <section className="finance-admin-panel">
     <header className="finance-admin-heading">
-      <div><span className="section-eyebrow">PLAYORA ADMIN</span><h2>{t.title}</h2><p>{t.subtitle}</p><span className="finance-admin-role"><ShieldCheck size={13}/>{t["role_"+role]}</span></div>
+      <div><span className="section-eyebrow">PLAYORA ADMIN</span><h2>{t.title}</h2><p>{t.subtitle}</p><span className="finance-admin-role"><ShieldCheck size={13}/>{t[("role_"+role) as keyof typeof t]}</span></div>
       <button className="financial-refresh-btn" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={14}/>{t.refresh}</button>
     </header>
     <p className="finance-admin-warning"><LockKeyhole size={14}/>{t.notConfigured}</p>
@@ -137,7 +139,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
     {role!=="support_admin"&&<>
       <section className="finance-admin-card">
         <h3>{t.deposits}</h3>
-        {!dashboard.depositRequests?.length?<p>{t.noDeposits}</p>:dashboard.depositRequests.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.deposits?.length?<p>{t.noDeposits}</p>:dashboard.depositRequests.map(row=><article className="finance-admin-row" key={row.id}>
           <div className="finance-admin-row-main"><b>{row.member?.display_name??row.user_id}</b><small>{row.asset_code} · {row.network_code} · {row.expected_amount} · {fmtDate(row.created_at,locale)}</small>
             <code>{row.tx_hash??"—"}</code><small>{row.coin_amount} {t.coins} · {formatState(row.status,t)}</small></div>
           {row.status==="under_review"&&<div className="finance-admin-actions">
@@ -150,7 +152,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
 
       <section className="finance-admin-card">
         <h3>{t.duplicates}</h3>
-        {!dashboard.duplicateTransactionAttempts?.length?<p>{t.noDuplicates}</p>:dashboard.duplicateTransactionAttempts.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.duplicateAttempts?.length?<p>{t.noDuplicates}</p>:dashboard.duplicateTransactionAttempts.map(row=><article className="finance-admin-row" key={row.id}>
           <div><b>{row.duplicate_request_id}</b><small>{t.duplicateRef}: {row.first_request_id}</small><small>{t.date}: {fmtDate(row.attempted_at,locale)}</small></div>
         </article>)}
       </section>
@@ -168,7 +170,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
 
       <section className="finance-admin-card">
         <h3>{t.withdrawals}</h3>
-        {!dashboard.withdrawalRequests?.length?<p>{t.noWithdrawals}</p>:dashboard.withdrawalRequests.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.withdrawals?.length?<p>{t.noWithdrawals}</p>:dashboard.withdrawalRequests.map(row=><article className="finance-admin-row" key={row.id}>
           <div className="finance-admin-row-main"><b>{row.member?.display_name??row.user_id}</b><small>{row.asset_code} · {row.network_code} · {row.requested_coins} {t.coins} · {fmtDate(row.created_at,locale)}</small>
             <code>{row.destination_address}</code><small>{formatState(row.status,t)} · {t.net}: {row.net_asset_amount} {row.asset_code}</small></div>
           {row.status==="pending"&&<div className="finance-admin-actions">
