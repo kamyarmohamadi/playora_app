@@ -20,6 +20,7 @@ import { listMySupportReports, submitMySupportReport } from "./platform/supportR
 import { prepareGameLaunch } from "./platform/prepareGameLaunch";
 import { PLAYORA_NATIVE_OAUTH_REDIRECT, parseNativeOAuthCallback } from "./platform/nativeOAuth";
 import { getProgressionSnapshot } from "./platform/progression";
+import { getPlayoraInstallId } from "./platform/installId";
 import type { PluginRuntimePolicy } from "./plugin-host/pluginPolicy";
 import {
   Activity, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Bell, BarChart3, Check, ChevronDown, Swords, Coins, Crown, Dices, Ellipsis, Gamepad2, Grid2X2, Heart, Home, Languages, LifeBuoy, LockKeyhole, LogIn, Medal, Search, Settings, ShieldCheck, Sparkles, Ticket, Trophy, UserRound, Users, Wallet, X, Zap
@@ -28,6 +29,7 @@ import { copy, type Locale } from "./i18n/copy";
 import "./index.css";
 
 const supportReportsEnabled = import.meta.env.VITE_SUPPORT_REPORTS_ENABLED === "true";
+const signupDeviceGuardEnabled = import.meta.env.VITE_SIGNUP_DEVICE_GUARD_ENABLED === "true";
 
 const gameCatalogProvider = supabase
   ? createSupabaseCatalogProvider(supabase as unknown as SupabaseClient<Database>, {
@@ -83,6 +85,8 @@ const supportCopy: Record<Locale, Record<string, string>> = {
     supportSecureContextRequired:"Secure browser context is required to submit a report.",
     supportReportFailed:"Your report could not be submitted. Please retry.",
     supportBackendUnavailable:"Support submissions are not connected yet. Please try again after the service is enabled.",
+    deviceInstallUnavailable:"This browser could not create a persistent Playora install ID. Enable site storage and try again.",
+    deviceAlreadyRegistered:"This device is already linked to another Playora account. Sign in with that account instead.",
   },
   fa: {
     supportEyebrow:"پشتیبانی پلیورا", supportSubtitle:"گزارش خود را برای تیم پلیورا بفرست.",
@@ -103,6 +107,8 @@ const supportCopy: Record<Locale, Record<string, string>> = {
     supportSecureContextRequired:"برای ارسال گزارش، مرورگر امن لازم است.",
     supportReportFailed:"گزارش ارسال نشد. دوباره تلاش کن.",
     supportBackendUnavailable:"ثبت گزارش هنوز به سرویس پشتیبانی متصل نشده است.",
+    deviceInstallUnavailable:"مرورگر نتوانست شناسهٔ نصب پایدار پلیورا را ذخیره کند. فضای ذخیره‌سازی سایت را فعال و دوباره تلاش کن.",
+    deviceAlreadyRegistered:"این دستگاه قبلاً به حساب دیگری متصل شده است. با همان حساب وارد شو.",
   },
 };
 
@@ -292,6 +298,36 @@ export default function App() {
   }, [currentMemberId]);
 
   const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
+
+  useEffect(() => {
+    if (!signupDeviceGuardEnabled || !supabase || !currentMemberId) return;
+    let active = true;
+    const installId = getPlayoraInstallId();
+    if (!installId) {
+      setAuthMessage(t("deviceInstallUnavailable"));
+      setAuthMode("signin");
+      setAuthOpen(true);
+      void supabase.auth.signOut();
+      return () => { active = false; };
+    }
+
+    void supabase.rpc("claim_playora_installation", { p_install_id: installId })
+      .then(({ error }) => {
+        if (!active || !error) return;
+        setAuthMessage(t("deviceAlreadyRegistered"));
+        setAuthMode("signin");
+        setAuthOpen(true);
+        void supabase.auth.signOut();
+      })
+      .catch(() => {
+        if (!active) return;
+        setAuthMessage(t("deviceAlreadyRegistered"));
+        setAuthMode("signin");
+        setAuthOpen(true);
+        void supabase.auth.signOut();
+      });
+    return () => { active = false; };
+  }, [currentMemberId]);
   useEffect(() => {
     const authClient = supabase;
     if (!authClient || Capacitor.getPlatform() !== "android") return;
@@ -683,11 +719,20 @@ export default function App() {
         setPassword("");
         setToast(t("signInSuccess"));
       } else if (authMode === "signup") {
+        const installId = getPlayoraInstallId();
+        if (signupDeviceGuardEnabled && !installId) {
+          setAuthMessage(t("deviceInstallUnavailable"));
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            data: { display_name: displayName.trim().slice(0, 32) || "Player", locale },
+            data: {
+              display_name: displayName.trim().slice(0, 32) || "Player",
+              locale,
+              ...(installId ? { playora_install_id: installId } : {}),
+            },
             emailRedirectTo: window.location.origin
           }
         });
