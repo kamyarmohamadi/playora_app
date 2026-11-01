@@ -139,7 +139,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
     {role!=="support_admin"&&<>
       <section className="finance-admin-card">
         <h3>{t.deposits}</h3>
-        {!dashboard.deposits?.length?<p>{t.noDeposits}</p>:dashboard.depositRequests.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.deposits?.length?<p>{t.noDeposits}</p>:dashboard.deposits.map(row=><article className="finance-admin-row" key={row.id}>
           <div className="finance-admin-row-main"><b>{row.member?.display_name??row.user_id}</b><small>{row.asset_code} · {row.network_code} · {row.expected_amount} · {fmtDate(row.created_at,locale)}</small>
             <code>{row.tx_hash??"—"}</code><small>{row.coin_amount} {t.coins} · {formatState(row.status,t)}</small></div>
           {row.status==="under_review"&&<div className="finance-admin-actions">
@@ -152,7 +152,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
 
       <section className="finance-admin-card">
         <h3>{t.duplicates}</h3>
-        {!dashboard.duplicateAttempts?.length?<p>{t.noDuplicates}</p>:dashboard.duplicateTransactionAttempts.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.duplicateAttempts?.length?<p>{t.noDuplicates}</p>:dashboard.duplicateAttempts.map(row=><article className="finance-admin-row" key={row.id}>
           <div><b>{row.duplicate_request_id}</b><small>{t.duplicateRef}: {row.first_request_id}</small><small>{t.date}: {fmtDate(row.attempted_at,locale)}</small></div>
         </article>)}
       </section>
@@ -170,7 +170,7 @@ export function FinanceAdminPanel({database,locale}:Props) {
 
       <section className="finance-admin-card">
         <h3>{t.withdrawals}</h3>
-        {!dashboard.withdrawals?.length?<p>{t.noWithdrawals}</p>:dashboard.withdrawalRequests.map(row=><article className="finance-admin-row" key={row.id}>
+        {!dashboard.withdrawals?.length?<p>{t.noWithdrawals}</p>:dashboard.withdrawals.map(row=><article className="finance-admin-row" key={row.id}>
           <div className="finance-admin-row-main"><b>{row.member?.display_name??row.user_id}</b><small>{row.asset_code} · {row.network_code} · {row.requested_coins} {t.coins} · {fmtDate(row.created_at,locale)}</small>
             <code>{row.destination_address}</code><small>{formatState(row.status,t)} · {t.net}: {row.net_asset_amount} {row.asset_code}</small></div>
           {row.status==="pending"&&<div className="finance-admin-actions">
