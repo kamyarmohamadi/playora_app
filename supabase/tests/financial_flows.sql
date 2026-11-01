@@ -261,6 +261,26 @@ SELECT public.apply_coin_delta(
  'finance-match-payout-010-104','00000000-0000-4000-8000-000000000104'
 );
 
+-- The 370-coin match first consumes the older winnings lot before reaching the
+-- second deposit. A separate 10-coin completed match must finish that lot's
+-- turnover; winnings themselves do not count toward deposit turnover.
+INSERT INTO public.matches(id,game_id,mode,economy_mode,status,entry_coins)
+VALUES('00000000-0000-4000-8000-000000000106','chess','ranked','paid','active',10);
+INSERT INTO public.match_participants(match_id,user_id,seat,final_result)
+VALUES
+ ('00000000-0000-4000-8000-000000000106','00000000-0000-4000-8000-000000000010',1,'win'),
+ ('00000000-0000-4000-8000-000000000106','00000000-0000-4000-8000-000000000011',2,'loss');
+SELECT public.apply_coin_delta(
+ '00000000-0000-4000-8000-000000000010','purchased',-10,'match_entry',
+ 'finance-match-entry-106','00000000-0000-4000-8000-000000000106'
+);
+UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000106';
+SELECT public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000106');
+SELECT public.apply_coin_delta(
+ '00000000-0000-4000-8000-000000000010','purchased',10,'match_payout',
+ 'finance-match-payout-010-106','00000000-0000-4000-8000-000000000106'
+);
+
 SELECT set_config('request.jwt.claim.role','authenticated',false);
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000010',false);
 SET ROLE authenticated;
