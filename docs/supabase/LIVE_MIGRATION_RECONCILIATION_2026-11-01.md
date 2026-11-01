@@ -82,6 +82,19 @@ The live `public.request_withdrawal(bigint,uuid)` function exists, but the new 5
 
 The live project does not yet contain the `private` schema, HMAC secret table, install-claim table, IP-attempt table, Before User Created function or installation-claim RPC. Keep `VITE_SIGNUP_DEVICE_GUARD_ENABLED=false` until the migration and live email/OAuth flows are verified. The hook must also be explicitly configured in Supabase Auth dashboard; applying its SQL alone does not enable the Auth hook.
 
+### Anonymous-session authorization gap found during this follow-up review
+
+The read-only function inventory identified four member-only RPCs whose live bodies check `auth.role()='authenticated'` and `auth.uid()`, but do not reject `auth.jwt()->>'is_anonymous' = true`:
+
+- `list_social_relationships()`
+- `send_friend_request(text)`
+- `respond_friend_request(uuid,text)`
+- `get_game_leaderboard_for_mode(text,text,integer)`
+
+Supabase anonymous sign-ins use the `authenticated` Postgres role, so the role check alone is not a sufficient registered-member check. Their function definitions have an empty `search_path`, and the observed grants exclude `anon`; this is a narrower authorization gap, not evidence that anonymous users can bypass RLS on every table.
+
+A branch-only remediation is being added as `20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql`, alongside CI tests that set the anonymous JWT claim while keeping the Postgres role set to `authenticated`. This source fix is **not deployed to the live database**. It must be reviewed and tested in CI before it can be included in a reconciled live migration plan.
+
 ## 4. Security Advisor findings
 
 The live Security Advisor reports leaked-password protection disabled. Enable it in **Authentication → Security and Protection** (exact dashboard wording may vary), then test password signup and password changes.
