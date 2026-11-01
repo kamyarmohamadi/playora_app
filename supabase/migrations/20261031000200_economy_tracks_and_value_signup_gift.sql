@@ -427,7 +427,7 @@ returns table(rank_position bigint, username text, display_name text, xp bigint,
 language plpgsql
 security definer
 set search_path = ''
-as $playora_rpc$
+as $$
 declare
   v_user_id uuid := auth.uid();
   v_limit integer := least(greatest(coalesce(p_limit,25),1),100);
@@ -452,8 +452,7 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$playora_rpc$
-;
+$$;
 revoke all on function public.get_game_leaderboard_for_mode(text,text,integer) from public,anon,authenticated;
 
 
@@ -496,7 +495,7 @@ begin
 
   return new;
 end;
-$playora_rpc$;
+$$;
 revoke all on function public.handle_new_member() from public,anon,authenticated;
 
 -- Migrate untouched former welcome gifts: move at most 50 coins from Free to Value.
