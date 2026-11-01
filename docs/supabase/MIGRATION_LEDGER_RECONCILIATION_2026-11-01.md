@@ -82,6 +82,17 @@ Supabase's current Backups guide says automatic daily backups are provided for P
 
 A PowerShell export script is in `scripts/backup-playora-supabase.ps1`. It writes roles, schema and data dumps to a private folder outside the Git repository. It explicitly selects `auth,public` so Auth accounts are part of the logical export. The current Storage API inventory is empty; re-check it at backup time.
 
+Run the script from the repository root after signing in and linking the project:
+
+```powershell
+supabase login
+supabase link --project-ref nnowvfewtrfurnluhflt
+.\scripts\backup-playora-supabase.ps1
+```
+
+Enter the database password only in the CLI prompt. Do not paste it into ChatGPT, a GitHub file, or a shell command. The current CLI uses the explicit `--remote=<project-ref>` target syntax; update the CLI if an older version rejects it.
+
+
 The database dump is sensitive: keep it out of GitHub, email, and public cloud folders. Store it on encrypted local/off-site storage, verify SHA-256 hashes, and perform a restore test in a separate throwaway project before changing the live database. This backup is not yet created by this audit.
 
 References:
@@ -129,6 +140,20 @@ supabase db push --remote=nnowvfewtrfurnluhflt --yes
 ```
 
 Do not run `db reset --remote`, do not run `db push --include-all`, and do not manually insert/delete history rows with SQL.
+
+
+### Replay verification added to CI
+
+CI run [#1165](https://github.com/kamyarmohamadi/playora_app/actions/runs/41261845416) completed successfully on commit `e222253fc5b2a01f89b7208d11f7a67c78e8b822`:
+
+- 16 app, unit, type, production-build and Playwright steps
+- 52 PostgreSQL, RLS, financial, signup, admin and migration-replay steps
+- 13 Edge Function checks
+- 81 successful steps total; no failed steps
+
+The PostgreSQL workflow now re-applies the three repeated-name migrations (plugin hardening, Free/Paid economy, and track seeding) after their first application. All three replay steps passed in the disposable CI database. Finance-admin and finance-index migrations also run before the November 1 migrations, matching their real timestamp order.
+
+This is CI-only evidence. It does not create a live backup, alter the live migration ledger, or deploy any migration to Supabase.
 
 ## 6. After-migration verification gates
 
