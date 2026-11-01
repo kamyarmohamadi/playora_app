@@ -302,38 +302,38 @@ export default function App() {
   const t = (key: string) => supportCopy[locale][key] ?? copy[locale][key] ?? key;
 
   useEffect(() => {
-    if (!signupDeviceGuardEnabled || !supabase || !currentMemberId) return;
+    const db = supabase;
+    if (!signupDeviceGuardEnabled || !db || !currentMemberId) return;
     let active = true;
     const installId = getPlayoraInstallId();
-    if (!installId) {
-      setAuthMessage(t("deviceInstallUnavailable"));
+    const rejectSession = (message: string) => {
+      if (!active) return;
+      setAuthMessage(message);
       setAuthMode("signin");
       setAuthOpen(true);
-      void supabase.auth.signOut();
+      void db.auth.signOut();
+    };
+
+    if (!installId) {
+      rejectSession(t("deviceInstallUnavailable"));
       return () => { active = false; };
     }
 
-    void supabase.rpc("claim_playora_installation", { p_install_id: installId })
-      .then(({ error }) => {
+    void (async () => {
+      try {
+        const { error } = await db.rpc("claim_playora_installation", { p_install_id: installId });
         if (!active || !error) return;
         const errorText = String(error.message ?? "").toLowerCase();
         const duplicate = errorText.includes("playora_device_already_registered")
           || errorText.includes("device_already_registered");
-        setAuthMessage(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
-        setAuthMode("signin");
-        setAuthOpen(true);
-        void supabase.auth.signOut();
-      })
-      .catch((error: unknown) => {
-        if (!active) return;
+        rejectSession(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
+      } catch (error: unknown) {
         const errorText = error instanceof Error ? error.message.toLowerCase() : "";
         const duplicate = errorText.includes("playora_device_already_registered")
           || errorText.includes("device_already_registered");
-        setAuthMessage(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
-        setAuthMode("signin");
-        setAuthOpen(true);
-        void supabase.auth.signOut();
-      });
+        rejectSession(t(duplicate ? "deviceAlreadyRegistered" : "deviceClaimUnavailable"));
+      }
+    })();
     return () => { active = false; };
   }, [currentMemberId]);
   useEffect(() => {
