@@ -85,7 +85,7 @@ function parseLocalePair(value: unknown, maxLength: number, field: string): Reco
 export function parseGameRegistry(input: unknown): CatalogGame[] {
   if (!isPlainRecord(input) || !hasOnlyKeys(input, ROOT_KEYS) ||
       !hasRequiredKeys(input, ["apiVersion", "games"]) || input.apiVersion !== 1 ||
-      !Array.isArray(input.games) || input.games.length < 1 || input.games.length > 64) {
+      !Array.isArray(input.games) || input.games.length > 64) {
     throw new Error("Unsupported or invalid game registry manifest");
   }
 

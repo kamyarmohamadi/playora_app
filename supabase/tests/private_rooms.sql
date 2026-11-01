@@ -5,12 +5,17 @@ INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
   ('00000000-0000-4000-8000-000000000002','two@example.test','{"display_name":"Member Two","locale":"fa"}')
 ON CONFLICT (id) DO NOTHING;
 
+-- Test-only grants: the live platform-only migration revokes browser access to game RPCs.
 UPDATE public.catalog_games SET is_enabled=true WHERE id='tictactoe';
-INSERT INTO public.member_game_stats(user_id,game_id)
+GRANT EXECUTE ON FUNCTION public.create_private_room(text,integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.join_private_room(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.leave_private_room(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_private_tictactoe_move(uuid,integer) TO authenticated;
+INSERT INTO public.member_game_stats(user_id,game_id,economy_mode)
 VALUES
-  ('00000000-0000-4000-8000-000000000001','tictactoe'),
-  ('00000000-0000-4000-8000-000000000002','tictactoe')
-ON CONFLICT (user_id,game_id) DO NOTHING;
+  ('00000000-0000-4000-8000-000000000001','tictactoe','free'),
+  ('00000000-0000-4000-8000-000000000002','tictactoe','free')
+ON CONFLICT (user_id,game_id,economy_mode) DO NOTHING;
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.role','authenticated',false);
@@ -89,7 +94,7 @@ BEGIN
 
   SELECT xp,competitive_rating,matches_played
   INTO v_one_xp_before,v_one_rating_before,v_one_matches_before
-  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
+  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
   SELECT free_coins+purchased_coins+reward_coins INTO v_one_balance_before
   FROM public.coin_wallets WHERE user_id=auth.uid();
 
@@ -100,7 +105,7 @@ BEGIN
 
   SELECT xp,competitive_rating,matches_played
   INTO v_two_xp_before,v_two_rating_before,v_two_matches_before
-  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
+  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
   SELECT free_coins+purchased_coins+reward_coins INTO v_two_balance_before
   FROM public.coin_wallets WHERE user_id=auth.uid();
 
@@ -154,7 +159,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',false);
   SELECT xp,competitive_rating,matches_played
   INTO v_xp_after,v_rating_after,v_matches_after
-  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
+  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
   IF v_xp_after <> v_one_xp_before OR v_rating_after <> v_one_rating_before OR v_matches_after <> v_one_matches_before THEN
     RAISE EXCEPTION 'Private play must not change host XP, rating, or ranked match count';
   END IF;
@@ -167,7 +172,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000002',false);
   SELECT xp,competitive_rating,matches_played
   INTO v_xp_after,v_rating_after,v_matches_after
-  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe';
+  FROM public.member_game_stats WHERE user_id=auth.uid() AND game_id='tictactoe' AND economy_mode='free';
   IF v_xp_after <> v_two_xp_before OR v_rating_after <> v_two_rating_before OR v_matches_after <> v_two_matches_before THEN
     RAISE EXCEPTION 'Private play must not change invited member XP, rating, or ranked match count';
   END IF;

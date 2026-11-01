@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/playora-dashboard-polish-2026-10-19
+      - feature/playora-platform-game-plugin-architecture-2026-10-22
   workflow_dispatch:
 
 permissions:
@@ -16,12 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
-    name: Verify and publish browser preview
+  build:
+    name: Verify and build browser preview
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -36,16 +34,28 @@ jobs:
         run: npm test
       - name: Type-check
         run: npm run typecheck
-      - name: Build for GitHub Pages
+      - name: Check platform/game boundary
+        run: npm run check:platform-boundary
+      - name: Build browser preview
         run: npm run build -- --base=/playora_app/
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+      - name: Upload only the built static site
+        uses: actions/upload-pages-artifact@v4
         with:
-          enablement: true
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - name: Deploy browser preview
+          path: ./dist
+
+  deploy:
+    name: Deploy browser preview
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

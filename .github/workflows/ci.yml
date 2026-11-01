@@ -3,6 +3,11 @@ name: Playora quality gate
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+# CI jobs only need to read source; do not grant write access to GITHUB_TOKEN.
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -10,22 +15,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Test Android OAuth manifest patcher
+        run: node --test scripts/configure-android-oauth.node-test.mjs
       - name: Audit dependency vulnerabilities
         run: npm audit --audit-level=moderate
       - name: Run unit tests
         run: npm test
+      - name: Enforce platform/game import boundary
+        run: npm run check:platform-boundary
       - name: Type-check
         run: npm run typecheck
       - name: Build production bundle
         run: npm run build
+      - name: Type-check browser end-to-end tests
+        run: npm run typecheck:e2e
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      - name: Run browser end-to-end tests
+        run: npm run test:e2e
+      - name: Upload production web build for manual preview/review
+        if: success() && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playora-web-build-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Playwright diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-test-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
 
   database-security:
@@ -52,11 +83,25 @@ jobs:
       PGDATABASE: playora_test
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
-      - name: Install PostgreSQL client
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Use PostgreSQL client from the service image
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+          sudo tee /usr/local/bin/psql >/dev/null <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          : "${GITHUB_WORKSPACE:?GITHUB_WORKSPACE is required}"
+          exec docker run --rm --network host \
+            -v "${GITHUB_WORKSPACE}:${GITHUB_WORKSPACE}" \
+            -w "${GITHUB_WORKSPACE}" \
+            -e PGHOST="${PGHOST:-localhost}" \
+            -e PGPORT="${PGPORT:-5432}" \
+            -e PGUSER="${PGUSER:-postgres}" \
+            -e PGPASSWORD="${PGPASSWORD:-}" \
+            -e PGDATABASE="${PGDATABASE:-playora_test}" \
+            postgres:16 psql "$@"
+          SH
+          sudo chmod +x /usr/local/bin/psql
+          psql --version
       - name: Bootstrap minimal Supabase auth test schema
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/bootstrap_supabase.sql
       - name: Simulate Supabase pgcrypto extension schema
@@ -74,10 +119,62 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020030000_limit_match_uuid_visibility.sql
       - name: Apply account deletion cleanup migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261020040000_account_deletion.sql
+      - name: Apply platform-only game RPC lockdown migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261021000000_platform_only_disable_game_rpc.sql
+      - name: Apply public catalog and trusted plugin registry migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261022000000_platform_game_plugin_registry.sql
+      - name: Apply plugin registry hardening migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
+      - name: Verify plugin registry hardening migration is replay-safe
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
+      - name: Enforce approved artifact origins and plugin publication states
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000100_plugin_origin_state_guards.sql
+      - name: Index artifact-origin creator reference
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000200_registry_origin_actor_index.sql
+      - name: Store catalog art as metadata
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261024000000_catalog_art_key.sql
+      - name: Add trusted plugin capability grants
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261025000000_plugin_capability_grants.sql
+      - name: Add member-owned support report intake
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261026000000_support_reports.sql
+      - name: Add capacity-oriented query indexes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261027000000_capacity_query_indexes.sql
+      - name: Add player progression and 55-coin welcome grant
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000000_player_progression_economy.sql
+      - name: Set the default free wallet grant to 55 coins
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000100_wallet_default_55.sql
+      - name: Split Free and Paid progression tracks and migrate signup gift
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
+      - name: Verify Free and Paid migration is replay-safe
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
+      - name: Seed both progression tracks for every game and future member
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000300_seed_both_game_tracks.sql
+      - name: Verify track seeding migration is replay-safe
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000300_seed_both_game_tracks.sql
+      - name: Add manual deposits, withdrawals and deposit-only turnover
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000400_manual_financial_flows_and_turnover.sql
+      - name: Add private finance administration control plane
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000500_private_finance_admin_control_plane.sql
+      - name: Index finance foreign keys and remove duplicate request index
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000600_financial_fk_indexes.sql
+      - name: Require 500 credited real-deposit coins before withdrawals
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000000_enforce_verified_deposit_withdrawal_minimum.sql
+      - name: Add server-side signup device and IP abuse controls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000100_signup_device_ip_guard.sql
+      - name: Reject anonymous member-only social and leaderboard RPC calls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql
       - name: Assert RLS and privileged table permissions
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_invariants.sql
+      - name: Verify capacity query indexes are valid
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/capacity_indexes.sql
+      - name: Test visible catalog and trusted plugin registry boundaries
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/game_plugin_registry.sql
+      - name: Test member-owned support reports, idempotency and rate limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/support_reports.sql
       - name: Test wallet ledger idempotency and overdraft protections
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/wallet_ledger.sql
+      - name: Test independent Free and Paid progression tracks
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/economy_tracks.sql
       - name: Test isolation between two authenticated members
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/rls_member_isolation.sql
       - name: Test ranked Tic Tac Toe matchmaking and server-authoritative outcomes
@@ -88,6 +185,16 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/social_leaderboard.sql
       - name: Test account deletion cleanup without reward side effects
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/account_deletion.sql
+      - name: Test manual financial flows, duplicate transaction claims, turnover and withdrawal limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/financial_flows.sql
+      - name: Test unique device binding and signup IP rate limits
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/signup_abuse_guard.sql
+      - name: Test private finance admin identities and audit permissions
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/admin_finance.sql
+      - name: Verify finance foreign-key indexes
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/financial_fk_indexes.sql
+      - name: Verify privileged finance administrator boundary
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/finance_admin_invariants.sql
 
 
   edge-functions:
@@ -95,14 +202,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Deno
-        uses: denoland/setup-deno@v2
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: v2.x
       - name: Type-check member self endpoint
         run: deno check --config supabase/functions/member-self/deno.json supabase/functions/member-self/index.ts
       - name: Type-check account deletion endpoint
         run: deno check --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index.ts
+      - name: Type-check private finance administrator endpoint
+        run: deno check --config supabase/functions/finance-admin/deno.json supabase/functions/finance-admin/index.ts
+      - name: Test finance administrator authorization and config validation
+        run: deno test --allow-env --config supabase/functions/finance-admin/deno.json supabase/functions/finance-admin/index_test.ts
       - name: Test account deletion request validation
         run: deno test --allow-env --config supabase/functions/delete-account/deno.json supabase/functions/delete-account/index_test.ts
+      - name: Type-check finance administration endpoint
+        run: deno check --config supabase/functions/admin-finance/deno.json supabase/functions/admin-finance/index.ts
+      - name: Test finance administration authorization rules
+        run: deno test --config supabase/functions/admin-finance/deno.json supabase/functions/admin-finance/authorization_test.ts

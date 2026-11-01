@@ -32,7 +32,7 @@ as $$
 declare
   v_user_id uuid := auth.uid();
 begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
 
@@ -82,7 +82,7 @@ declare
   v_recent_minute integer;
   v_recent_hour integer;
 begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
 
@@ -212,7 +212,7 @@ declare
   v_status text;
   v_updated_id uuid;
 begin
-  if coalesce(auth.role(),'') <> 'authenticated' or v_user_id is null then
+  if v_user_id is null or coalesce((auth.jwt()->>'is_anonymous')::boolean,false) then
     raise exception 'not_authorized' using errcode = '42501';
   end if;
   if p_action is null or p_action not in ('accepted','declined','blocked') then
