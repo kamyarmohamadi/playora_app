@@ -125,6 +125,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261022000000_platform_game_plugin_registry.sql
       - name: Apply plugin registry hardening migration
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
+      - name: Verify plugin registry hardening migration is replay-safe
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000000_plugin_registry_hardening.sql
       - name: Enforce approved artifact origins and plugin publication states
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261023000100_plugin_origin_state_guards.sql
       - name: Index artifact-origin creator reference
@@ -143,18 +145,22 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000100_wallet_default_55.sql
       - name: Split Free and Paid progression tracks and migrate signup gift
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
+      - name: Verify Free and Paid migration is replay-safe
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000200_economy_tracks_and_value_signup_gift.sql
       - name: Seed both progression tracks for every game and future member
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000300_seed_both_game_tracks.sql
+      - name: Verify track seeding migration is replay-safe
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000300_seed_both_game_tracks.sql
       - name: Add manual deposits, withdrawals and deposit-only turnover
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000400_manual_financial_flows_and_turnover.sql
-      - name: Require 500 credited real-deposit coins before withdrawals
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000000_enforce_verified_deposit_withdrawal_minimum.sql
-      - name: Add server-side signup device and IP abuse controls
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000100_signup_device_ip_guard.sql
       - name: Add private finance administration control plane
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000500_private_finance_admin_control_plane.sql
       - name: Index finance foreign keys and remove duplicate request index
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000600_financial_fk_indexes.sql
+      - name: Require 500 credited real-deposit coins before withdrawals
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000000_enforce_verified_deposit_withdrawal_minimum.sql
+      - name: Add server-side signup device and IP abuse controls
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000100_signup_device_ip_guard.sql
       - name: Reject anonymous member-only social and leaderboard RPC calls
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261101000200_reject_anonymous_social_and_leaderboard_rpcs.sql
       - name: Assert RLS and privileged table permissions
