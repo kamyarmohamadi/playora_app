@@ -452,7 +452,8 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$;
+$playora_rpc$
+;
 revoke all on function public.get_game_leaderboard_for_mode(text,text,integer) from public,anon,authenticated;
 
 
