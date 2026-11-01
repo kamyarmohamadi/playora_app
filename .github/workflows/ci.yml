@@ -135,8 +135,6 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000400_manual_financial_flows_and_turnover.sql
       - name: Add private finance administration control plane
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000500_private_finance_admin_control_plane.sql
-      - name: Add private finance administrator identities and audit log
-        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000500_private_finance_admin_control_plane.sql
       - name: Index finance foreign keys and remove duplicate request index
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261031000600_financial_fk_indexes.sql
       - name: Assert RLS and privileged table permissions
