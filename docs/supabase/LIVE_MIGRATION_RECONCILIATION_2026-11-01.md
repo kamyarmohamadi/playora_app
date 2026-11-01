@@ -102,6 +102,16 @@ The audit also found 11 public `SECURITY DEFINER` functions executable by `authe
 
 This finding is not by itself proof of an exploit: several are intentionally privileged RPCs. Review each body for explicit `auth.uid()` checks, ownership constraints, argument validation, an empty/fixed `search_path`, and least-privilege grants. Do not switch them all to invoker or revoke them in bulk; that could break legitimate server-authoritative flows or obscure a real authorization flaw.
 
+### Data API exposure enforcement (effective 2026-10-30)
+
+Supabase's October 28, 2026 breaking-change notice says public tables are no longer automatically exposed to the Data and GraphQL APIs, with enforcement on all projects from October 30. For every table needed by the client, verify explicit table grants and RLS independently; `public` schema membership alone is not evidence of API access. The read-only diagnostic's final query inventories current grants and RLS state. Keep finance/admin/internal tables unexposed and grant only the exact roles and operations required.
+
+Reference: [Supabase changelog — Tables not exposed to Data and GraphQL API automatically](https://supabase.com/changelog?tags=database).
+
+The current Before User Created Hook documentation confirms the hook payload includes `metadata.ip_address` and `user.user_metadata`, and that a Postgres function may return an `error` object with `http_code` and `message`. This matches the JSON fields used by the local Playora hook; the live Supabase dashboard hook still needs to be configured and exercised with real email/OAuth signup tests.
+
+Reference: [Supabase Before User Created Hook](https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook).
+
 ## 5. Safe reconciliation sequence
 
 1. **Freeze schema-changing activity.** No Dashboard SQL edits, no migration pushes, no migration repairs, and no deployment during the comparison.
