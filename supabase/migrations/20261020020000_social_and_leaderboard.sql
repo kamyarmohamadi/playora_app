@@ -28,7 +28,7 @@ returns table(
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $playora_rpc$
 declare
   v_user_id uuid := auth.uid();
 begin
@@ -73,7 +73,7 @@ returns table(request_id uuid, relationship_status text)
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $playora_rpc$
 declare
   v_user_id uuid := auth.uid();
   v_target_id uuid;
@@ -96,7 +96,7 @@ returns table(request_id uuid, relationship_status text)
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $playora_rpc$
 declare
   v_user_id uuid := auth.uid();
   v_status text;
@@ -186,7 +186,7 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$$;
+$playora_rpc$;
 revoke all on function public.get_game_leaderboard(text,integer) from public, anon;
 grant execute on function public.get_game_leaderboard(text,integer) to authenticated;
  then
@@ -341,7 +341,7 @@ begin
 
   return query select v_updated_id,v_status;
 end;
-$$;
+$playora_rpc$;
 revoke all on function public.respond_friend_request(uuid,text) from public, anon;
 grant execute on function public.respond_friend_request(uuid,text) to authenticated;
 
@@ -398,6 +398,6 @@ begin
   order by s.competitive_rating desc,s.xp desc,s.wins desc,s.updated_at asc,s.user_id
   limit v_limit;
 end;
-$$;
+$playora_rpc$;
 revoke all on function public.get_game_leaderboard(text,integer) from public, anon;
 grant execute on function public.get_game_leaderboard(text,integer) to authenticated;
