@@ -2,7 +2,8 @@
 
 -- User 10 is created by economy_tracks.sql; user 11 is a second claimant.
 INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES
- ('00000000-0000-4000-8000-000000000011','finance-duplicate@example.test','{"display_name":"Duplicate Claim","locale":"en"}')
+ ('00000000-0000-4000-8000-000000000011','finance-duplicate@example.test','{"display_name":"Duplicate Claim","locale":"en"}'),
+ ('00000000-0000-4000-8000-000000000012','finance-daily-cap@example.test','{"display_name":"Daily Cap","locale":"en"}')
 ON CONFLICT(id) DO NOTHING;
 
 CREATE TEMP TABLE finance_test_ids(name text primary key,id uuid not null);
@@ -197,6 +198,73 @@ SELECT set_config('request.jwt.claim.role','authenticated',false);
 SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000010',false);
 SET ROLE authenticated;
 
+-- 450 credited deposit coins are insufficient even when the Value Wallet
+-- contains the 50-coin signup gift and the 20% deposit turnover is complete.
+DO $below_minimum_deposit_history$
+DECLARE
+  v_rejected boolean:=false;
+  v_error text;
+BEGIN
+  IF (SELECT lifetime_deposit_coins FROM public.get_my_financial_summary())<>450 THEN
+    RAISE EXCEPTION 'Precondition must be exactly 450 credited deposit coins';
+  END IF;
+  BEGIN
+    PERFORM public.request_withdrawal(500,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'));
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    v_rejected := v_error='verified_deposit_history_below_minimum';
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'A 450-coin credited deposit history must not satisfy the 500-coin withdrawal gate; got %',coalesce(v_error,'no error');
+  END IF;
+  IF (SELECT purchased_coins FROM public.coin_wallets WHERE user_id=auth.uid())<>560
+     OR EXISTS(SELECT 1 FROM public.withdrawal_requests WHERE user_id=auth.uid()) THEN
+    RAISE EXCEPTION 'Rejected sub-minimum withdrawal must not reserve coins or create a request';
+  END IF;
+END
+$below_minimum_deposit_history$;
+
+-- A second, separate 50-coin credited deposit raises lifetime verified
+-- deposits to 500. Its own 10-coin turnover must also be completed.
+DO $second_deposit_claim$
+DECLARE v_id uuid;
+BEGIN
+  v_id:=public.submit_deposit_claim(
+    'USDC','TRC20',0.5,
+    '0x2222222222222222222222222222222222222222222222222222222222222222',
+    now()-interval '1 minute'
+  );
+  INSERT INTO finance_test_ids(name,id) VALUES('second_deposit_user_10',v_id);
+END
+$second_deposit_claim$;
+
+RESET ROLE;
+SELECT set_config('request.jwt.claim.role','service_role',false);
+SELECT public.review_deposit_request(
+  (SELECT id FROM finance_test_ids WHERE name='second_deposit_user_10'),true,'CI second manual deposit approval'
+);
+
+INSERT INTO public.matches(id,game_id,mode,economy_mode,status,entry_coins)
+VALUES('00000000-0000-4000-8000-000000000104','chess','ranked','paid','active',370);
+INSERT INTO public.match_participants(match_id,user_id,seat,final_result)
+VALUES
+ ('00000000-0000-4000-8000-000000000104','00000000-0000-4000-8000-000000000010',1,'win'),
+ ('00000000-0000-4000-8000-000000000104','00000000-0000-4000-8000-000000000011',2,'loss');
+SELECT public.apply_coin_delta(
+ '00000000-0000-4000-8000-000000000010','purchased',-370,'match_entry',
+ 'finance-match-entry-104','00000000-0000-4000-8000-000000000104'
+);
+UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000104';
+SELECT public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000104');
+SELECT public.apply_coin_delta(
+ '00000000-0000-4000-8000-000000000010','purchased',260,'match_payout',
+ 'finance-match-payout-010-104','00000000-0000-4000-8000-000000000104'
+);
+
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000010',false);
+SET ROLE authenticated;
+
 DO $access_and_withdrawal$
 DECLARE
   v_free integer;
@@ -206,6 +274,8 @@ DECLARE
   v_deposits bigint;
   v_remaining bigint;
   v_wallet bigint;
+  v_required bigint;
+  v_completed bigint;
   v_withdrawal uuid;
 BEGIN
   SELECT free_level,paid_level,paid_random_unlocked,paid_private_unlocked
@@ -218,8 +288,15 @@ BEGIN
   SELECT lifetime_deposit_coins,turnover_remaining,value_wallet_coins
   INTO v_deposits,v_remaining,v_wallet
   FROM public.get_my_financial_summary();
-  IF v_deposits<>450 OR v_remaining<>0 OR v_wallet<>560 THEN
+  IF v_deposits<>500 OR v_remaining<>0 OR v_wallet<>500 THEN
     RAISE EXCEPTION 'Financial summary mismatch: deposits %, turnover remaining %, wallet %',v_deposits,v_remaining,v_wallet;
+  END IF;
+  SELECT sum(turnover_required),sum(turnover_completed)
+  INTO v_required,v_completed
+  FROM public.paid_coin_lots
+  WHERE user_id=auth.uid() AND source_type='deposit';
+  IF v_required<>100 OR v_completed<>100 THEN
+    RAISE EXCEPTION 'Both deposit lots must complete 100/100 turnover, got %/%',v_completed,v_required;
   END IF;
 
   v_withdrawal := public.request_withdrawal(500,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'));
@@ -227,8 +304,8 @@ BEGIN
   IF (SELECT status FROM public.withdrawal_requests WHERE id=v_withdrawal)<>'pending' THEN
     RAISE EXCEPTION 'Withdrawal request must enter pending manual review';
   END IF;
-  IF (SELECT purchased_coins FROM public.coin_wallets WHERE user_id=auth.uid())<>60 THEN
-    RAISE EXCEPTION 'Withdrawal must reserve 500 coins immediately';
+  IF (SELECT purchased_coins FROM public.coin_wallets WHERE user_id=auth.uid())<>0 THEN
+    RAISE EXCEPTION 'Withdrawal must reserve exactly 500 coins after the threshold is satisfied';
   END IF;
 END
 $access_and_withdrawal$;
@@ -252,62 +329,111 @@ BEGIN
 END
 $rejection_refund$;
 
--- User 11 reaches the daily cap with one request; a second request must be rejected.
+-- User 12 has 500 credited deposit coins and completed turnover. A paid
+-- first withdrawal consumes the daily limit; a subsequent request must fail
+-- specifically because of that cap, not because an earlier request is pending.
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
+SET ROLE authenticated;
+DO $daily_cap_deposit_claim$
+DECLARE v_id uuid;
+BEGIN
+  v_id:=public.submit_deposit_claim(
+    'USDC','TRC20',5.0,
+    '0x3333333333333333333333333333333333333333333333333333333333333333',
+    now()-interval '1 minute'
+  );
+  INSERT INTO finance_test_ids(name,id) VALUES('daily_cap_deposit_user_12',v_id);
+END
+$daily_cap_deposit_claim$;
+
+RESET ROLE;
+SELECT set_config('request.jwt.claim.role','service_role',false);
+SELECT public.review_deposit_request(
+  (SELECT id FROM finance_test_ids WHERE name='daily_cap_deposit_user_12'),true,'CI daily-cap member deposit approval'
+);
+INSERT INTO public.matches(id,game_id,mode,economy_mode,status,entry_coins)
+VALUES('00000000-0000-4000-8000-000000000105','chess','ranked','paid','active',150);
+INSERT INTO public.match_participants(match_id,user_id,seat,final_result)
+VALUES
+ ('00000000-0000-4000-8000-000000000105','00000000-0000-4000-8000-000000000012',1,'win'),
+ ('00000000-0000-4000-8000-000000000011','00000000-0000-4000-8000-000000000011',2,'loss');
 SELECT public.apply_coin_delta(
- '00000000-0000-4000-8000-000000000011','purchased',60000,'admin_adjustment',
- 'finance-admin-adjustment-011','CI daily withdrawal cap fixture'
+ '00000000-0000-4000-8000-000000000012','purchased',-150,'match_entry',
+ 'finance-match-entry-105','00000000-0000-4000-8000-000000000105'
+);
+UPDATE public.matches SET status='completed' WHERE id='00000000-0000-4000-8000-000000000105';
+SELECT public.complete_paid_match_turnover('00000000-0000-4000-8000-000000000105');
+SELECT public.apply_coin_delta(
+ '00000000-0000-4000-8000-000000000012','purchased',60000,'admin_adjustment',
+ 'finance-admin-adjustment-012','CI daily withdrawal cap fixture'
 );
 SELECT public.set_member_gate_verification(
- '00000000-0000-4000-8000-000000000011',true,true,false
+ '00000000-0000-4000-8000-000000000012',true,true,false
 );
 SELECT set_config('request.jwt.claim.role','authenticated',false);
-SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
 SET ROLE authenticated;
-DO $member_11_payout_address$
+DO $member_12_payout_address$
 DECLARE v_id uuid;
 BEGIN
   v_id:=public.register_member_payout_address('USDT','TRC20','T_TEST_WITHDRAWAL_ADDRESS_987654321');
-  INSERT INTO finance_test_ids(name,id) VALUES('payout_address_user_11',v_id);
+  INSERT INTO finance_test_ids(name,id) VALUES('payout_address_user_12',v_id);
 END
-$member_11_payout_address$;
+$member_12_payout_address$;
 RESET ROLE;
 SELECT set_config('request.jwt.claim.role','service_role',false);
 SELECT public.review_member_payout_address(
-  (SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'),true,'CI wallet address verification'
+  (SELECT id FROM finance_test_ids WHERE name='payout_address_user_12'),true,'CI wallet address verification'
 );
 SELECT set_config('request.jwt.claim.role','authenticated',false);
-SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000011',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
 SET ROLE authenticated;
 
 DO $daily_cap$
 DECLARE
   v_first uuid;
   v_rejected boolean:=false;
+  v_error text;
 BEGIN
-  v_first:=public.request_withdrawal(50000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'));
-  INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_11',v_first);
-  BEGIN
-    PERFORM public.request_withdrawal(5000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_11'));
-    v_rejected:=false;
-  EXCEPTION WHEN SQLSTATE '22023' THEN
-    v_rejected:=true;
-  END;
-  IF NOT v_rejected THEN RAISE EXCEPTION 'Daily withdrawal cap was bypassed'; END IF;
+  IF (SELECT lifetime_deposit_coins FROM public.get_my_financial_summary())<>500
+     OR (SELECT turnover_remaining FROM public.get_my_financial_summary())<>0 THEN
+    RAISE EXCEPTION 'Daily cap fixture must have 500 credited deposit coins and completed turnover';
+  END IF;
+  v_first:=public.request_withdrawal(50000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_12'));
+  INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_12',v_first);
 END
 $daily_cap$;
 
 RESET ROLE;
 SELECT set_config('request.jwt.claim.role','service_role',false);
 SELECT public.review_withdrawal_request(
-  (SELECT id FROM finance_test_ids WHERE name='withdrawal_user_11'),
-  'reject',null,null,'CI daily cap fixture cleanup'
+  (SELECT id FROM finance_test_ids WHERE name='withdrawal_user_12'),
+  'paid','0x4444444444444444444444444444444444444444444444444444444444444444',499.9,'CI paid request to exercise rolling daily cap'
 );
+SELECT set_config('request.jwt.claim.role','authenticated',false);
+SELECT set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000012',false);
+SET ROLE authenticated;
+DO $daily_cap_second_request$
+DECLARE v_error text; v_rejected boolean:=false;
+BEGIN
+  BEGIN
+    PERFORM public.request_withdrawal(5000,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_12'));
+  EXCEPTION WHEN SQLSTATE '22023' THEN
+    GET STACKED DIAGNOSTICS v_error = MESSAGE_TEXT;
+    v_rejected := v_error='daily_withdrawal_limit_exceeded';
+  END;
+  IF NOT v_rejected THEN
+    RAISE EXCEPTION 'Daily withdrawal cap was not the reason for rejection; got %',coalesce(v_error,'no error');
+  END IF;
+END
+$daily_cap_second_request$;
 
 DO $final_financial_integrity$
 BEGIN
   IF (SELECT count(*) FROM public.coin_ledger
       WHERE user_id='00000000-0000-4000-8000-000000000010'
-        AND idempotency_key like 'deposit-credit:%')<>1 THEN
+        AND idempotency_key like 'deposit-credit:%')<>2 THEN
     RAISE EXCEPTION 'The first claimant must be credited once only';
   END IF;
   IF (SELECT count(*) FROM public.coin_ledger
@@ -318,7 +444,7 @@ BEGIN
   IF (SELECT count(*) FROM public.paid_coin_lot_consumptions
       WHERE user_id='00000000-0000-4000-8000-000000000010'
         AND event_type='match_entry' AND qualifies_for_turnover=true
-        AND turnover_counted>0)<>2 THEN
+        AND turnover_counted>0)<>3 THEN
     RAISE EXCEPTION 'Only deposit-funded match stakes should count toward turnover';
   END IF;
 END
