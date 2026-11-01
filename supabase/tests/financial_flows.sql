@@ -445,22 +445,41 @@ END
 $daily_cap_second_request$;
 
 DO $final_financial_integrity$
+DECLARE
+  v_credited_count bigint;
+  v_duplicate_count bigint;
+  v_turnover_count bigint;
 BEGIN
-  IF (SELECT count(*) FROM public.coin_ledger
-      WHERE user_id='00000000-0000-4000-8000-000000000010'
-        AND idempotency_key like 'deposit-credit:%')<>2 THEN
-    RAISE EXCEPTION 'The first claimant must be credited once only';
+  -- Each manually credited deposit must point to its own matching Value Wallet
+  -- purchase ledger entry. This checks one-to-one provenance via the FK snapshot.
+  SELECT count(*) INTO v_credited_count
+  FROM public.deposit_requests d
+  JOIN public.coin_ledger l ON l.id=d.credited_ledger_id
+  WHERE d.user_id='00000000-0000-4000-8000-000000000010'
+    AND d.status='credited'
+    AND l.user_id=d.user_id
+    AND l.bucket='purchased'
+    AND l.event_type='purchase'
+    AND l.amount=d.coin_amount;
+  IF v_credited_count<>2 THEN
+    RAISE EXCEPTION 'Two credited deposits must each map to one purchase ledger row, found %',v_credited_count;
   END IF;
-  IF (SELECT count(*) FROM public.coin_ledger
-      WHERE user_id='00000000-0000-4000-8000-000000000011'
-        AND idempotency_key like 'deposit-credit:%')<>0 THEN
+
+  SELECT count(*) INTO v_duplicate_count
+  FROM public.deposit_requests d
+  WHERE d.user_id='00000000-0000-4000-8000-000000000011'
+    AND (d.status='credited' OR d.credited_ledger_id IS NOT NULL);
+  IF v_duplicate_count<>0 THEN
     RAISE EXCEPTION 'Duplicate transaction claimant must never be credited';
   END IF;
-  IF (SELECT count(*) FROM public.paid_coin_lot_consumptions
-      WHERE user_id='00000000-0000-4000-8000-000000000010'
-        AND event_type='match_entry' AND qualifies_for_turnover=true
-        AND turnover_counted>0)<>3 THEN
-    RAISE EXCEPTION 'Only deposit-funded match stakes should count toward turnover';
+
+  SELECT count(*) INTO v_turnover_count
+  FROM public.paid_coin_lot_consumptions
+  WHERE user_id='00000000-0000-4000-8000-000000000010'
+    AND event_type='match_entry' AND qualifies_for_turnover=true
+    AND turnover_counted>0;
+  IF v_turnover_count<>3 THEN
+    RAISE EXCEPTION 'Only deposit-funded match stakes should count toward turnover, found %',v_turnover_count;
   END IF;
 END
 $final_financial_integrity$;
