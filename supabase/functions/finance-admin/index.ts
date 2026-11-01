@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type AdminRole = "owner" | "finance_admin" | "support_admin";
 type JsonObject = Record<string, unknown>;
@@ -72,7 +72,7 @@ async function readJson(request: Request, maxBytes = 8_192): Promise<JsonObject 
 }
 
 async function recordAudit(
-  service: ReturnType<typeof createClient>,
+  service: SupabaseClient<any>,
   actorId: string,
   role: AdminRole,
   action: string,
@@ -132,7 +132,7 @@ export async function handleFinanceAdmin(request: Request): Promise<Response> {
   const { data: authData, error: authError } = await caller.auth.getUser(token);
   if (authError || !authData.user) return json({ error: "Session is invalid or expired." }, 401, headers);
 
-  const service = createClient(projectUrl, serviceRoleKey, {
+  const service = createClient<any>(projectUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   const actorId = authData.user.id;
