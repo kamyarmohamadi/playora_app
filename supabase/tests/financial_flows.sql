@@ -334,8 +334,8 @@ BEGIN
       WHERE id=(SELECT id FROM finance_test_ids WHERE name='withdrawal_user_10'))<>'rejected' THEN
     RAISE EXCEPTION 'Rejected withdrawal status not persisted';
   END IF;
-  IF (SELECT purchased_coins FROM public.coin_wallets WHERE user_id='00000000-0000-4000-8000-000000000010')<>560 THEN
-    RAISE EXCEPTION 'Rejected withdrawal must refund the full reserved amount';
+  IF (SELECT purchased_coins FROM public.coin_wallets WHERE user_id='00000000-0000-4000-8000-000000000010')<>500 THEN
+    RAISE EXCEPTION 'Rejected withdrawal must refund the full reserved amount to the pre-request 500-coin balance';
   END IF;
 END
 $rejection_refund$;
