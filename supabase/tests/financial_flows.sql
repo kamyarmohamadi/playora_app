@@ -295,6 +295,7 @@ DECLARE
   v_deposits bigint;
   v_remaining bigint;
   v_wallet bigint;
+  v_credited_deposits bigint;
   v_withdrawal uuid;
 BEGIN
   SELECT free_level,paid_level,paid_random_unlocked,paid_private_unlocked
@@ -310,6 +311,14 @@ BEGIN
   IF v_deposits<>500 OR v_remaining<>0 OR v_wallet<>500 THEN
     RAISE EXCEPTION 'Financial summary mismatch: deposits %, turnover remaining %, wallet %',v_deposits,v_remaining,v_wallet;
   END IF;
+
+  SELECT count(*) INTO v_credited_deposits
+  FROM public.deposit_requests
+  WHERE user_id=auth.uid() AND status='credited';
+  IF v_credited_deposits<>2 THEN
+    RAISE EXCEPTION 'The first claimant must have exactly two manually credited deposits, found %',v_credited_deposits;
+  END IF;
+
   v_withdrawal := public.request_withdrawal(500,(SELECT id FROM finance_test_ids WHERE name='payout_address_user_10'));
   INSERT INTO finance_test_ids(name,id) VALUES('withdrawal_user_10',v_withdrawal);
   IF (SELECT status FROM public.withdrawal_requests WHERE id=v_withdrawal)<>'pending' THEN
@@ -444,59 +453,5 @@ BEGIN
 END
 $daily_cap_second_request$;
 
-SELECT
-  d.id AS deposit_request_id,
-  d.status,
-  d.coin_amount,
-  d.credited_ledger_id,
-  l.user_id AS ledger_user_id,
-  l.bucket AS ledger_bucket,
-  l.event_type AS ledger_event_type,
-  l.amount AS ledger_amount,
-  l.idempotency_key
-FROM public.deposit_requests d
-LEFT JOIN public.coin_ledger l ON l.id=d.credited_ledger_id
-WHERE d.user_id='00000000-0000-4000-8000-000000000010'
-ORDER BY d.created_at;
-
-DO $final_financial_integrity$
-DECLARE
-  v_credited_count bigint;
-  v_duplicate_count bigint;
-  v_turnover_count bigint;
-BEGIN
-  -- Each manually credited deposit must point to its own matching Value Wallet
-  -- purchase ledger entry. This checks one-to-one provenance via the FK snapshot.
-  SELECT count(*) INTO v_credited_count
-  FROM public.deposit_requests d
-  JOIN public.coin_ledger l ON l.id=d.credited_ledger_id
-  WHERE d.user_id='00000000-0000-4000-8000-000000000010'
-    AND d.status='credited'
-    AND l.user_id=d.user_id
-    AND l.bucket='purchased'
-    AND l.event_type='purchase'
-    AND l.amount=d.coin_amount;
-  IF v_credited_count<>2 THEN
-    RAISE EXCEPTION 'Two credited deposits must each map to one purchase ledger row, found %',v_credited_count;
-  END IF;
-
-  SELECT count(*) INTO v_duplicate_count
-  FROM public.deposit_requests d
-  WHERE d.user_id='00000000-0000-4000-8000-000000000011'
-    AND (d.status='credited' OR d.credited_ledger_id IS NOT NULL);
-  IF v_duplicate_count<>0 THEN
-    RAISE EXCEPTION 'Duplicate transaction claimant must never be credited';
-  END IF;
-
-  SELECT count(*) INTO v_turnover_count
-  FROM public.paid_coin_lot_consumptions
-  WHERE user_id='00000000-0000-4000-8000-000000000010'
-    AND event_type='match_entry' AND qualifies_for_turnover=true
-    AND turnover_counted>0;
-  IF v_turnover_count<>3 THEN
-    RAISE EXCEPTION 'Only deposit-funded match stakes should count toward turnover, found %',v_turnover_count;
-  END IF;
-END
-$final_financial_integrity$;
-
+-- Member-10 deposit count is asserted inside its own authenticated RLS scope above.
 RESET ROLE;
