@@ -444,6 +444,21 @@ BEGIN
 END
 $daily_cap_second_request$;
 
+SELECT
+  d.id AS deposit_request_id,
+  d.status,
+  d.coin_amount,
+  d.credited_ledger_id,
+  l.user_id AS ledger_user_id,
+  l.bucket AS ledger_bucket,
+  l.event_type AS ledger_event_type,
+  l.amount AS ledger_amount,
+  l.idempotency_key
+FROM public.deposit_requests d
+LEFT JOIN public.coin_ledger l ON l.id=d.credited_ledger_id
+WHERE d.user_id='00000000-0000-4000-8000-000000000010'
+ORDER BY d.created_at;
+
 DO $final_financial_integrity$
 DECLARE
   v_credited_count bigint;
